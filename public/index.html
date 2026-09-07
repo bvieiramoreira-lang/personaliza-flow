@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personaliza Flow - ERP Logístico</title>
+  <link rel="icon" type="image/png" href="/images/logow2.png">
+  <link rel="shortcut icon" href="/images/logow2.png" type="image/png">
+  <link rel="apple-touch-icon" href="/images/logow2.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Asap+Sharp:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=1788800600">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- DUAL SIDEBAR CONTAINER -->
+    <div class="dual-sidebar-wrapper" id="sidebar-wrapper">
+
+      <!-- 1. DARK FAR-LEFT STRIP (PERSONALIZA FLOW STYLE) -->
+      <aside class="sidebar-strip">
+        <div class="sidebar-top-brand" title="Novidades e Guia do Sistema" onclick="switchTab('tab-updates')">
+          <img src="/images/logow.png" alt="Personaliza Flow" class="strip-brand-icon">
+        </div>
+
+        <ul class="strip-menu">
+          <li class="strip-item active" data-tab="tab-home" title="Início">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </li>
+          <li class="strip-item" data-tab="tab-my-products" title="Meus Produtos em Estoque">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          </li>
+          <li class="strip-item" data-tab="tab-cart" title="Novo Envio">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          </li>
+          <li class="strip-item" data-tab="tab-shipments" title="Gestão de Remessas">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+          </li>
+          <li class="strip-item" data-tab="tab-addresses" title="Meus Endereços">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </li>
+          <li class="strip-item" data-tab="tab-billing" title="Carteira">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          </li>
+          <li class="strip-item admin-only hidden" data-tab="tab-products" title="Cadastros (Admin)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </li>
+        </ul>
+
+        <div class="strip-footer">
+          <!-- Avatar Minha Conta com Balão Tooltip (Conforme Referência) -->
+          <div class="strip-avatar-account" onclick="switchTab('tab-my-account')" title="Minha conta">
+            <div class="account-avatar-circle" id="strip-user-avatar">PB</div>
+            <div class="account-tooltip">Minha conta</div>
+          </div>
+
+          <div class="strip-item" title="Notificações">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          </div>
+
+          <div class="strip-item" data-tab="tab-updates" title="Ajuda e Novidades" onclick="switchTab('tab-updates')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 2. SECONDARY FLOATING LIGHT PANEL -->
+      <aside class="sidebar-panel">
+        <div class="brand-section">
+          <a href="javascript:void(0)" onclick="switchTab('tab-home')" class="brand-logo-link">
+            <img src="/images/logo2.png" alt="Personaliza Flow" class="brand-logo-img">
+          </a>
+        </div>
+
+        <ul class="panel-menu">
+          <li class="panel-item active" data-tab="tab-home">Início</li>
+          <li class="panel-item" data-tab="tab-my-products">Meus Produtos</li>
+          <li class="panel-item client-only" data-tab="tab-cart">Novo Envio</li>
+          <li class="panel-item" data-tab="tab-shipments">Gestão de Remessas</li>
+          <li class="panel-item client-only" data-tab="tab-addresses">Meus Endereços</li>
+          <li class="panel-item" data-tab="tab-billing">Carteira</li>
+          <li class="panel-item admin-only hidden" data-tab="tab-clients">Clientes</li>
+          <li class="panel-item admin-only hidden" data-tab="tab-settings">Configurações</li>
+          <li class="panel-item" data-tab="tab-my-account">Minha Conta</li>
+        </ul>
+
+        <div class="panel-footer">
+          <button type="button" class="btn-logout-sidebar" onclick="handleLogout()" title="Sair do sistema">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Sair do sistema</span>
+          </button>
+
+          <div class="pin-menu-row">
+            <span>Fixar menu</span>
+            <label class="switch">
+              <input type="checkbox" id="chk-pin-menu" checked onchange="toggleSidebarPin(this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+
+    <!-- MAIN WORKSPACE -->
+    <main class="main-content">
+      
+      <!-- Top Bar com Saudação Dinâmica e Alternador de Perfil -->
+      <div class="top-welcome-bar">
+        <div id="welcome-greeting-container">
+          <h1 class="welcome-title" id="welcome-greeting-text">Boa tarde, Personaliza Brindes</h1>
+          <a href="javascript:void(0)" onclick="switchTab('tab-updates')" class="welcome-subtitle" title="Clique para ver o que mudou no módulo logístico">Descubra o que mudou no módulo logístico nesta semana</a>
+        </div>
+
+        <!-- Seletor de Perfil (Cliente vs Admin) -->
+        <div class="role-selector" title="Alternar perfil de visualização" style="margin-left: auto;">
+          <button class="role-btn active" id="btn-role-client" onclick="setAppRole('client')">Visão Cliente</button>
+          <button class="role-btn" id="btn-role-admin" onclick="setAppRole('admin')">Visão Admin</button>
+        </div>
+      </div>
+
+      <!-- TAB 0: TELA INICIAL DO CLIENTE (WELCOME + BANNER + HELP BLOCKS) -->
+      <section id="tab-home" class="tab-page">
+        
+        <!-- LINHA DO TEMPO HORIZONTAL (COMO FUNCIONA) -->
+        <div class="how-it-works-card">
+          <div class="how-it-works-header">
+            <h2 class="how-it-works-title">Como funciona o Personaliza Flow</h2>
+            <p class="how-it-works-subtitle">Acompanhe o fluxo da sua operação de ponta a ponta, do pedido ao envio sob demanda.</p>
+          </div>
+
+          <div class="timeline-horizontal">
+            <!-- Etapa 1 -->
+            <div class="timeline-step">
+              <div class="timeline-circle">1</div>
+              <div class="timeline-content">
+                <h3 class="timeline-title">Compra</h3>
+                <p class="timeline-desc">Sua empresa escolhe os produtos que deseja utilizar em ações de marketing, onboarding, premiações ou eventos.</p>
+              </div>
+            </div>
+
+            <!-- Etapa 2 -->
+            <div class="timeline-step">
+              <div class="timeline-circle">2</div>
+              <div class="timeline-content">
+                <h3 class="timeline-title">Personalização</h3>
+                <p class="timeline-desc">Personalizamos cada item para criar uma experiência alinhada à identidade visual da sua marca.</p>
+              </div>
+            </div>
+
+            <!-- Etapa 3 -->
+            <div class="timeline-step">
+              <div class="timeline-circle">3</div>
+              <div class="timeline-content">
+                <h3 class="timeline-title">Armazenamento</h3>
+                <p class="timeline-desc">Seus brindes ficam organizados e protegidos em nossa estrutura logística, prontos para uso.</p>
+              </div>
+            </div>
+
+            <!-- Etapa 4 -->
+            <div class="timeline-step">
+              <div class="timeline-circle">4</div>
+              <div class="timeline-content">
+                <h3 class="timeline-title">Gestão de estoque</h3>
+                <p class="timeline-desc">Tenha visibilidade em tempo real do seu saldo de produtos e saiba exatamente o que está disponível.</p>
+              </div>
+            </div>
+
+            <!-- Etapa 5 -->
+            <div class="timeline-step">
+              <div class="timeline-circle">5</div>
+              <div class="timeline-content">
+                <h3 class="timeline-title">Envios sob demanda</h3>
+                <p class="timeline-desc">Nós separamos, embalamos e enviamos sob demanda para qualquer destino do Brasil.</p>
+                <button class="timeline-cta-btn" onclick="switchTab('tab-cart')">
+                  Criar Envio &rarr;
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2 MINI BLOCOS: PRECISA DE AJUDA? -->
+        <div class="help-section">
+          <h3 class="help-title">Precisa de ajuda?</h3>
+          <div class="help-cards-grid">
+            
+            <!-- Bloco 1: Fale conosco -->
+            <div class="help-card" onclick="alert('Abra um chamado de suporte via comercial@personaliza.com.br ou WhatsApp.');">
+              <div>
+                <h4 class="help-card-title">Fale conosco</h4>
+                <p class="help-card-desc">Tem alguma dúvida? Abra um chamado para o nosso time de suporte.</p>
+              </div>
+            </div>
+
+            <!-- Bloco 2: Vídeo tutoriais -->
+            <div class="help-card" onclick="alert('Vídeo tutoriais e passo a passo em breve disponíveis na plataforma!');">
+              <div>
+                <h4 class="help-card-title">Vídeo tutoriais</h4>
+                <p class="help-card-desc">Explore o ERP com vídeos que mostram o passo a passo dos principais recursos.</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </section>
+
+      <!-- TAB 0.5: MEUS PRODUTOS (CLIENT CATALOG) -->
+      <section id="tab-my-products" class="tab-page hidden">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary);">Meus Produtos em Estoque</h2>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Consulte o inventário disponível, veja fotos dos itens e monte envios rapidamente</p>
+          </div>
+          
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <input type="text" id="search-my-products" placeholder="Buscar produto por código ou nome..." style="min-width: 260px;">
+            <button class="btn btn-primary" id="btn-header-cart" onclick="switchTab('tab-cart')" style="display: flex; align-items: center; gap: 0.5rem; position: relative;">
+              <span>Ir para o Carrinho</span>
+              <span class="cart-badge-count" id="cart-header-badge" style="background: #ef4444; color: #ffffff; font-size: 0.75rem; font-weight: 800; padding: 2px 8px; border-radius: 12px; display: none;">0</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="my-products-grid" id="my-products-grid-container">
+          <!-- Renderizado via JS -->
+        </div>
+      </section>
+
+      <!-- TAB 1: NOVO ENVIO / CARRINHO -->
+      <section id="tab-cart" class="tab-page hidden">
+        <!-- Tabela do Carrinho -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+            <div>
+              <h2 class="card-title" style="margin-bottom: 0.25rem;">Produtos Selecionados para Envio</h2>
+              <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Selecione os itens que serão consolidados na remessa para o mesmo destino</p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <button class="btn btn-primary btn-sm" onclick="switchTab('tab-my-products')" style="white-space: nowrap; font-weight: 700;">FAZER UM NOVO ENVIO</button>
+              <button class="btn btn-secondary btn-sm" id="btn-clear-cart">Limpar Carrinho</button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 45px; text-align: center;">
+                    <input type="checkbox" id="cart-select-all" checked onchange="toggleSelectAllCartItems(this.checked)" title="Selecionar/Desmarcar Todos" style="cursor: pointer; width: 16px; height: 16px;">
+                  </th>
+                  <th style="width: 65px; text-align: center;">Foto</th>
+                  <th>Código</th>
+                  <th>Produto</th>
+                  <th>Quantidade</th>
+                  <th>Embalagem Padrão</th>
+                  <th>Volumes Estimados</th>
+                  <th style="text-align: center;">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="cart-table-body">
+                <tr>
+                  <td colspan="8" style="text-align: center; color: var(--text-muted);">Nenhum produto adicionado ao carrinho.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Cotação de Frete (Fase 1: Somente CEP) -->
+        <div class="card" id="card-destination">
+          <h2 class="card-title">Cotação de Frete (Orçamento)</h2>
+          <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.25rem;">Informe apenas o CEP de destino para simular os prazos e modalidades de entrega</p>
+          
+          <form id="form-quote-freight">
+            <div class="form-grid" style="margin-bottom: 1.25rem;">
+              <div class="form-group" style="max-width: 480px;">
+                <label for="input-dest-cep">CEP de Destino <span style="color: red;">*</span></label>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                  <input type="text" id="input-dest-cep" placeholder="80000-000" maxlength="9" required style="flex: 1;">
+                  <button type="button" class="btn btn-secondary" onclick="openSelectSavedAddressModal()" style="white-space: nowrap; padding: 0.75rem 1rem;">
+                    Meus Endereços
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+              <button type="submit" class="btn btn-success" id="btn-calculate-freight">Calcular Frete</button>
+            </div>
+          </form>
+
+          <!-- Resultados de Cotação de Frete -->
+          <div id="quotes-result-container" class="hidden" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+            <h3 style="color: var(--text-primary); margin-bottom: 0.5rem; font-size: 1.1rem; font-weight: 700;">Modalidades de Transporte Disponíveis</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem;" id="quote-summary-text"></p>
+
+            <div class="quotes-grid" id="quotes-grid">
+              <!-- Cards de Frete renderizados via JS -->
+            </div>
+
+            <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
+              <button class="btn btn-primary" id="btn-confirm-quote-step" disabled onclick="confirmQuoteStep()">Confirmar Opção de Frete</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fase 2: Preenchimento de Endereço Completo (Abre após confirmar frete) -->
+        <div class="card hidden" id="section-destination-address" style="margin-top: 1.5rem; border-left: 4px solid var(--primary);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div>
+              <h2 class="card-title" style="margin-bottom: 0.25rem;">Endereço Completo de Destino</h2>
+              <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Os dados da rua e cidade foram autocompletados pelo CEP. Informe o destinatário e o número.</p>
+            </div>
+            <span class="badge badge-success" id="badge-selected-freight" style="font-size: 0.85rem; padding: 6px 12px;">Frete Selecionado</span>
+          </div>
+
+          <form id="form-destination-final" onsubmit="confirmAndCreateShipment(event)">
+            <div class="form-grid" style="margin-bottom: 1.25rem;">
+              <div class="form-group">
+                <label for="final-input-cep">CEP de Destino</label>
+                <input type="text" id="final-input-cep" readonly style="background: var(--bg-card-subtle); cursor: not-allowed;">
+              </div>
+              <div class="form-group">
+                <label for="final-input-name">Nome / Destinatário <span style="color: red;">*</span></label>
+                <input type="text" id="final-input-name" placeholder="Ex: João da Silva / Cresol" required>
+              </div>
+              <div class="form-group" style="grid-column: span 2;">
+                <label for="final-input-street">Rua / Logradouro <span style="color: red;">*</span></label>
+                <input type="text" id="final-input-street" placeholder="Rua / Avenida..." required>
+              </div>
+              <div class="form-group">
+                <label for="final-input-number">Número <span style="color: red;">*</span></label>
+                <input type="text" id="final-input-number" placeholder="Ex: 123" required>
+              </div>
+              <div class="form-group">
+                <label for="final-input-bairro">Bairro</label>
+                <input type="text" id="final-input-bairro" placeholder="Bairro...">
+              </div>
+              <div class="form-group">
+                <label for="final-input-city">Cidade</label>
+                <input type="text" id="final-input-city" placeholder="Cidade...">
+              </div>
+              <div class="form-group">
+                <label for="final-input-uf">UF / Estado</label>
+                <input type="text" id="final-input-uf" placeholder="Ex: PR" maxlength="2">
+              </div>
+              <div class="form-group" style="grid-column: span 2;">
+                <label for="final-input-complement">Complemento (Opcional)</label>
+                <input type="text" id="final-input-complement" placeholder="Apto, Bloco, Sala...">
+              </div>
+            </div>
+
+            <!-- Checkbox para Salvar Endereço -->
+            <div style="margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.6rem; background: #ffffff; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
+              <input type="checkbox" id="chk-save-to-my-addresses" style="width: 18px; height: 18px; cursor: pointer;">
+              <label for="chk-save-to-my-addresses" style="margin: 0; font-weight: 600; font-size: 0.88rem; color: var(--text-primary); cursor: pointer;">
+                Salvar este endereço em "Meus Endereços" para envios futuros
+              </label>
+            </div>
+
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+              <button type="button" class="btn btn-secondary" onclick="cancelAddressStep()">Voltar para Frete</button>
+              <button type="submit" class="btn btn-success" id="btn-confirm-shipment">Finalizar e Gerar Remessa</button>
+            </div>
+          </form>
+        </div>
+
+      </section>
+
+      <!-- TAB 2: GESTÃO DE REMESSAS -->
+      <section id="tab-shipments" class="tab-page hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary);">Gestão de Remessas & Rastreio</h2>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Acompanhe a linha do tempo de preparação, envio e entrega dos seus pedidos</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="loadShipments()">Atualizar Status</button>
+        </div>
+
+        <div id="shipments-cards-container">
+          <!-- Renderizado dinamicamente via JS como cards com linha do tempo -->
+        </div>
+      </section>
+
+      <!-- TAB 3: MEUS ENDEREÇOS -->
+      <section id="tab-addresses" class="tab-page hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary);">Meus Endereços Cadastrados</h2>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Gerencie seus endereços frequentes para selecionar facilmente no momento do envio</p>
+          </div>
+          <button class="btn btn-primary" onclick="openAddressFormModal()">Cadastrar Novo Endereço</button>
+        </div>
+
+        <div id="addresses-cards-container">
+          <!-- Renderizado dinamicamente via JS -->
+        </div>
+      </section>
+
+      <!-- TAB: CARTEIRA & CONTROLE DE FATURAMENTO -->
+      <section id="tab-billing" class="tab-page hidden">
+        <!-- Header compacto -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h2 style="font-size: 1.35rem; font-weight: 700; color: #0f172a; margin-bottom: 0.2rem;">Controle de Faturamento</h2>
+            <div style="font-size: 0.95rem; color: #475569; font-weight: 500;">
+              Saldo em aberto: <strong id="billing-total-open" style="font-size: 1.15rem; color: #dc2626; font-weight: 800; margin-left: 0.2rem;">R$ 0,00</strong>
+              <span style="margin: 0 0.6rem; color: #cbd5e1;">|</span>
+              Total quitado: <strong id="billing-total-paid" style="font-size: 1rem; color: #16a34a; font-weight: 700; margin-left: 0.2rem;">R$ 0,00</strong>
+            </div>
+          </div>
+
+          <!-- Barra de Ações em Lote do Admin (Visível ao selecionar caixas) -->
+          <div id="billing-admin-actions" class="admin-only hidden" style="display: flex; align-items: center; gap: 0.6rem;">
+            <div id="billing-batch-bar" style="display: none; align-items: center; gap: 0.6rem;">
+              <span style="font-size: 0.82rem; color: #475569; font-weight: 600;">(<span id="billing-selected-count">0</span>) selecionados:</span>
+              <button type="button" class="btn btn-sm btn-success" onclick="batchSetPaymentStatus('pago')" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; font-weight: 600; border-radius: 6px;">Dar Baixa nos Selecionados</button>
+              <button type="button" class="btn btn-sm" onclick="batchSetPaymentStatus('em_aberto')" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-weight: 600; border-radius: 6px;">Marcar Em Aberto</button>
+              <button type="button" class="btn btn-sm btn-danger" onclick="batchDeleteBillingShipments()" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; background: #ef4444; color: #fff; border: none; font-weight: 600; border-radius: 6px; cursor: pointer;">Excluir Selecionados</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabela Compacta de Lançamentos -->
+        <div class="card" style="padding: 0; overflow: hidden; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+          <div class="table-responsive">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.84rem;">
+              <thead>
+                <tr style="background: #ffffff; border-bottom: 1px solid #f1f5f9; text-align: left; color: #64748b; font-weight: 600; font-size: 0.8rem;">
+                  <th class="admin-only hidden" style="width: 38px; text-align: center; padding: 0.8rem 0.5rem;">
+                    <input type="checkbox" id="billing-select-all" onclick="toggleSelectAllBillingShipments(this.checked)" style="cursor: pointer;" title="Selecionar Todos">
+                  </th>
+                  <th style="padding: 0.8rem 1rem;">Data</th>
+                  <th style="padding: 0.8rem 1rem;">Valor</th>
+                  <th style="padding: 0.8rem 1rem;">Pedido / Remessa</th>
+                  <th style="padding: 0.8rem 1rem;">Observações / Destino</th>
+                  <th style="padding: 0.8rem 1rem;">Status Pagamento</th>
+                </tr>
+              </thead>
+              <tbody id="billing-shipments-tbody">
+                <!-- Renderizado dinamicamente via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: GESTÃO DE CLIENTES (ADMIN ONLY) -->
+      <section id="tab-clients" class="tab-page hidden admin-only">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <div>
+            <h2 style="font-size: 1.3rem; font-weight: 800;">Gestão de Clientes & Contas</h2>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Gerencie empresas cadastradas, acesse seus catálogos de produtos e acompanhe a carteira individual.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openAddClientPage()">Adicionar Cliente</button>
+        </div>
+
+        <div class="card">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Empresa / Cliente</th>
+                  <th>CNPJ / CPF</th>
+                  <th>E-mail de Acesso</th>
+                  <th>Telefone</th>
+                  <th>Produtos</th>
+                  <th>Total Envios</th>
+                  <th>Em Aberto (R$)</th>
+                  <th>Quitado (R$)</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="clients-table-body">
+                <!-- Renderizado via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- PÁGINA DEDICADA: ADICIONAR NOVO CLIENTE (ADMIN ONLY) -->
+      <section id="page-add-client" class="tab-page hidden admin-only">
+        <div style="margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between;">
+          <button type="button" class="btn btn-secondary" onclick="closeAddClientPage()" style="display: flex; align-items: center; gap: 0.5rem; font-weight: 700; padding: 0.5rem 1rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+            Voltar para Clientes
+          </button>
+        </div>
+
+        <div class="card" style="margin-bottom: 1.5rem; max-width: 800px;">
+          <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+            <h2 class="card-title" style="font-size: 1.4rem; font-weight: 800; margin-bottom: 0.25rem;">Adicionar Novo Cliente</h2>
+            <p style="font-size: 0.88rem; color: var(--text-muted); margin: 0;">Cadastre uma nova empresa no Personaliza Flow com credenciais de acesso, dados fiscais e contato.</p>
+          </div>
+
+          <form id="form-add-client" onsubmit="submitAddClient(event)">
+            <div class="form-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem;">
+              <div class="form-group" style="grid-column: span 2;">
+                <label for="client-name">Nome da Empresa / Cliente <span style="color: #ef4444;">*</span></label>
+                <input type="text" id="client-name" placeholder="Ex: Cresol / Cooperativa Regional" required>
+              </div>
+
+              <div class="form-group" style="grid-column: span 2;">
+                <label for="client-email">E-mail de Acesso <span style="color: #ef4444;">*</span></label>
+                <input type="email" id="client-email" placeholder="cliente@empresa.com.br" required>
+              </div>
+
+              <div class="form-group" style="grid-column: span 2;">
+                <label for="client-password">Senha de Acesso <span style="color: #ef4444;">*</span></label>
+                <div style="position: relative; display: flex; align-items: center;">
+                  <input type="password" id="client-password" placeholder="Defina uma senha de acesso..." required style="padding-right: 2.75rem; width: 100%;">
+                  <button type="button" onclick="togglePasswordVisibility('client-password', this)" title="Mostrar senha" style="position: absolute; right: 0.5rem; background: none; border: none; cursor: pointer; color: #64748b; padding: 0.4rem; display: flex; align-items: center; justify-content: center;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="client-cnpj">CNPJ / CPF</label>
+                <input type="text" id="client-cnpj" placeholder="00.000.000/0001-00">
+              </div>
+
+              <div class="form-group">
+                <label for="client-phone">Telefone / WhatsApp</label>
+                <input type="text" id="client-phone" placeholder="(41) 99999-9999">
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
+              <button type="button" class="btn btn-secondary" onclick="closeAddClientPage()">Cancelar</button>
+              <button type="submit" class="btn btn-primary" id="btn-save-client" style="font-weight: 700; padding: 0.65rem 1.5rem;">Cadastrar Cliente</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- PAGE DEDICADA: GERENCIAR CLIENTE (ADMIN ONLY) -->
+      <section id="page-client-detail" class="tab-page hidden admin-only">
+        <div style="margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+          <button class="btn btn-secondary" onclick="switchTab('tab-clients')" style="display: flex; align-items: center; gap: 0.5rem; font-weight: 700; padding: 0.5rem 1rem;">
+            Voltar para Clientes
+          </button>
+          <button type="button" class="btn btn-danger" onclick="deleteCurrentManagedClient()" style="display: flex; align-items: center; gap: 0.5rem; font-weight: 700; padding: 0.5rem 1rem; background: #ef4444; color: #fff; border: none; border-radius: 8px; cursor: pointer;" title="Excluir este cliente e todos os seus produtos">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 1-2h6c1 0 1 1 1 2v2"/></svg>
+            Excluir Cliente
+          </button>
+        </div>
+
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+            <div>
+              <h2 class="card-title" id="manage-client-name" style="font-size: 1.4rem; font-weight: 800; margin-bottom: 0.25rem;">Gerenciar Cliente</h2>
+              <p id="manage-client-subtitle" style="font-size: 0.88rem; color: var(--text-muted);">Empresa vinculada ao sistema Personaliza Flow</p>
+            </div>
+          </div>
+
+          <!-- Sub-Abas do Cliente -->
+          <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary client-tab-btn active" id="btn-client-tab-products" onclick="switchClientDetailTab('products')">Produtos do Cliente</button>
+            <button type="button" class="btn btn-secondary client-tab-btn" id="btn-client-tab-billing" onclick="switchClientDetailTab('billing')">Carteira do Cliente</button>
+            <button type="button" class="btn btn-secondary client-tab-btn" id="btn-client-tab-info" onclick="switchClientDetailTab('info')">Dados Cadastrais & Acesso</button>
+          </div>
+
+          <!-- Conteúdo da Sub-Aba 1: Produtos do Cliente -->
+          <div id="client-subtab-products" class="client-subtab-content" style="margin-top: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+              <h3 style="font-size: 1rem; font-weight: 700;">Produtos Cadastrados para este Cliente</h3>
+              <button class="btn btn-primary" onclick="openNewProductForClient()">Adicionar Produto para este Cliente</button>
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Código</th>
+                    <th>Produto</th>
+                    <th>Estoque</th>
+                    <th>Peso</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="client-products-tbody">
+                  <!-- Render via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Conteúdo da Sub-Aba 2: Carteira do Cliente -->
+          <div id="client-subtab-billing" class="client-subtab-content hidden" style="margin-top: 1.5rem;">
+            <div style="display: flex; gap: 1.25rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 220px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); padding: 1.25rem; border-radius: 12px;">
+                <div style="font-size: 0.78rem; color: #ef4444; font-weight: 700; text-transform: uppercase;">SALDO EM ABERTO</div>
+                <div id="client-open-balance" style="font-size: 1.6rem; font-weight: 800; color: #dc2626; margin-top: 0.25rem;">R$ 0,00</div>
+              </div>
+              <div style="flex: 1; min-width: 220px; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.2); padding: 1.25rem; border-radius: 12px;">
+                <div style="font-size: 0.78rem; color: #22c55e; font-weight: 700; text-transform: uppercase;">TOTAL QUITADO</div>
+                <div id="client-paid-balance" style="font-size: 1.6rem; font-weight: 800; color: #16a34a; margin-top: 0.25rem;">R$ 0,00</div>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+              <h3 style="font-size: 1rem; font-weight: 700; margin: 0;">Histórico de Remessas & Cobranças</h3>
+              
+              <!-- Ações em Lote para a Carteira deste Cliente -->
+              <div id="client-billing-batch-bar" style="display: none; align-items: center; gap: 0.6rem;">
+                <span style="font-size: 0.82rem; color: #475569; font-weight: 600;">(<span id="client-billing-selected-count">0</span>) selecionados:</span>
+                <button type="button" class="btn btn-sm btn-success" onclick="batchSetClientPaymentStatus('pago')" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; font-weight: 700; border-radius: 6px; background: #16a34a; color: #fff; border: none; cursor: pointer;">Dar Baixa nos Selecionados</button>
+                <button type="button" class="btn btn-sm" onclick="batchSetClientPaymentStatus('em_aberto')" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-weight: 600; border-radius: 6px; cursor: pointer;">Marcar Em Aberto</button>
+                <button type="button" class="btn btn-sm btn-danger" onclick="batchDeleteClientBillingShipments()" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; background: #ef4444; color: #fff; border: none; font-weight: 700; border-radius: 6px; cursor: pointer;">Excluir Selecionados</button>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width: 38px; text-align: center; padding: 0.8rem 0.5rem;">
+                      <input type="checkbox" id="client-billing-select-all" onclick="toggleSelectAllClientBilling(this.checked)" style="cursor: pointer;" title="Selecionar Todos">
+                    </th>
+                    <th>Código</th>
+                    <th>Data</th>
+                    <th>Destino</th>
+                    <th>Valor</th>
+                    <th>Status Pagamento</th>
+                    <th style="text-align: center; min-width: 140px;">Ação / Dar Baixa</th>
+                  </tr>
+                </thead>
+                <tbody id="client-shipments-tbody">
+                  <!-- Render via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Conteúdo da Sub-Aba 3: Dados Cadastrais -->
+          <div id="client-subtab-info" class="client-subtab-content hidden" style="margin-top: 1.5rem;">
+            <form id="form-edit-client-info" onsubmit="submitEditClientInfo(event)">
+              <input type="hidden" id="edit-client-id">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="edit-client-name">Nome da Empresa / Razão Social</label>
+                  <input type="text" id="edit-client-name" required>
+                </div>
+                <div class="form-group">
+                  <label for="edit-client-email">E-mail de Acesso</label>
+                  <input type="email" id="edit-client-email" required>
+                </div>
+                <div class="form-group">
+                  <label for="edit-client-cnpj">CNPJ / CPF</label>
+                  <input type="text" id="edit-client-cnpj">
+                </div>
+                <div class="form-group">
+                  <label for="edit-client-phone">Telefone / WhatsApp</label>
+                  <input type="text" id="edit-client-phone">
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                  <label for="edit-client-password">Redefinir Senha de Acesso (opcional)</label>
+                  <div style="position: relative; display: flex; align-items: center;">
+                    <input type="password" id="edit-client-password" placeholder="Digite uma nova senha para redefinir..." style="padding-right: 2.75rem; width: 100%;">
+                    <button type="button" onclick="togglePasswordVisibility('edit-client-password', this)" title="Mostrar senha" style="position: absolute; right: 0.5rem; background: none; border: none; cursor: pointer; color: #64748b; padding: 0.4rem; display: flex; align-items: center; justify-content: center;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <button type="button" class="btn" onclick="deleteCurrentManagedClient()" style="color: #ef4444; background: #fef2f2; border: 1px solid #fecaca; font-weight: 700; padding: 0.55rem 1rem; border-radius: 8px; cursor: pointer;">
+                  Excluir Cliente Definitivamente
+                </button>
+                <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: PRODUTOS & REGRAS LOGÍSTICAS (ADMIN ONLY) -->
+      <section id="tab-products" class="tab-page hidden admin-only">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <div>
+            <h2 style="font-size: 1.3rem; font-weight: 800;">Cadastro Logístico de Produtos (Admin)</h2>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Cadastre dimensões unitárias e regras de caixas/embalagens para cálculo automático de cubagem</p>
+          </div>
+          <button class="btn btn-primary" id="btn-open-new-product">Novo Produto</button>
+        </div>
+
+        <div class="card">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Nº Pedido</th>
+                  <th>Produto</th>
+                  <th>Peso Unit. (kg)</th>
+                  <th>Dimensões Unit. (cm)</th>
+                  <th>Máx / Caixa</th>
+                  <th>Caixa (C x L x A cm)</th>
+                  <th>Peso Caixa (kg)</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="products-table-body">
+                <!-- Renderizado via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- PÁGINA DEDICADA: CADASTRO / EDIÇÃO DE PRODUTO (ADMIN ONLY) -->
+      <section id="page-product-form" class="tab-page hidden admin-only">
+        <div style="margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between;">
+          <button type="button" class="btn btn-secondary" onclick="closeProductForm()" style="font-weight: 700; padding: 0.5rem 1rem;">
+            <span id="product-form-back-label">Voltar para Lista de Produtos</span>
+          </button>
+        </div>
+
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+            <h2 class="card-title" id="product-form-title" style="font-size: 1.4rem; font-weight: 800; margin-bottom: 0.25rem;">Cadastrar Produto & Regra Logística</h2>
+            <p id="product-form-subtitle" style="font-size: 0.88rem; color: var(--text-muted); margin: 0;">Cadastre as dimensões unitárias e regras de caixas/embalagens para cálculo automático de frete e cubagem.</p>
+          </div>
+
+          <form id="form-product">
+            <input type="hidden" id="modal-product-id">
+
+            <!-- BLOCO 1: INFORMAÇÕES GERAIS & ESTOQUE -->
+            <div style="margin-bottom: 2rem; padding-bottom: 1.75rem; border-bottom: 1px solid var(--border-color);">
+              <h3 style="color: var(--primary); font-size: 1rem; font-weight: 700; margin-bottom: 1.25rem;">
+                1. Informações Gerais, Estoque & Vínculo
+              </h3>
+
+              <div class="form-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem;">
+                <div class="form-group">
+                  <label for="prod-code">Código / SKU <span style="color: #ef4444;">*</span></label>
+                  <input type="text" id="prod-code" placeholder="Ex: GAR-001" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="prod-name">Nome do Produto <span style="color: #ef4444;">*</span></label>
+                  <input type="text" id="prod-name" placeholder="Ex: Garrafa Térmica 500ml" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="prod-order-number">Número do Pedido</label>
+                  <input type="text" id="prod-order-number" placeholder="Ex: PED-10492">
+                </div>
+
+                <div class="form-group">
+                  <label for="prod-client-select">Empresa / Cliente Vinculado</label>
+                  <select id="prod-client-select" style="width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.88rem; background: #fff;">
+                    <option value="">Geral / Empresa Principal</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="prod-stock-qty">Estoque Disponível (unidades) <span style="color: #ef4444;">*</span></label>
+                  <input type="number" id="prod-stock-qty" min="0" value="100" placeholder="100" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="prod-description">Descrição Curta</label>
+                  <input type="text" id="prod-description" placeholder="Ex: Inox com tampa hermética">
+                </div>
+
+                <div class="form-group" style="grid-column: span 3;">
+                  <label for="prod-image-url">Foto do Produto (Upload ou URL)</label>
+                  <div style="display: flex; gap: 0.75rem; align-items: center;">
+                    <input type="text" id="prod-image-url" placeholder="/images/garrafa.png" style="flex: 1;">
+                    <input type="file" id="prod-image-file" accept="image/*" style="display: none;" onchange="uploadProductImage(this)">
+                    <button type="button" class="btn btn-secondary" style="white-space: nowrap; padding: 0.65rem 1rem;" onclick="document.getElementById('prod-image-file').click()">
+                      Upload Imagem
+                    </button>
+                  </div>
+                  <div id="prod-image-preview-container" style="margin-top: 0.75rem; display: none; align-items: center; gap: 0.75rem; background: #ffffff; padding: 0.6rem 0.85rem; border-radius: 8px; border: 1px dashed var(--border-color); width: fit-content;">
+                    <img id="prod-image-preview-img" src="" alt="Preview" style="height: 48px; width: 48px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <span id="prod-image-preview-text" style="font-size: 0.82rem; color: #16a34a; font-weight: 600;">Imagem carregada com sucesso</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- BLOCO 2: DIMENSÕES DO PRODUTO (UNITÁRIO) -->
+            <div style="margin-bottom: 2rem; padding-bottom: 1.75rem; border-bottom: 1px solid var(--border-color);">
+              <h3 style="color: var(--primary); font-size: 1rem; font-weight: 700; margin-bottom: 1.25rem;">
+                2. Dimensões do Produto Unitário
+              </h3>
+
+              <div class="form-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.25rem;">
+                <div class="form-group">
+                  <label for="prod-unit-weight">Peso Unit. (kg) <span style="color: #ef4444;">*</span></label>
+                  <input type="number" id="prod-unit-weight" step="0.001" placeholder="0.300" required>
+                </div>
+                <div class="form-group">
+                  <label for="prod-unit-height">Altura (cm) <span style="color: #ef4444;">*</span></label>
+                  <input type="number" id="prod-unit-height" step="0.1" placeholder="25" required>
+                </div>
+                <div class="form-group">
+                  <label for="prod-unit-width">Largura (cm) <span style="color: #ef4444;">*</span></label>
+                  <input type="number" id="prod-unit-width" step="0.1" placeholder="7" required>
+                </div>
+                <div class="form-group">
+                  <label for="prod-unit-length">Comprimento (cm) <span style="color: #ef4444;">*</span></label>
+                  <input type="number" id="prod-unit-length" step="0.1" placeholder="7" required>
+                </div>
+              </div>
+            </div>
+
+            <!-- BLOCO 3: EMBALAGEM / CAIXA MASTER (CÁLCULO DE FRETE) -->
+            <div style="margin-bottom: 1.5rem; padding-bottom: 0.5rem;">
+              <h3 style="color: var(--primary); font-size: 1rem; font-weight: 700; margin-bottom: 1.25rem;">
+                3. Regra de Embalagem / Caixa Master (Cálculo de Frete)
+              </h3>
+
+              <div class="form-grid" style="grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1.25rem;">
+                <div class="form-group">
+                  <label for="prod-max-qty">Qtd Máx / Caixa <span style="color: #ef4444;">*</span></label>
+                  <input type="number" id="prod-max-qty" min="1" placeholder="20" required>
+                </div>
+                <div class="form-group">
+                  <label for="prod-box-weight">Peso Caixa Vazia (kg) <span style="color: #ef4444;">*</span></label>
+                  <input type="number" id="prod-box-weight" step="0.001" placeholder="0.500" required>
+                </div>
+                <div class="form-group">
+                  <label for="prod-box-height">Altura Caixa (cm) <span style="color: #ef4444;">*</span></label>
+                  <input type="number" id="prod-box-height" step="0.1" placeholder="30" required>
+                </div>
+                <div class="form-group">
+                  <label for="prod-box-width">Largura Caixa (cm) <span style="color: #ef4444;">*</span></label>
+                  <input type="number" id="prod-box-width" step="0.1" placeholder="40" required>
+                </div>
+                <div class="form-group">
+                  <label for="prod-box-length">Comp. Caixa (cm) <span style="color: #ef4444;">*</span></label>
+                  <input type="number" id="prod-box-length" step="0.1" placeholder="40" required>
+                </div>
+              </div>
+            </div>
+
+            <!-- BARRA DE AÇÕES -->
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; align-items: center; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+              <button type="button" class="btn btn-secondary" style="padding: 0.65rem 1.25rem; font-weight: 600;" onclick="closeProductForm()">Cancelar</button>
+              <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.5rem; font-weight: 700;">
+                Salvar Produto
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- TAB 4: CONFIGURAÇÕES (ADMIN ONLY) -->
+      <section id="tab-settings" class="tab-page hidden admin-only">
+        <div style="margin-bottom: 1.5rem;">
+          <h2 style="font-size: 1.3rem; font-weight: 800;">Configurações Logísticas & Gateways (Admin)</h2>
+          <p style="color: var(--text-muted); font-size: 0.88rem;">Ajuste CEP de origem, margem de lucro padrão e gerencie os gateways de frete integrados.</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.5rem; max-width: 1000px;">
+          <!-- Card 1: Configurações Gerais -->
+          <div class="card">
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              Parâmetros de Cotação
+            </h3>
+            <form id="form-settings" class="form-grid">
+              <div class="form-group" style="grid-column: span 2;">
+                <label for="input-origin-cep">CEP de Origem (Personaliza Brindes)</label>
+                <input type="text" id="input-origin-cep" placeholder="80000000" required>
+              </div>
+
+              <div class="form-group" style="grid-column: span 2;">
+                <label for="input-markup-percent">Margem de Lucro Padrão (%)</label>
+                <input type="number" id="input-markup-percent" step="0.1" min="0" placeholder="10.0" required>
+                <small style="color: var(--text-muted); font-size: 0.78rem;">Aplicada automaticamente sobre o valor de custo de todas as transportadoras.</small>
+              </div>
+
+              <div class="form-group" style="grid-column: span 2; margin-top: 1rem;">
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Salvar Configurações</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Card 2: Transportadora Disktenha (Tabela Excel) -->
+          <div class="card" style="border: 1px solid #10b98140; background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+              <div>
+                <h3 style="font-size: 1.1rem; font-weight: 700; color: #065f46; display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="font-size: 1.2rem;">🚛</span> Disktenha (Tabela Regional)
+                </h3>
+                <p style="color: #047857; font-size: 0.8rem; margin-top: 0.2rem;">Integração direta via planilha Excel</p>
+              </div>
+              <span id="badge-disktenha-status" style="background: #10b981; color: #fff; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 20px;">
+                🟢 Ativo
+              </span>
+            </div>
+
+            <div style="background: #ffffff; border: 1px solid #d1fae5; border-radius: 8px; padding: 0.85rem; margin-bottom: 1rem; font-size: 0.84rem; color: #1f2937;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+                <span style="color: var(--text-muted);">Cidades Cobertas:</span>
+                <strong id="disktenha-total-cities">65 cidades (SC e PR)</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+                <span style="color: var(--text-muted);">Prazo de Entrega:</span>
+                <strong>2 dias úteis</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: var(--text-muted);">Arquivo:</span>
+                <span style="font-family: monospace; font-size: 0.78rem; background: #e5e7eb; padding: 0.1rem 0.4rem; border-radius: 4px;">disktenha_personaliza.xlsx</span>
+              </div>
+            </div>
+
+            <!-- Testador Rápido de CEP Disktenha -->
+            <div style="margin-top: 0.75rem;">
+              <label style="font-weight: 700; font-size: 0.82rem; color: #374151; display: block; margin-bottom: 0.4rem;">
+                🔍 Testar Cobertura de CEP:
+              </label>
+              <div style="display: flex; gap: 0.5rem;">
+                <input type="text" id="input-disktenha-test-cep" placeholder="Ex: 88010-000 ou 80010-000" style="flex: 1; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.88rem;">
+                <button type="button" class="btn btn-secondary" onclick="testDisktenhaCep()" style="padding: 0.5rem 0.9rem; font-weight: 700; font-size: 0.85rem;">Testar</button>
+              </div>
+              <div id="disktenha-test-result" style="margin-top: 0.6rem; min-height: 24px; font-size: 0.82rem;"></div>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem; border-top: 1px solid #e5e7eb; padding-top: 0.85rem;">
+              <button type="button" class="btn btn-secondary" onclick="openDisktenhaCitiesModal()" style="flex: 1; font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 0.35rem;">
+                Ver 65 Cidades Atendidas
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="reloadDisktenhaTable()" title="Recarregar dados da planilha" style="font-size: 0.82rem; font-weight: 700;">
+                🔄 Recarregar
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: MINHA CONTA -->
+      <section id="tab-my-account" class="tab-page hidden">
+        <div style="margin-bottom: 1.5rem;">
+          <h2 style="font-size: 1.3rem; font-weight: 800;">Minha Conta</h2>
+          <p style="color: var(--text-muted); font-size: 0.88rem;">Gerencie seus dados cadastrais, informações de contato e senha de acesso</p>
+        </div>
+
+        <div class="my-account-grid" style="display: grid; grid-template-columns: 280px 1fr; gap: 1.5rem; align-items: start;">
+          <!-- Card Lateral: Resumo do Usuário -->
+          <div class="card" style="text-align: center; padding: 2rem 1.5rem; background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+            <div id="my-account-avatar-circle" style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #1d4ed8, #3b82f6); color: #ffffff; font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.85rem auto; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25); overflow: hidden; position: relative;">
+              PB
+            </div>
+
+            <!-- Upload Controls de Foto de Perfil -->
+            <input type="file" id="input-avatar-file" accept="image/*" style="display: none;" onchange="handleAvatarFileSelect(this)">
+            <div style="display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 1.25rem;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('input-avatar-file').click()" style="font-size: 0.78rem; padding: 0.35rem 0.75rem;">
+                Alterar Foto
+              </button>
+              <button type="button" id="btn-remove-avatar" class="btn btn-secondary btn-sm hidden" onclick="handleRemoveAvatar()" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; color: #ef4444; border-color: #fecaca;">
+                Remover
+              </button>
+            </div>
+
+            <h3 id="my-account-card-name" style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--text-primary); word-break: break-word;">Nome do Usuário</h3>
+            <span id="my-account-card-role" class="badge badge-primary" style="font-size: 0.78rem; padding: 0.25rem 0.75rem; text-transform: uppercase; font-weight: 700;">Cliente</span>
+            
+            <div style="margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted); border-top: 1px solid var(--border-color); padding-top: 1.25rem; text-align: left; display: flex; flex-direction: column; gap: 0.65rem;">
+              <div>
+                <span style="font-weight: 600; color: var(--text-primary); display: block; font-size: 0.78rem; text-transform: uppercase;">E-mail Cadastrado</span>
+                <span id="my-account-card-email" style="color: var(--text-secondary); word-break: break-all;">-</span>
+              </div>
+              <div>
+                <span style="font-weight: 600; color: var(--text-primary); display: block; font-size: 0.78rem; text-transform: uppercase;">Status do Cadastro</span>
+                <span class="badge badge-success" style="font-size: 0.75rem;">Ativo</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Principal: Formulário de Edição -->
+          <div class="card" style="background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.75rem 2rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); color: var(--text-primary);">
+              Dados Cadastrais
+            </h3>
+
+            <form id="form-my-account" onsubmit="handleSaveMyAccount(event)">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
+                <div class="form-group">
+                  <label for="my-account-name">Nome Completo / Razão Social</label>
+                  <input type="text" id="my-account-name" required placeholder="Digite seu nome ou da sua empresa">
+                </div>
+                <div class="form-group">
+                  <label for="my-account-email">E-mail de Login</label>
+                  <input type="email" id="my-account-email" disabled style="background-color: #f8fafc; color: #64748b; cursor: not-allowed;" title="O e-mail de login não pode ser alterado diretamente">
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.75rem;">
+                <div class="form-group">
+                  <label for="my-account-doc">CNPJ ou CPF</label>
+                  <input type="text" id="my-account-doc" placeholder="00.000.000/0000-00">
+                </div>
+                <div class="form-group">
+                  <label for="my-account-phone">Telefone / WhatsApp</label>
+                  <input type="text" id="my-account-phone" placeholder="(00) 00000-0000">
+                </div>
+              </div>
+
+              <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-color); color: var(--text-primary);">
+                Segurança e Senha de Acesso
+              </h3>
+              <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+                Preencha os campos abaixo caso deseje alterar sua senha. Se não desejar trocar a senha atual, deixe-os em branco.
+              </p>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.5rem;">
+                <div class="form-group">
+                  <label for="my-account-password">Nova Senha</label>
+                  <div style="position: relative; display: flex; align-items: center;">
+                    <input type="password" id="my-account-password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" style="padding-right: 2.75rem; width: 100%;">
+                    <button type="button" onclick="togglePasswordVisibility('my-account-password', this)" title="Mostrar senha" style="position: absolute; right: 0.5rem; background: none; border: none; cursor: pointer; color: #64748b; padding: 0.4rem; display: flex; align-items: center; justify-content: center;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="my-account-confirm-password">Confirmar Nova Senha</label>
+                  <div style="position: relative; display: flex; align-items: center;">
+                    <input type="password" id="my-account-confirm-password" placeholder="Repita a nova senha" autocomplete="new-password" style="padding-right: 2.75rem; width: 100%;">
+                    <button type="button" onclick="togglePasswordVisibility('my-account-confirm-password', this)" title="Mostrar senha" style="position: absolute; right: 0.5rem; background: none; border: none; cursor: pointer; color: #64748b; padding: 0.4rem; display: flex; align-items: center; justify-content: center;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div id="my-account-feedback" class="hidden" style="margin-bottom: 1.25rem; padding: 0.85rem 1.2rem; border-radius: 6px; font-size: 0.88rem; font-weight: 600;"></div>
+
+              <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button type="submit" class="btn btn-primary" id="btn-save-my-account" style="padding: 0.65rem 1.5rem; font-size: 0.9rem;">
+                  Salvar Alterações
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: ATUALIZAÇÕES DO SISTEMA, GUIA & FAQ -->
+      <section id="tab-updates" class="tab-page hidden">
+        <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.35rem;">Atualizações do Sistema e Central de Ajuda</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Confira o que mudou recentemente no módulo logístico, aprenda a operar suas remessas e tire dúvidas frequentes.</p>
+          </div>
+          <button type="button" class="btn btn-secondary" onclick="switchTab('tab-home')" style="font-size: 0.85rem; padding: 0.5rem 1.1rem;">
+            Voltar ao Início
+          </button>
+        </div>
+
+        <!-- Seção de Navegação Rápida em Pílulas -->
+        <div style="display: flex; gap: 0.75rem; margin-bottom: 2rem; flex-wrap: wrap;">
+          <a href="#updates-section-changelog" class="btn btn-secondary" style="font-size: 0.84rem; padding: 0.45rem 1rem; border-radius: 9999px; text-decoration: none; color: var(--text-primary);">O que mudou no módulo logístico</a>
+          <a href="#updates-section-guide" class="btn btn-secondary" style="font-size: 0.84rem; padding: 0.45rem 1rem; border-radius: 9999px; text-decoration: none; color: var(--text-primary);">Resumo de como utilizar</a>
+          <a href="#updates-section-faq" class="btn btn-secondary" style="font-size: 0.84rem; padding: 0.45rem 1rem; border-radius: 9999px; text-decoration: none; color: var(--text-primary);">Perguntas Frequentes (FAQ)</a>
+        </div>
+
+        <!-- 1. O QUE MUDOU NO MÓDULO LOGÍSTICO (CHANGELOG) -->
+        <div id="updates-section-changelog" class="card" style="margin-bottom: 2rem; background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.75rem 2rem;">
+          <div style="padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); margin-bottom: 1.5rem;">
+            <span class="badge badge-primary" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.5rem; display: inline-block;">Notas de Atualização</span>
+            <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">O que mudou no módulo logístico</h3>
+            <p style="color: var(--text-muted); font-size: 0.86rem; margin-top: 0.25rem;">Acompanhe o histórico contínuo de melhorias e novas funcionalidades lançadas no Personaliza Flow.</p>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 1.75rem;">
+            <!-- Versão Atual 2.4 -->
+            <div style="position: relative; padding-left: 1.5rem; border-left: 3px solid var(--primary);">
+              <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.4rem; flex-wrap: wrap;">
+                <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">Versão 2.4 - Foto de Perfil, Menu Inteligente e Identidade Visual</h4>
+                <span class="badge badge-success" style="font-size: 0.72rem;">Versão Atual</span>
+              </div>
+              <p style="color: var(--text-muted); font-size: 0.84rem; margin-bottom: 0.75rem;">Lançamento em Setembro de 2026</p>
+              <ul style="list-style-type: disc; padding-left: 1.25rem; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.7;">
+                <li><strong>Foto de Perfil Personalizada:</strong> Cada usuário agora pode enviar sua foto na página Minha Conta, com corte e enquadramento automático.</li>
+                <li><strong>Menu Retrátil Inteligente:</strong> Ao desmarcar a chave "Fixar menu", a barra se recolhe liberando espaço total para o conteúdo, abrindo suavemente ao aproximar o mouse.</li>
+                <li><strong>Botão Sair do Sistema:</strong> O logout foi transferido do topo para um botão em pílula integrado ao rodapé do menu lateral.</li>
+                <li><strong>Logotipo Oficial no Menu:</strong> O ícone superior da barra escura agora traz a marca oficial do Personaliza Flow com degradê exclusivo.</li>
+              </ul>
+            </div>
+
+            <!-- Versão 2.3 -->
+            <div style="position: relative; padding-left: 1.5rem; border-left: 3px solid #cbd5e1;">
+              <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.4rem; flex-wrap: wrap;">
+                <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">Versão 2.3 - Isolamento Multi-Tenant e Novo Formulário Integrado</h4>
+                <span class="badge badge-secondary" style="font-size: 0.72rem;">Estabilidade</span>
+              </div>
+              <p style="color: var(--text-muted); font-size: 0.84rem; margin-bottom: 0.75rem;">Lançamento em Agosto de 2026</p>
+              <ul style="list-style-type: disc; padding-left: 1.25rem; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.7;">
+                <li><strong>Privacidade e Isolamento Total:</strong> Cada cliente visualiza estritamente seus próprios produtos, remessas, endereços e saldo financeiro.</li>
+                <li><strong>Cadastro de Produtos Sem Janelas Modais:</strong> O cadastro e edição de produtos passou a contar com página própria completa e fluida.</li>
+                <li><strong>Design System Limpo:</strong> Eliminação de caixas cinzas pesadas, adoção de fundo branco puro e tipografia institucional Asap Sharp.</li>
+              </ul>
+            </div>
+
+            <!-- Versão 2.2 -->
+            <div style="position: relative; padding-left: 1.5rem; border-left: 3px solid #cbd5e1;">
+              <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.4rem; flex-wrap: wrap;">
+                <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">Versão 2.2 - Inteligência de Embalagens e Módulo Financeiro</h4>
+                <span class="badge badge-secondary" style="font-size: 0.72rem;">Logística</span>
+              </div>
+              <p style="color: var(--text-muted); font-size: 0.84rem; margin-bottom: 0.75rem;">Lançamento em Julho de 2026</p>
+              <ul style="list-style-type: disc; padding-left: 1.25rem; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.7;">
+                <li><strong>Cálculo Volumétrico de Caixas:</strong> Agrupamento automático de produtos por capacidade cúbica máxima para cotações de frete precisas.</li>
+                <li><strong>Carteira e Faturamento:</strong> Painel de controle de remessas com status financeiro em aberto e quitado, facilitando a conciliação.</li>
+                <li><strong>Geração de Etiquetas:</strong> Impressão de etiquetas de transporte com código de barras prontas para expedição.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. RESUMO DE COMO UTILIZAR O SISTEMA -->
+        <div id="updates-section-guide" class="card" style="margin-bottom: 2rem; background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.75rem 2rem;">
+          <div style="padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); margin-bottom: 1.5rem;">
+            <span class="badge badge-primary" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.5rem; display: inline-block;">Guia Rápido</span>
+            <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">Resumo de como utilizar o sistema</h3>
+            <p style="color: var(--text-muted); font-size: 0.86rem; margin-top: 0.25rem;">Passo a passo simples para você gerenciar seus estoques e despachar mercadorias sob demanda.</p>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+            <!-- Etapa 1 -->
+            <div style="padding: 1.25rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: #ffffff;">
+              <span style="font-size: 0.8rem; font-weight: 800; color: var(--primary); text-transform: uppercase; display: block; margin-bottom: 0.5rem;">Etapa 01</span>
+              <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary);">Consulte seus Produtos em Estoque</h4>
+              <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
+                Acesse a aba <strong>Meus Produtos</strong> para visualizar a lista completa de itens estocados no centro logístico, com saldo de unidades em tempo real, fotos, peso e dimensões.
+              </p>
+            </div>
+
+            <!-- Etapa 2 -->
+            <div style="padding: 1.25rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: #ffffff;">
+              <span style="font-size: 0.8rem; font-weight: 800; color: var(--primary); text-transform: uppercase; display: block; margin-bottom: 0.5rem;">Etapa 02</span>
+              <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary);">Monte um Novo Envio</h4>
+              <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
+                Na aba <strong>Novo Envio</strong>, escolha os itens desejados e suas quantidades. Selecione o endereço do destinatário ou consulte pelo CEP para calcular o frete e as opções de prazo.
+              </p>
+            </div>
+
+            <!-- Etapa 3 -->
+            <div style="padding: 1.25rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: #ffffff;">
+              <span style="font-size: 0.8rem; font-weight: 800; color: var(--primary); text-transform: uppercase; display: block; margin-bottom: 0.5rem;">Etapa 03</span>
+              <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary);">Separação e Expedição Automática</h4>
+              <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
+                Assim que a remessa é gerada, nossa equipe recebe a ordem de separação, acondiciona seus produtos nas caixas ideais e despacha com a transportadora selecionada.
+              </p>
+            </div>
+
+            <!-- Etapa 4 -->
+            <div style="padding: 1.25rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: #ffffff;">
+              <span style="font-size: 0.8rem; font-weight: 800; color: var(--primary); text-transform: uppercase; display: block; margin-bottom: 0.5rem;">Etapa 04</span>
+              <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary);">Rastreie em Gestão de Remessas</h4>
+              <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
+                Na aba <strong>Gestão de Remessas</strong>, acompanhe o código de rastreamento, status da entrega (Em trânsito, Entregue) e visualize os detalhes de cada volume postado.
+              </p>
+            </div>
+
+            <!-- Etapa 5 -->
+            <div style="padding: 1.25rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: #ffffff;">
+              <span style="font-size: 0.8rem; font-weight: 800; color: var(--primary); text-transform: uppercase; display: block; margin-bottom: 0.5rem;">Etapa 05</span>
+              <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary);">Controle sua Carteira e Pagamentos</h4>
+              <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
+                Na aba <strong>Carteira</strong>, acompanhe o saldo financeiro consolidado de fretes em aberto e envios já quitados com total transparência e histórico detalhado.
+              </p>
+            </div>
+
+            <!-- Etapa 6 -->
+            <div style="padding: 1.25rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: #ffffff;">
+              <span style="font-size: 0.8rem; font-weight: 800; color: var(--primary); text-transform: uppercase; display: block; margin-bottom: 0.5rem;">Etapa 06</span>
+              <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary);">Personalize sua Conta</h4>
+              <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
+                Na aba <strong>Minha Conta</strong>, envie a foto da sua empresa ou avatar pessoal, atualize telefones de contato, CNPJ/CPF e modifique sua senha com segurança.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. FAQ - PERGUNTAS FREQUENTES -->
+        <div id="updates-section-faq" class="card" style="margin-bottom: 2rem; background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.75rem 2rem;">
+          <div style="padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); margin-bottom: 1.5rem;">
+            <span class="badge badge-primary" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.5rem; display: inline-block;">Dúvidas Comuns</span>
+            <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">Perguntas Frequentes (FAQ)</h3>
+            <p style="color: var(--text-muted); font-size: 0.86rem; margin-top: 0.25rem;">Encontre respostas rápidas para as dúvidas mais comuns sobre o funcionamento do Personaliza Flow.</p>
+          </div>
+
+          <div class="faq-list" style="display: flex; flex-direction: column; gap: 0.85rem;">
+            
+            <details class="faq-item" style="border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem 1.25rem; background: #ffffff;">
+              <summary style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); cursor: pointer; user-select: none;">
+                Como funciona o controle de estoque dos meus produtos?
+              </summary>
+              <p style="margin-top: 0.75rem; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                Seus produtos ficam armazenados fisicamente com toda a segurança no centro de distribuição da Personaliza Brindes. Cada vez que você ou sua equipe solicita um novo envio, a quantidade correspondente é deduzida automaticamente do estoque disponível em tempo real.
+              </p>
+            </details>
+
+            <details class="faq-item" style="border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem 1.25rem; background: #ffffff;">
+              <summary style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); cursor: pointer; user-select: none;">
+                Quem calcula as dimensões e pesos das embalagens para o frete?
+              </summary>
+              <p style="margin-top: 0.75rem; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                O sistema possui um algoritmo logístico inteligente de consolidação volumétrica. Ao selecionar múltiplos itens em um envio, a plataforma calcula automaticamente quantas caixas serão necessárias, o peso cúbico e o peso bruto total, cotando as melhores tabelas de transporte.
+              </p>
+            </details>
+
+            <details class="faq-item" style="border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem 1.25rem; background: #ffffff;">
+              <summary style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); cursor: pointer; user-select: none;">
+                Outros clientes conseguem ver meus produtos ou remessas?
+              </summary>
+              <p style="margin-top: 0.75rem; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                Não. O Personaliza Flow opera com arquitetura multi-tenant com isolamento total por conta. Nenhum outro cliente tem acesso visual ou técnico aos seus produtos, relatórios, histórico de faturamento ou lista de endereços.
+              </p>
+            </details>
+
+            <details class="faq-item" style="border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem 1.25rem; background: #ffffff;">
+              <summary style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); cursor: pointer; user-select: none;">
+                Como funciona a chave "Fixar menu" na barra lateral?
+              </summary>
+              <p style="margin-top: 0.75rem; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                Quando a chave "Fixar menu" estiver marcada, o menu lateral secundário permanece sempre aberto. Quando desmarcada, o menu se recolhe para dar espaço máximo à tela e abre automaticamente de forma suspensa (flutuante) ao passar o cursor do mouse sobre a barra lateral.
+              </p>
+            </details>
+
+            <details class="faq-item" style="border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem 1.25rem; background: #ffffff;">
+              <summary style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); cursor: pointer; user-select: none;">
+                Posso cadastrar múltiplos endereços de entrega?
+              </summary>
+              <p style="margin-top: 0.75rem; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                Sim! No menu "Meus Endereços", você pode cadastrar e salvar múltiplos destinos (como filiais, clientes finais, sedes de eventos ou parceiros). No momento de criar uma remessa, você escolhe o destino diretamente com um clique.
+              </p>
+            </details>
+
+            <details class="faq-item" style="border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem 1.25rem; background: #ffffff;">
+              <summary style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); cursor: pointer; user-select: none;">
+                Como acompanho o rastreamento das remessas despachadas?
+              </summary>
+              <p style="margin-top: 0.75rem; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                Na aba "Gestão de Remessas", cada envio possui um código de identificação único e seu status atualizado em tempo real. Você pode consultar o código de rastreamento da transportadora e compartilhar com quem receberá a encomenda.
+              </p>
+            </details>
+
+            <details class="faq-item" style="border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem 1.25rem; background: #ffffff;">
+              <summary style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); cursor: pointer; user-select: none;">
+                Como alterar minha foto de perfil ou senha de acesso?
+              </summary>
+              <p style="margin-top: 0.75rem; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                Acesse a aba "Minha Conta" no menu lateral ou clique no avatar circular no rodapé da faixa escura. Na seção esquerda você pode clicar em "Alterar Foto" e na seção direita alterar seus telefones e trocar sua senha com toda a conveniência.
+              </p>
+            </details>
+
+            <details class="faq-item" style="border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem 1.25rem; background: #ffffff;">
+              <summary style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); cursor: pointer; user-select: none;">
+                Como funciona o pagamento dos fretes gerados?
+              </summary>
+              <p style="margin-top: 0.75rem; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+                Na aba "Carteira", você tem visão consolidada dos valores de fretes com status "Em Aberto" ou "Pago". O acerto financeiro é realizado conforme as condições contratadas junto à Personaliza Brindes.
+              </p>
+            </details>
+
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL 2: OVERRIDE MANUAL DE VOLUMES (ADMINISTRADOR) -->
+  <div id="modal-override" class="modal-backdrop hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="card-title">Ajustar Volumes Manualmente (Admin)</h2>
+        <button class="modal-close" onclick="closeModal('modal-override')">&times;</button>
+      </div>
+
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+        Altere a quantidade de volumes, peso ou dimensões reais se a equipe conseguiu consolidar a embalagem durante a separação.
+      </p>
+
+      <input type="hidden" id="override-shipment-id">
+      
+      <div class="table-responsive" style="margin-bottom: 1rem;">
+        <table>
+          <thead>
+            <tr>
+              <th>Vol. #</th>
+              <th>Peso (kg)</th>
+              <th>Altura (cm)</th>
+              <th>Largura (cm)</th>
+              <th>Comprimento (cm)</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="override-packages-body">
+            <!-- Linhas de volumes editáveis -->
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-add-override-volume">Adicionar Volume</button>
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-override')">Cancelar</button>
+          <button type="button" class="btn btn-success" id="btn-save-override">Salvar Ajustes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: RESUMO DE EMBALAGENS CALCULADAS -->
+  <div id="modal-packages-summary" class="modal-backdrop hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="card-title">Resumo de Embalagens Calculadas</h2>
+        <button class="modal-close" onclick="closeModal('modal-packages-summary')">&times;</button>
+      </div>
+      
+      <div id="packages-summary-content">
+        <!-- Detalhes dos volumes renderizados via JS -->
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
+        <button class="btn btn-primary" onclick="closeModal('modal-packages-summary')">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: VISUALIZAÇÃO DE IMAGEM AMPLIADA DO PRODUTO -->
+  <div id="modal-image-preview" class="modal-backdrop hidden">
+    <div class="modal-content" style="max-width: 650px; text-align: center; padding: 1.5rem;">
+      <div class="modal-header" style="margin-bottom: 1rem;">
+        <h2 class="card-title" id="image-preview-title">Foto do Produto</h2>
+        <button class="modal-close" onclick="closeModal('modal-image-preview')">&times;</button>
+      </div>
+      
+      <div style="background: #f8fafc; border-radius: 12px; padding: 1rem; border: 1px solid var(--border-color); display: flex; justify-content: center; align-items: center; min-height: 300px; max-height: 500px; overflow: hidden;">
+        <img id="image-preview-src" src="" alt="Foto do Produto Ampliada" style="max-width: 100%; max-height: 440px; object-fit: contain; border-radius: 8px;">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
+        <button class="btn btn-secondary" onclick="closeModal('modal-image-preview')">Fechar Visualização</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 5: DETALHES COMPLETOS DO ENVIO -->
+  <div id="modal-shipment-detail" class="modal-backdrop hidden">
+    <div class="modal-content" style="max-width: 650px;">
+      <div class="modal-header">
+        <h2 class="card-title" id="shipment-detail-title">Detalhes do Envio</h2>
+        <button class="modal-close" onclick="closeModal('modal-shipment-detail')">&times;</button>
+      </div>
+
+      <div id="shipment-detail-body" style="margin-top: 1rem;">
+        <!-- Conteúdo dinâmico via JS -->
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; flex-wrap: wrap; gap: 0.5rem;" id="shipment-detail-actions">
+        <button class="btn btn-secondary" onclick="closeModal('modal-shipment-detail')">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 6: ATUALIZAR STATUS DO ENVIO (ADMIN) -->
+  <div id="modal-update-status" class="modal-backdrop hidden">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h2 class="card-title">Atualizar Status do Envio</h2>
+        <button class="modal-close" onclick="closeModal('modal-update-status')">&times;</button>
+      </div>
+
+      <form id="form-update-status" onsubmit="saveShipmentStatus(event)" style="margin-top: 1rem;">
+        <input type="hidden" id="status-shipment-id">
+
+        <div class="form-group" style="margin-bottom: 1.25rem;">
+          <label for="select-shipment-status">Etapa do Envio <span style="color: red;">*</span></label>
+          <select id="select-shipment-status" class="form-control" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+            <option value="separacao">1. Separação do pedido (Em preparação)</option>
+            <option value="a_caminho">2. A caminho (Despachado)</option>
+            <option value="entregue">3. Entrega (Pedido entregue)</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.25rem;">
+          <label for="input-shipment-tracking">Código de Rastreio (Transportadora)</label>
+          <input type="text" id="input-shipment-tracking" placeholder="Ex: BR123456789BR / JADLOG98765">
+          <small style="color: var(--text-muted); font-size: 0.78rem;">Preencha ao alterar para 'A caminho'</small>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-update-status')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Status</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 7: SELECIONAR ENDEREÇO SALVO (NOVO ENVIO) -->
+  <div id="modal-select-address" class="modal-backdrop hidden">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2 class="card-title">Selecionar Endereço Cadastrado</h2>
+        <button class="modal-close" onclick="closeModal('modal-select-address')">&times;</button>
+      </div>
+
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0.5rem 0 1rem 0;">Escolha um dos seus endereços frequentes para autopreencher a cotação e o envio:</p>
+
+      <div id="modal-select-address-list" style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem;">
+        <!-- Lista de endereços gerada via JS -->
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem;">
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('modal-select-address'); openAddressFormModal();">Novo Endereço</button>
+        <button class="btn btn-secondary" onclick="closeModal('modal-select-address')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 8: FORMULÁRIO DE CADASTRAR/EDITAR ENDEREÇO -->
+  <div id="modal-address-form" class="modal-backdrop hidden">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2 class="card-title" id="address-form-modal-title">Cadastrar Novo Endereço</h2>
+        <button class="modal-close" onclick="closeModal('modal-address-form')">&times;</button>
+      </div>
+
+      <form id="form-address-edit" onsubmit="saveAddressForm(event)" style="margin-top: 1rem;">
+        <input type="hidden" id="address-id">
+
+        <div class="form-grid" style="margin-bottom: 1rem;">
+          <div class="form-group" style="grid-column: span 2;">
+            <label for="addr-title">Apelido / Identificador do Endereço <span style="color: red;">*</span></label>
+            <input type="text" id="addr-title" placeholder="Ex: Matriz Curitiba, Cliente Cresol, Filial SP" required>
+          </div>
+
+          <div class="form-group">
+            <label for="addr-cep">CEP <span style="color: red;">*</span></label>
+            <input type="text" id="addr-cep" placeholder="80000-000" maxlength="9" required onblur="fetchViaCEPAux(this.value, 'addr-street', 'addr-bairro', 'addr-city', 'addr-uf')">
+          </div>
+
+          <div class="form-group">
+            <label for="addr-recipient">Nome / Destinatário <span style="color: red;">*</span></label>
+            <input type="text" id="addr-recipient" placeholder="Ex: Agência Cresol / João Silva" required>
+          </div>
+
+          <div class="form-group" style="grid-column: span 2;">
+            <label for="addr-street">Rua / Logradouro <span style="color: red;">*</span></label>
+            <input type="text" id="addr-street" placeholder="Rua / Avenida..." required>
+          </div>
+
+          <div class="form-group">
+            <label for="addr-number">Número <span style="color: red;">*</span></label>
+            <input type="text" id="addr-number" placeholder="Ex: 1500" required>
+          </div>
+
+          <div class="form-group">
+            <label for="addr-bairro">Bairro</label>
+            <input type="text" id="addr-bairro" placeholder="Bairro...">
+          </div>
+
+          <div class="form-group">
+            <label for="addr-city">Cidade</label>
+            <input type="text" id="addr-city" placeholder="Cidade...">
+          </div>
+
+          <div class="form-group">
+            <label for="addr-uf">UF / Estado</label>
+            <input type="text" id="addr-uf" placeholder="Ex: PR" maxlength="2">
+          </div>
+
+          <div class="form-group" style="grid-column: span 2;">
+            <label for="addr-complement">Complemento (Opcional)</label>
+            <input type="text" id="addr-complement" placeholder="Apto, Sala, Bloco...">
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.25rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-address-form')">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-address-form">Salvar Endereço</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CIDADES ATENDIDAS PELA DISKTENHA -->
+  <div id="modal-disktenha-cities" class="modal-backdrop hidden">
+    <div class="modal-content" style="max-width: 700px; max-height: 85vh; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <h2 class="card-title" style="display: flex; align-items: center; gap: 0.5rem; margin: 0; font-size: 1.2rem;">
+          <span>🚛</span> Cidades Atendidas — Disktenha
+        </h2>
+        <button class="modal-close" onclick="closeModal('modal-disktenha-cities')">&times;</button>
+      </div>
+
+      <div style="padding: 1rem 0; border-bottom: 1px solid var(--border-color);">
+        <input type="text" id="filter-disktenha-cities" placeholder="Filtrar por nome da cidade..." oninput="filterDisktenhaCitiesList(this.value)" style="width: 100%; padding: 0.6rem 1rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.9rem;">
+      </div>
+
+      <div class="table-responsive" style="overflow-y: auto; flex: 1; max-height: 380px; margin-top: 0.5rem;">
+        <table>
+          <thead>
+            <tr>
+              <th>Cidade</th>
+              <th>Faixa de CEP</th>
+              <th>Custo Base</th>
+              <th>Prazo de Entrega</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-disktenha-cities">
+            <!-- Renderizado via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color); font-size: 0.85rem; color: var(--text-muted);">
+        <span id="disktenha-cities-count">65 cidades cadastradas</span>
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-disktenha-cities')">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js?v=1788402540"></script>
+</body>
+</html>
