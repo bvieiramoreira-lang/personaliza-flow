@@ -37,6 +37,8 @@ router.get('/shipments', (req, res) => {
     SELECT 
       s.id,
       s.code,
+      s.client_id,
+      c.name as client_name,
       s.recipient_name,
       s.dest_city,
       s.dest_state,
@@ -50,6 +52,7 @@ router.get('/shipments', (req, res) => {
       s.billing_id,
       s.created_at
     FROM shipments s
+    LEFT JOIN clients c ON s.client_id = c.id
     WHERE s.status != 'draft'
   `;
   const params = [];

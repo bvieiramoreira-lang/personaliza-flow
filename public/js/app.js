@@ -307,9 +307,11 @@ function setAppRole(role) {
     }
   }
 
-  // Recarregar tabela de remessas para mostrar/esconder botões de admin
-  if (typeof renderShipmentsTable === 'function') {
-    renderShipmentsTable(window.cachedShipments || []);
+  // Recarregar/filtrar remessas para mostrar/esconder botões e filtros de admin
+  if (typeof filterShipments === 'function') {
+    filterShipments();
+  } else if (typeof renderShipmentCards === 'function' && window.allDetailedShipments) {
+    renderShipmentCards(window.allDetailedShipments);
   }
 }
 
@@ -1479,6 +1481,9 @@ async function confirmAndCreateShipment(e) {
 /* ==========================================================================
    6. GESTÃO DE REMESSAS (CARDS COM LINHA DO TEMPO)
    ========================================================================== */
+let allDetailedShipments = [];
+window.allDetailedShipments = allDetailedShipments;
+
 async function loadShipments() {
   const container = document.getElementById('shipments-cards-container');
   if (!container) return;
@@ -1489,6 +1494,11 @@ async function loadShipments() {
     window.cachedShipments = shipments;
 
     if (!shipments || shipments.length === 0) {
+      window.allDetailedShipments = [];
+      populateShipmentClientFilter([]);
+      const countBadge = document.getElementById('shipments-count-badge');
+      if (countBadge) countBadge.textContent = '0 remessas';
+
       container.innerHTML = `
         <div class="card" style="text-align: center; padding: 3rem 1.5rem;">
           <h3 style="color: var(--text-primary); font-weight: 700; margin-bottom: 0.25rem;">Nenhuma remessa gerada ainda</h3>
@@ -1503,22 +1513,183 @@ async function loadShipments() {
       shipments.map(async s => {
         try {
           const detailRes = await fetch(`/api/shipments/${s.id}`);
-          if (detailRes.ok) return await detailRes.json();
+          if (detailRes.ok) {
+            const data = await detailRes.json();
+            if (s.client_name && !data.shipment.client_name) {
+              data.shipment.client_name = s.client_name;
+            }
+            if (s.client_email && !data.shipment.client_email) {
+              data.shipment.client_email = s.client_email;
+            }
+            return data;
+          }
         } catch (e) {}
         return { shipment: s, items: [], packages: [] };
       })
     );
 
-    renderShipmentCards(detailedShipments);
+    window.allDetailedShipments = detailedShipments;
+    populateShipmentClientFilter(detailedShipments);
+    filterShipments();
   } catch (err) {
     console.error('Erro ao carregar remessas:', err);
     container.innerHTML = `<div class="card" style="color: var(--danger);">Erro ao carregar remessas: ${err.message}</div>`;
   }
 }
 
-function renderShipmentCards(detailedShipments) {
+function populateShipmentClientFilter(detailedShipments) {
+  const select = document.getElementById('filter-shipment-client');
+  if (!select) return;
+
+  const currentVal = select.value;
+  const clientsMap = new Map();
+
+  // 1. Usar clientsList se já carregada
+  if (Array.isArray(clientsList) && clientsList.length > 0) {
+    clientsList.forEach(c => {
+      if (c && c.id && c.name) {
+        clientsMap.set(String(c.id), c.name);
+      }
+    });
+  }
+
+  // 2. Mesclar com clientes presentes nas remessas carregadas
+  if (Array.isArray(detailedShipments)) {
+    detailedShipments.forEach(({ shipment }) => {
+      if (shipment && shipment.client_id && shipment.client_name) {
+        clientsMap.set(String(shipment.client_id), shipment.client_name);
+      }
+    });
+  }
+
+  let html = '<option value="all">🏢 Todos os Clientes</option>';
+  clientsMap.forEach((name, id) => {
+    const count = Array.isArray(detailedShipments)
+      ? detailedShipments.filter(d => String(d.shipment?.client_id) === String(id)).length
+      : 0;
+    const countBadge = count > 0 ? ` (${count})` : '';
+    html += `<option value="${id}">${escapeHtml(name)}${countBadge}</option>`;
+  });
+
+  select.innerHTML = html;
+
+  if (currentVal && clientsMap.has(currentVal)) {
+    select.value = currentVal;
+  } else {
+    select.value = 'all';
+  }
+}
+
+function filterShipments() {
+  if (!window.allDetailedShipments) return;
+
+  const clientFilter = document.getElementById('filter-shipment-client')?.value || 'all';
+  const statusFilter = document.getElementById('filter-shipment-status')?.value || 'all';
+  const searchFilter = (document.getElementById('filter-shipment-search')?.value || '').trim().toLowerCase();
+  const countBadge = document.getElementById('shipments-count-badge');
+  const btnClear = document.getElementById('btn-clear-shipment-filters');
+
+  const isFilterActive = clientFilter !== 'all' || statusFilter !== 'all' || searchFilter !== '';
+
+  if (btnClear) {
+    btnClear.style.display = isFilterActive ? 'inline-block' : 'none';
+  }
+
+  const filtered = window.allDetailedShipments.filter(({ shipment, items }) => {
+    const s = shipment || {};
+
+    // 1. Filtro por Cliente
+    if (clientFilter !== 'all') {
+      if (String(s.client_id) !== String(clientFilter)) {
+        return false;
+      }
+    }
+
+    // 2. Filtro por Status
+    if (statusFilter !== 'all') {
+      const statusRaw = (s.status || 'separacao').toLowerCase();
+      const isSeparacao = ['separacao', 'em_preparacao', 'draft', 'quoted'].includes(statusRaw);
+      const isACaminho = ['a_caminho', 'dispatched'].includes(statusRaw);
+      const isEntregue = ['entregue', 'delivered'].includes(statusRaw);
+
+      if (statusFilter === 'preparacao' && !isSeparacao) return false;
+      if (statusFilter === 'a_caminho' && !isACaminho) return false;
+      if (statusFilter === 'entregue' && !isEntregue) return false;
+    }
+
+    // 3. Filtro por Termo de Busca
+    if (searchFilter) {
+      const matchCode = (s.code || '').toLowerCase().includes(searchFilter);
+      const matchClient = (s.client_name || '').toLowerCase().includes(searchFilter);
+      const matchRecipient = (s.recipient_name || '').toLowerCase().includes(searchFilter);
+      const matchCity = (s.dest_city || '').toLowerCase().includes(searchFilter);
+      const matchState = (s.dest_state || '').toLowerCase().includes(searchFilter);
+      const matchTracking = (s.tracking_code || '').toLowerCase().includes(searchFilter);
+      const matchCarrier = (s.selected_carrier || '').toLowerCase().includes(searchFilter);
+      const matchItems = Array.isArray(items) && items.some(it => 
+        (it.product_name || '').toLowerCase().includes(searchFilter) || 
+        (it.product_code || '').toLowerCase().includes(searchFilter)
+      );
+
+      if (!matchCode && !matchClient && !matchRecipient && !matchCity && !matchState && !matchTracking && !matchCarrier && !matchItems) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  if (countBadge) {
+    const total = window.allDetailedShipments.length;
+    if (isFilterActive) {
+      countBadge.textContent = `${filtered.length} de ${total} ${total === 1 ? 'remessa' : 'remessas'}`;
+    } else {
+      countBadge.textContent = `${filtered.length} ${filtered.length === 1 ? 'remessa' : 'remessas'}`;
+    }
+  }
+
+  renderShipmentCards(filtered, isFilterActive);
+}
+
+function clearShipmentFilters() {
+  const clientSelect = document.getElementById('filter-shipment-client');
+  const statusSelect = document.getElementById('filter-shipment-status');
+  const searchInput = document.getElementById('filter-shipment-search');
+
+  if (clientSelect) clientSelect.value = 'all';
+  if (statusSelect) statusSelect.value = 'all';
+  if (searchInput) searchInput.value = '';
+
+  filterShipments();
+}
+
+window.filterShipments = filterShipments;
+window.clearShipmentFilters = clearShipmentFilters;
+window.populateShipmentClientFilter = populateShipmentClientFilter;
+
+function renderShipmentCards(detailedShipments, isFiltered = false) {
   const container = document.getElementById('shipments-cards-container');
   if (!container) return;
+
+  if (!detailedShipments || detailedShipments.length === 0) {
+    if (isFiltered) {
+      container.innerHTML = `
+        <div class="card" style="text-align: center; padding: 3rem 1.5rem;">
+          <h3 style="color: var(--text-primary); font-weight: 700; margin-bottom: 0.35rem;">Nenhuma remessa encontrada</h3>
+          <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.25rem;">Nenhuma remessa corresponde aos filtros de cliente, status ou busca selecionados.</p>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="clearShipmentFilters()">Limpar Filtros</button>
+        </div>
+      `;
+    } else {
+      container.innerHTML = `
+        <div class="card" style="text-align: center; padding: 3rem 1.5rem;">
+          <h3 style="color: var(--text-primary); font-weight: 700; margin-bottom: 0.25rem;">Nenhuma remessa gerada ainda</h3>
+          <p style="color: var(--text-muted); font-size: 0.88rem;">Selecione seus produtos na aba 'Novo Envio', cote o frete e gere sua primeira remessa.</p>
+        </div>
+      `;
+    }
+    return;
+  }
 
   container.innerHTML = detailedShipments.map(({ shipment, items, packages }) => {
     const s = shipment;
@@ -1559,26 +1730,39 @@ function renderShipmentCards(detailedShipments) {
 
     return `
       <div class="shipment-card">
-        <!-- Top Bar: Status à Esquerda | Código & Transportadora à Direita (Sem valor) -->
+        <!-- Top Bar: Status & Badge do Cliente à Esquerda | Código & Transportadora à Direita -->
         <div class="shipment-card-top-bar">
-          <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <div style="display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap;">
             <span style="font-size: 0.95rem; font-weight: 700; color: ${isEntregue ? '#16a34a' : (isACaminho ? '#0284c7' : '#d97706')};">
               ${isEntregue ? 'Entregue' : (isACaminho ? 'A caminho' : 'Em preparação')}
             </span>
+
+            <!-- BADGE DO CLIENTE DESTAQUE (ESSENCIAL PARA O ADMIN) -->
+            <span class="badge" style="background: rgba(79, 70, 229, 0.1); color: #4338ca; border: 1px solid rgba(79, 70, 229, 0.22); font-weight: 700; font-size: 0.8rem; padding: 0.22rem 0.65rem; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;" title="Cliente / Empresa Solicitante">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>${escapeHtml(s.client_name || 'Personaliza Brindes')}</span>
+            </span>
           </div>
+
           <div style="display: flex; align-items: center; gap: 0.6rem; text-align: right; flex-wrap: wrap;">
-            <span style="font-weight: 500; color: var(--text-muted); font-size: 0.65rem;">Código: ${s.code}</span>
+            <span style="font-weight: 600; color: var(--text-muted); font-size: 0.82rem; font-family: monospace;">Código: ${s.code}</span>
             <span style="color: var(--text-muted);">|</span>
             <span style="color: var(--text-secondary); font-weight: 600; font-size: 0.85rem;">${s.selected_carrier} (${s.selected_service})</span>
           </div>
         </div>
 
-        <!-- Grid do Card: Esquerda (Foto + Produto + Endereço Destino) | Direita (Timeline Compacta) -->
+        <!-- Grid do Card: Esquerda (Foto + Produto + Endereço Destino + Cliente) | Direita (Timeline Compacta) -->
         <div class="shipment-card-grid">
           <!-- Coluna Esquerda: Foto + Dados + Endereço -->
           <div class="shipment-card-left-col">
             <img src="${itemThumb}" alt="Foto do Produto" class="shipment-product-thumb">
             <div class="shipment-info-details">
+              <!-- Linha com Identificação do Cliente -->
+              <div style="font-size: 0.82rem; color: #4338ca; font-weight: 700; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 5px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                <span>Cliente: <strong>${escapeHtml(s.client_name || 'Personaliza Brindes')}</strong></span>
+              </div>
+
               <div class="shipment-product-title">
                 ${itemTitle} <span style="font-weight: 400; color: var(--text-muted); font-size: 0.82rem;">(${totalItemsCount} un.)</span>
               </div>
@@ -1591,7 +1775,7 @@ function renderShipmentCards(detailedShipments) {
               </div>
 
               <!-- Botões de Ação Inline -->
-              <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem; flex-wrap: wrap;">
+              <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">
                 <button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" onclick="openShipmentDetailModal(${s.id})">Ver Detalhe</button>
                 <button class="btn btn-primary admin-only ${currentRole === 'admin' ? '' : 'hidden'}" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" onclick="openUpdateStatusModal(${s.id}, '${s.status}', '${s.tracking_code || ''}')">Atualizar Status (Admin)</button>
               </div>
@@ -1649,6 +1833,22 @@ async function openShipmentDetailModal(shipmentId) {
 
     const body = document.getElementById('shipment-detail-body');
     body.innerHTML = `
+      <!-- Identificação Destacada do Cliente / Empresa -->
+      <div style="background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 10px; padding: 0.85rem 1.1rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.1rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div>
+          <span style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: #4338ca; letter-spacing: 0.5px;">Cliente / Solicitante da Remessa</span>
+          <div style="font-size: 1.15rem; font-weight: 800; color: #1e1b4b; display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            ${escapeHtml(s.client_name || 'Personaliza Brindes')}
+          </div>
+        </div>
+        ${s.client_email ? `
+          <div style="font-size: 0.82rem; color: #4f46e5; font-weight: 600; background: #ffffff; padding: 0.25rem 0.65rem; border-radius: 6px; border: 1px solid #c7d2fe;">
+            ${escapeHtml(s.client_email)}
+          </div>
+        ` : ''}
+      </div>
+
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; background: var(--bg-card-subtle); padding: 1rem; border-radius: 10px; border: 1px solid var(--border-color);">
         <div>
           <div style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Destinatário</div>
@@ -1772,7 +1972,7 @@ async function printPickingSlip(shipmentId) {
           .doc-title { text-align: right; }
           .doc-title h2 { margin: 0; font-size: 1.25rem; color: #0f172a; font-weight: 800; }
           .doc-title p { margin: 2px 0 0 0; font-size: 0.85rem; color: #475569; }
-          .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; }
+          .info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; }
           .info-box h4 { margin: 0 0 6px 0; font-size: 0.75rem; text-transform: uppercase; color: #475569; font-weight: 700; letter-spacing: 0.5px; }
           .info-box p { margin: 0; font-size: 0.9rem; font-weight: 600; color: #0f172a; }
           .table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
@@ -1800,6 +2000,11 @@ async function printPickingSlip(shipmentId) {
         </div>
 
         <div class="info-grid">
+          <div class="info-box">
+            <h4>CLIENTE / SOLICITANTE</h4>
+            <p style="font-size: 1.05rem; color: #4338ca; font-weight: 800;">${s.client_name || 'Personaliza Brindes'}</p>
+            ${s.client_email ? `<p style="font-size: 0.82rem; color: #64748b; margin-top: 3px;">${s.client_email}</p>` : ''}
+          </div>
           <div class="info-box">
             <h4>DESTINATÁRIO & ENDEREÇO</h4>
             <p style="font-size: 1rem; color: #0284c7; font-weight: 800;">${s.recipient_name || 'Cliente'}</p>
@@ -1931,8 +2136,8 @@ async function printShippingLabel(shipmentId) {
 
           <div>
             <div class="sender-block">
-              <div class="sender-title">REMETENTE</div>
-              <strong>Personaliza Brindes Logística</strong><br>
+              <div class="sender-title">REMETENTE / CLIENTE</div>
+              <strong>${s.client_name ? escapeHtml(s.client_name) + ' (Personaliza Flow)' : 'Personaliza Brindes Logística'}</strong><br>
               Rua Açucena, 100 — Bairro Jardim Eldorado<br>
               Palhoça / SC — CEP: 88133-700
             </div>
@@ -3143,6 +3348,9 @@ async function loadClients() {
     if (!res.ok) throw new Error('Erro ao buscar clientes');
     clientsList = await res.json();
     renderClientsTable(clientsList);
+    if (typeof populateShipmentClientFilter === 'function') {
+      populateShipmentClientFilter(window.allDetailedShipments || []);
+    }
   } catch (err) {
     console.error('Erro ao carregar clientes:', err);
   }

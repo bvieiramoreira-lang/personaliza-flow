@@ -322,18 +322,24 @@ router.post('/', (req, res) => {
 
 // 4. Listar solicitações de envio (suporta filtro por client_id e isolamento multi-tenant)
 router.get('/', (req, res) => {
-  let query = 'SELECT * FROM shipments';
+  let query = `
+    SELECT 
+      s.*,
+      c.name AS client_name,
+      c.email AS client_email
+    FROM shipments s
+    LEFT JOIN clients c ON s.client_id = c.id
+  `;
   const params = [];
 
-  if (req.isClient) {
-    query += ' WHERE client_id = ?';
-    params.push(req.clientId);
-  } else if (req.clientId) {
-    query += ' WHERE client_id = ?';
-    params.push(req.clientId);
+  const filterClientId = req.isClient ? req.clientId : (req.query.client_id ? parseInt(req.query.client_id, 10) : req.clientId);
+
+  if (filterClientId) {
+    query += ' WHERE s.client_id = ?';
+    params.push(filterClientId);
   }
 
-  query += ' ORDER BY created_at DESC';
+  query += ' ORDER BY s.created_at DESC';
 
   db.all(query, params, (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -345,7 +351,19 @@ router.get('/', (req, res) => {
 router.get('/:id', (req, res) => {
   const shipmentId = req.params.id;
 
-  db.get('SELECT * FROM shipments WHERE id = ?', [shipmentId], (err, shipment) => {
+  const shipmentSql = `
+    SELECT 
+      s.*,
+      c.name AS client_name,
+      c.email AS client_email,
+      c.cnpj_cpf AS client_cnpj_cpf,
+      c.phone AS client_phone
+    FROM shipments s
+    LEFT JOIN clients c ON s.client_id = c.id
+    WHERE s.id = ?
+  `;
+
+  db.get(shipmentSql, [shipmentId], (err, shipment) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!shipment) return res.status(404).json({ error: 'Solicitação de envio não encontrada.' });
 
