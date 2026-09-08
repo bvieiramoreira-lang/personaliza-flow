@@ -1562,7 +1562,7 @@ function populateShipmentClientFilter(detailedShipments) {
     });
   }
 
-  let html = '<option value="all">🏢 Todos os Clientes</option>';
+  let html = '<option value="all">Todos os Clientes</option>';
   clientsMap.forEach((name, id) => {
     const count = Array.isArray(detailedShipments)
       ? detailedShipments.filter(d => String(d.shipment?.client_id) === String(id)).length
@@ -1737,10 +1737,9 @@ function renderShipmentCards(detailedShipments, isFiltered = false) {
               ${isEntregue ? 'Entregue' : (isACaminho ? 'A caminho' : 'Em preparação')}
             </span>
 
-            <!-- BADGE DO CLIENTE DESTAQUE (ESSENCIAL PARA O ADMIN) -->
-            <span class="badge" style="background: rgba(79, 70, 229, 0.1); color: #4338ca; border: 1px solid rgba(79, 70, 229, 0.22); font-weight: 700; font-size: 0.8rem; padding: 0.22rem 0.65rem; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;" title="Cliente / Empresa Solicitante">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              <span>${escapeHtml(s.client_name || 'Personaliza Brindes')}</span>
+            <!-- Identificação do Cliente (Sem ícones, neutro) -->
+            <span style="font-size: 0.82rem; font-weight: 600; color: #475569; background: #ffffff; border: 1px solid #cbd5e1; padding: 0.22rem 0.65rem; border-radius: 6px;">
+              Cliente: <strong style="color: #0f172a;">${escapeHtml(s.client_name || 'Personaliza Brindes')}</strong>
             </span>
           </div>
 
@@ -1751,18 +1750,12 @@ function renderShipmentCards(detailedShipments, isFiltered = false) {
           </div>
         </div>
 
-        <!-- Grid do Card: Esquerda (Foto + Produto + Endereço Destino + Cliente) | Direita (Timeline Compacta) -->
+        <!-- Grid do Card: Esquerda (Foto + Produto + Endereço Destino) | Direita (Timeline Compacta) -->
         <div class="shipment-card-grid">
           <!-- Coluna Esquerda: Foto + Dados + Endereço -->
           <div class="shipment-card-left-col">
             <img src="${itemThumb}" alt="Foto do Produto" class="shipment-product-thumb">
             <div class="shipment-info-details">
-              <!-- Linha com Identificação do Cliente -->
-              <div style="font-size: 0.82rem; color: #4338ca; font-weight: 700; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 5px;">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-                <span>Cliente: <strong>${escapeHtml(s.client_name || 'Personaliza Brindes')}</strong></span>
-              </div>
-
               <div class="shipment-product-title">
                 ${itemTitle} <span style="font-weight: 400; color: var(--text-muted); font-size: 0.82rem;">(${totalItemsCount} un.)</span>
               </div>
@@ -1774,10 +1767,10 @@ function renderShipmentCards(detailedShipments, isFiltered = false) {
                 <div>${s.dest_city || ''} ${s.dest_state ? '- ' + s.dest_state : ''} ${s.dest_cep ? '| CEP: ' + s.dest_cep : ''}</div>
               </div>
 
-              <!-- Botões de Ação Inline -->
+              <!-- Botões de Ação Inline (Fundo branco normal) -->
               <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">
-                <button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" onclick="openShipmentDetailModal(${s.id})">Ver Detalhe</button>
-                <button class="btn btn-primary admin-only ${currentRole === 'admin' ? '' : 'hidden'}" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" onclick="openUpdateStatusModal(${s.id}, '${s.status}', '${s.tracking_code || ''}')">Atualizar Status (Admin)</button>
+                <button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; background: #ffffff; border: 1px solid #cbd5e1; color: #334155;" onclick="openShipmentDetailModal(${s.id})">Ver Detalhe</button>
+                <button class="btn btn-secondary admin-only ${currentRole === 'admin' ? '' : 'hidden'}" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; background: #ffffff; border: 1px solid #cbd5e1; color: #334155;" onclick="openUpdateStatusModal(${s.id}, '${s.status}', '${s.tracking_code || ''}')">Atualizar Status (Admin)</button>
               </div>
             </div>
           </div>
@@ -1833,17 +1826,16 @@ async function openShipmentDetailModal(shipmentId) {
 
     const body = document.getElementById('shipment-detail-body');
     body.innerHTML = `
-      <!-- Identificação Destacada do Cliente / Empresa -->
-      <div style="background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 10px; padding: 0.85rem 1.1rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.1rem; flex-wrap: wrap; gap: 0.5rem;">
+      <!-- Identificação do Cliente / Empresa (Sem ícone) -->
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem 1rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
         <div>
-          <span style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: #4338ca; letter-spacing: 0.5px;">Cliente / Solicitante da Remessa</span>
-          <div style="font-size: 1.15rem; font-weight: 800; color: #1e1b4b; display: flex; align-items: center; gap: 6px; margin-top: 2px;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px;">Cliente / Solicitante da Remessa</span>
+          <div style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin-top: 2px;">
             ${escapeHtml(s.client_name || 'Personaliza Brindes')}
           </div>
         </div>
         ${s.client_email ? `
-          <div style="font-size: 0.82rem; color: #4f46e5; font-weight: 600; background: #ffffff; padding: 0.25rem 0.65rem; border-radius: 6px; border: 1px solid #c7d2fe;">
+          <div style="font-size: 0.82rem; color: #475569; background: #ffffff; padding: 0.25rem 0.65rem; border-radius: 6px; border: 1px solid #cbd5e1;">
             ${escapeHtml(s.client_email)}
           </div>
         ` : ''}
@@ -1891,14 +1883,14 @@ async function openShipmentDetailModal(shipmentId) {
     if (actionsContainer) {
       actionsContainer.innerHTML = `
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-          <button type="button" class="btn btn-primary admin-only ${currentRole === 'admin' ? '' : 'hidden'}" onclick="printPickingSlip(${s.id})" style="font-size: 0.82rem; padding: 0.45rem 0.85rem;">
+          <button type="button" class="btn btn-secondary admin-only ${currentRole === 'admin' ? '' : 'hidden'}" onclick="printPickingSlip(${s.id})" style="font-size: 0.82rem; padding: 0.45rem 0.85rem; background: #ffffff; border: 1px solid #cbd5e1; color: #334155;">
             Ordem de Separação
           </button>
-          <button type="button" class="btn btn-secondary admin-only ${currentRole === 'admin' ? '' : 'hidden'}" onclick="printShippingLabel(${s.id})" style="font-size: 0.82rem; padding: 0.45rem 0.85rem; border-color: #0284c7; color: #0284c7; background: #f0f9ff;">
+          <button type="button" class="btn btn-secondary admin-only ${currentRole === 'admin' ? '' : 'hidden'}" onclick="printShippingLabel(${s.id})" style="font-size: 0.82rem; padding: 0.45rem 0.85rem; background: #ffffff; border: 1px solid #cbd5e1; color: #334155;">
             Etiqueta de Envio
           </button>
         </div>
-        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-shipment-detail')">Fechar</button>
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-shipment-detail')" style="background: #ffffff; border: 1px solid #cbd5e1; color: #334155;">Fechar</button>
       `;
     }
 

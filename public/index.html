@@ -384,65 +384,47 @@
             <p style="color: var(--text-muted); font-size: 0.88rem;">Acompanhe a linha do tempo de preparação, envio e entrega dos seus pedidos</p>
           </div>
           <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <button class="btn btn-secondary btn-sm" onclick="loadShipments()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; vertical-align: middle;"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+            <button class="btn btn-secondary btn-sm" onclick="loadShipments()" style="background: #ffffff; border: 1px solid #cbd5e1; color: #334155;">
               Atualizar Status
             </button>
           </div>
         </div>
 
-        <!-- BARRA DE FILTROS & BUSCA DA GESTÃO DE REMESSAS -->
-        <div class="card" style="padding: 1rem 1.25rem; margin-bottom: 1.25rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-          <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; justify-content: space-between;">
-            
-            <div style="display: flex; flex-wrap: wrap; gap: 0.85rem; align-items: flex-end; flex: 1; min-width: 280px;">
-              <!-- Filtro por Cliente (Destaque Admin) -->
-              <div id="shipments-client-filter-container" class="admin-only hidden" style="min-width: 210px; flex: 1; max-width: 320px;">
-                <label for="filter-shipment-client" style="font-size: 0.75rem; font-weight: 700; color: #4338ca; text-transform: uppercase; margin-bottom: 0.3rem; display: flex; align-items: center; gap: 4px;">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                  Filtrar por Cliente
-                </label>
-                <select id="filter-shipment-client" class="form-control" onchange="filterShipments()" style="height: 38px; font-size: 0.84rem; font-weight: 600; background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;">
-                  <option value="all">🏢 Todos os Clientes</option>
-                  <!-- Opções inseridas dinamicamente via JS -->
-                </select>
-              </div>
-
-              <!-- Filtro por Status da Remessa -->
-              <div style="min-width: 170px;">
-                <label for="filter-shipment-status" style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.3rem; display: block;">
-                  Status
-                </label>
-                <select id="filter-shipment-status" class="form-control" onchange="filterShipments()" style="height: 38px; font-size: 0.84rem; background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;">
-                  <option value="all">Todos os Status</option>
-                  <option value="preparacao">Em preparação</option>
-                  <option value="a_caminho">A caminho</option>
-                  <option value="entregue">Entregue</option>
-                </select>
-              </div>
-
-              <!-- Busca Textual -->
-              <div style="min-width: 220px; flex: 1.5;">
-                <label for="filter-shipment-search" style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.3rem; display: block;">
-                  Buscar
-                </label>
-                <div style="position: relative;">
-                  <input type="text" id="filter-shipment-search" class="form-control" placeholder="Buscar por código, cliente, destinatário..." oninput="filterShipments()" style="height: 38px; font-size: 0.84rem; padding-left: 2.1rem; border-radius: 8px; border: 1px solid #cbd5e1;">
-                  <svg style="position: absolute; left: 10px; top: 11px; color: #94a3b8; pointer-events: none;" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                </div>
-              </div>
+        <!-- BARRA DE FILTROS & BUSCA DA GESTÃO DE REMESSAS (SEM BALÃO / SEM LABELS / SEM ÍCONES) -->
+        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;">
+          <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; flex: 1; min-width: 280px;">
+            <!-- Filtro por Cliente (Somente a caixa) -->
+            <div id="shipments-client-filter-container" class="admin-only hidden" style="min-width: 180px; max-width: 260px; flex: 1;">
+              <select id="filter-shipment-client" class="form-control" onchange="filterShipments()" style="height: 38px; font-size: 0.85rem; font-weight: 500; background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px;">
+                <option value="all">Todos os Clientes</option>
+                <!-- Opções inseridas dinamicamente via JS -->
+              </select>
             </div>
 
-            <!-- Contador de Resultados & Botão Limpar -->
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <span id="shipments-count-badge" style="font-size: 0.82rem; font-weight: 700; color: #334155; background: #f1f5f9; padding: 0.4rem 0.8rem; border-radius: 20px; white-space: nowrap;">
-                0 remessas
-              </span>
-              <button id="btn-clear-shipment-filters" type="button" class="btn btn-secondary btn-sm" onclick="clearShipmentFilters()" style="display: none; font-size: 0.78rem; padding: 0.35rem 0.65rem; white-space: nowrap;">
-                Limpar filtros
-              </button>
+            <!-- Filtro por Status da Remessa (Somente a caixa) -->
+            <div style="min-width: 160px;">
+              <select id="filter-shipment-status" class="form-control" onchange="filterShipments()" style="height: 38px; font-size: 0.85rem; font-weight: 500; background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px;">
+                <option value="all">Todos os Status</option>
+                <option value="preparacao">Em preparação</option>
+                <option value="a_caminho">A caminho</option>
+                <option value="entregue">Entregue</option>
+              </select>
             </div>
 
+            <!-- Busca Textual (Somente a caixa) -->
+            <div style="min-width: 240px; flex: 1.5;">
+              <input type="text" id="filter-shipment-search" class="form-control" placeholder="Buscar por código, cliente, destinatário..." oninput="filterShipments()" style="height: 38px; font-size: 0.85rem; padding: 0 0.85rem; border-radius: 8px; border: 1px solid #cbd5e1; background-color: #ffffff;">
+            </div>
+          </div>
+
+          <!-- Contador de Resultados & Botão Limpar -->
+          <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <span id="shipments-count-badge" style="font-size: 0.82rem; font-weight: 600; color: #64748b; background: #ffffff; border: 1px solid #cbd5e1; padding: 0.35rem 0.75rem; border-radius: 8px; white-space: nowrap;">
+              0 remessas
+            </span>
+            <button id="btn-clear-shipment-filters" type="button" class="btn btn-secondary btn-sm" onclick="clearShipmentFilters()" style="display: none; font-size: 0.78rem; padding: 0.35rem 0.65rem; background: #ffffff; border: 1px solid #cbd5e1; color: #334155; white-space: nowrap;">
+              Limpar filtros
+            </button>
           </div>
         </div>
 
