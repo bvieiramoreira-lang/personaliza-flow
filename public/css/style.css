@@ -351,6 +351,7 @@ body {
 .panel-item {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.65rem;
   padding: 0.65rem 0.85rem;
   border-radius: 8px;
@@ -359,6 +360,173 @@ body {
   font-size: 0.88rem;
   cursor: pointer;
   transition: var(--transition);
+}
+
+/* Badge vermelho de aviso com sino + contador no menu lateral */
+.nav-alert-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background-color: #dc2626;
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  line-height: 1.25;
+  flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(220, 38, 38, 0.35);
+}
+
+.nav-alert-badge svg {
+  width: 11px;
+  height: 11px;
+  stroke: #ffffff;
+  flex-shrink: 0;
+}
+
+.nav-alert-badge.hidden {
+  display: none !important;
+}
+
+/* Sino e Painel de Notificações no Canto Superior Direito */
+.top-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+  position: relative;
+}
+
+.top-bell-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.top-bell-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+
+.top-bell-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: var(--primary);
+}
+
+.top-bell-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border-radius: 9999px;
+  background-color: #dc2626;
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 5px rgba(220, 38, 38, 0.4);
+}
+
+.top-bell-count.hidden {
+  display: none !important;
+}
+
+.top-bell-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 340px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+  z-index: 1200;
+  overflow: hidden;
+}
+
+.top-bell-dropdown.hidden {
+  display: none !important;
+}
+
+.top-bell-dropdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  background: #f8fafc;
+}
+
+.top-bell-dropdown-title {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.top-bell-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.top-bell-item:last-child {
+  border-bottom: none;
+}
+
+.top-bell-item:hover {
+  background: #fef2f2;
+}
+
+.top-bell-item-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #fef2f2;
+  color: #dc2626;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.top-bell-item-body {
+  flex: 1;
+}
+
+.top-bell-item-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.35;
+}
+
+.top-bell-item-sub {
+  font-size: 0.72rem;
+  color: #64748b;
+  margin-top: 2px;
 }
 
 .panel-item:hover {
@@ -1807,5 +1975,105 @@ tr:hover td {
   color: var(--primary);
   text-decoration-color: var(--primary);
 }
+
+/* --------------------------------------------------------------------------
+   CATEGORIAS MÃE DO MENU LATERAL (FLOW & LOJA VIRTUAL)
+   -------------------------------------------------------------------------- */
+.menu-category-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-category-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45rem 0.75rem;
+  margin-bottom: 0.25rem;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: var(--transition);
+}
+
+.menu-category-header:hover {
+  background-color: #f8fafc;
+  color: var(--text-primary);
+}
+
+.menu-category-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.menu-category-chevron {
+  transition: transform 0.2s ease;
+  color: var(--text-muted);
+}
+
+.menu-category-group.collapsed .menu-category-chevron {
+  transform: rotate(-90deg);
+}
+
+.menu-category-group.collapsed .menu-category-list {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   LOJA VIRTUAL B2B - CARDS, SELETORES DE FAIXA (20-1000) & CHECKOUT
+   -------------------------------------------------------------------------- */
+.store-tier-pills {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+  margin: 0.75rem 0;
+}
+
+.store-tier-pill {
+  padding: 0.4rem 0.35rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.store-tier-pill:hover {
+  border-color: var(--primary);
+  background: #faf8ff;
+}
+
+.store-tier-pill.active {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.store-tier-pill small {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.store-tier-pill.active small {
+  color: var(--primary);
+  font-weight: 700;
+}
+
 
 

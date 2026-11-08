@@ -107,7 +107,9 @@ function initApp() {
   if (typeof loadAddresses === 'function') loadAddresses();
   if (typeof loadSettings === 'function') loadSettings();
   if (typeof initFormEvents === 'function') initFormEvents();
+  if (typeof loadStoreCart === 'function') loadStoreCart();
   if (currentRole === 'admin' && typeof loadClients === 'function') loadClients();
+  if (typeof refreshSystemNotifications === 'function') refreshSystemNotifications();
 }
 
 function getInitials(name) {
@@ -290,6 +292,14 @@ function setAppRole(role) {
       }
     });
     clientElements.forEach(el => el.classList.add('hidden'));
+
+    const flowGroup = document.getElementById('cat-group-flow');
+    const storeGroup = document.getElementById('cat-group-store');
+    const motherGroup = document.getElementById('cat-group-mother');
+    if (flowGroup) flowGroup.classList.remove('hidden');
+    if (storeGroup) storeGroup.classList.remove('hidden');
+    if (motherGroup) motherGroup.classList.add('hidden');
+    document.querySelectorAll('.strip-item[data-tab="tab-my-products"], .strip-item[data-tab="tab-shipments"], .strip-item[data-tab="tab-store-catalog"]').forEach(el => el.classList.remove('hidden'));
   } else {
     if (btnClient) btnClient.classList.add('active');
     if (btnAdmin) btnAdmin.classList.remove('active');
@@ -300,10 +310,31 @@ function setAppRole(role) {
       }
     });
 
+    const isChildBranch = Boolean(currentAuthUser && currentAuthUser.parent_client_id);
+    const canFlow = isChildBranch ? (Number(currentAuthUser.can_access_flow ?? 1) !== 0) : true;
+    const canStore = isChildBranch ? (Number(currentAuthUser.can_access_store ?? 1) !== 0) : true;
+
+    const flowGroup = document.getElementById('cat-group-flow');
+    const storeGroup = document.getElementById('cat-group-store');
+    const motherGroup = document.getElementById('cat-group-mother');
+
+    if (flowGroup) flowGroup.classList.toggle('hidden', !canFlow);
+    if (storeGroup) storeGroup.classList.toggle('hidden', !canStore);
+    if (motherGroup) motherGroup.classList.toggle('hidden', isChildBranch);
+
+    document.querySelectorAll('.strip-item[data-tab="tab-my-products"], .strip-item[data-tab="tab-shipments"]').forEach(el => el.classList.toggle('hidden', !canFlow));
+    document.querySelectorAll('.strip-item[data-tab="tab-store-catalog"]').forEach(el => el.classList.toggle('hidden', !canStore));
+
+    if (!isChildBranch && typeof refreshMotherApprovalsBadge === 'function') {
+      refreshMotherApprovalsBadge();
+    }
+
     // Se estiver em uma aba exclusiva de admin ao trocar para cliente, vai para a home
     const activePage = document.querySelector('.tab-page:not(.hidden)');
-    if (activePage && (activePage.id === 'tab-products' || activePage.id === 'tab-settings' || activePage.id === 'tab-clients' || activePage.id === 'page-client-detail' || activePage.id === 'page-add-client' || activePage.id === 'page-product-form')) {
-      switchTab('tab-home');
+    if (activePage && (activePage.id === 'tab-products' || activePage.id === 'tab-settings' || activePage.id === 'tab-clients' || activePage.id === 'page-client-detail' || activePage.id === 'page-add-client' || activePage.id === 'page-product-form' || activePage.id === 'tab-admin-store-orders' || activePage.id === 'tab-admin-store-settings' || activePage.id === 'page-store-product-form' || activePage.id === 'page-billing-receive')) {
+      switchTab(canFlow ? 'tab-home' : 'tab-store-catalog');
+    } else if (!canFlow && activePage && activePage.id === 'tab-home') {
+      switchTab('tab-store-catalog');
     }
   }
 
@@ -312,6 +343,9 @@ function setAppRole(role) {
     filterShipments();
   } else if (typeof renderShipmentCards === 'function' && window.allDetailedShipments) {
     renderShipmentCards(window.allDetailedShipments);
+  }
+  if (typeof refreshSystemNotifications === 'function') {
+    refreshSystemNotifications();
   }
 }
 
@@ -322,10 +356,28 @@ function switchTab(targetTab) {
 
   let activeNavTab = targetTab;
   if (targetTab === 'page-client-detail' || targetTab === 'page-add-client') activeNavTab = 'tab-clients';
+  if (targetTab === 'page-branch-form') activeNavTab = (typeof branchFormReturnTab !== 'undefined' && branchFormReturnTab === 'page-client-detail') ? 'tab-clients' : 'tab-mother-branches';
   if (targetTab === 'page-product-form') activeNavTab = (typeof productFormReturnTab !== 'undefined' && productFormReturnTab === 'page-client-detail') ? 'tab-clients' : 'tab-products';
+  if (targetTab === 'page-store-product-form') activeNavTab = (typeof storeProductFormReturnTab !== 'undefined' && storeProductFormReturnTab === 'page-client-detail') ? 'tab-clients' : 'tab-admin-store-settings';
+  if (targetTab === 'page-billing-receive') activeNavTab = (typeof receiveBillingReturnTab !== 'undefined' && receiveBillingReturnTab === 'page-client-detail') ? 'tab-clients' : 'tab-billing';
+  if (targetTab === 'page-store-product-detail') activeNavTab = 'tab-store-catalog';
+  if (targetTab === 'page-store-order-detail') {
+    if (typeof storeOrderDetailReturnTab !== 'undefined' && storeOrderDetailReturnTab === 'tab-admin-store-orders') activeNavTab = 'tab-admin-store-orders';
+    else if (typeof storeOrderDetailReturnTab !== 'undefined' && storeOrderDetailReturnTab === 'tab-mother-approvals') activeNavTab = 'tab-mother-approvals';
+    else if (typeof storeOrderDetailReturnTab !== 'undefined' && storeOrderDetailReturnTab === 'tab-billing') activeNavTab = 'tab-billing';
+    else if (typeof storeOrderDetailReturnTab !== 'undefined' && storeOrderDetailReturnTab === 'tab-invoices-nf') activeNavTab = 'tab-invoices-nf';
+    else if (typeof storeOrderDetailReturnTab !== 'undefined' && storeOrderDetailReturnTab === 'page-client-detail') activeNavTab = 'tab-clients';
+    else activeNavTab = 'tab-store-orders';
+  }
 
-  stripItems.forEach(s => s.classList.toggle('active', s.getAttribute('data-tab') === activeNavTab));
+  const activeStripTab = (activeNavTab === 'tab-settings') ? 'tab-clients' : activeNavTab;
+  stripItems.forEach(s => s.classList.toggle('active', s.getAttribute('data-tab') === activeStripTab));
   panelItems.forEach(p => p.classList.toggle('active', p.getAttribute('data-tab') === activeNavTab));
+
+  if (activeNavTab === 'tab-clients' || activeNavTab === 'tab-settings') {
+    const configGroup = document.getElementById('cat-group-config');
+    if (configGroup) configGroup.classList.remove('collapsed');
+  }
 
   tabPages.forEach(page => {
     if (page.id === targetTab) {
@@ -346,12 +398,32 @@ function switchTab(targetTab) {
 
   if (targetTab === 'tab-cart') {
     loadCart();
+    if (typeof loadNetworkBillingOptions === 'function') {
+      loadNetworkBillingOptions('flow-checkout-billing-select');
+    }
+  }
+  if (targetTab === 'tab-mother-branches') {
+    if (typeof loadMotherBranches === 'function') loadMotherBranches();
+  }
+  if (targetTab === 'tab-mother-approvals') {
+    if (typeof loadMotherApprovals === 'function') loadMotherApprovals();
   }
   if (targetTab === 'tab-addresses') {
     loadAddresses();
   }
   if (targetTab === 'tab-billing') {
+    if (currentRole !== 'admin' && typeof markClientDocsAsSeen === 'function') {
+      markClientDocsAsSeen('billing', latestClientBillingDocKeys);
+      setNavAlertBadge('nav-badge-billing', 'nav-badge-billing-count', 0);
+    }
     loadBillingData();
+  }
+  if (targetTab === 'tab-invoices-nf') {
+    if (currentRole !== 'admin' && typeof markClientDocsAsSeen === 'function') {
+      markClientDocsAsSeen('nf', latestClientNfDocKeys);
+      setNavAlertBadge('nav-badge-invoices-nf', 'nav-badge-invoices-nf-count', 0);
+    }
+    loadInvoicesNfData();
   }
   if (targetTab === 'tab-products' || targetTab === 'tab-my-products') {
     loadProducts();
@@ -362,10 +434,33 @@ function switchTab(targetTab) {
   if (targetTab === 'tab-my-account') {
     loadMyAccountData();
   }
+  if (targetTab === 'tab-store-catalog') {
+    loadStoreCatalog();
+    loadStoreCart();
+  }
+  if (targetTab === 'tab-store-cart') {
+    loadStoreCart();
+  }
+  if (targetTab === 'tab-store-orders') {
+    loadClientStoreOrders();
+  }
+  if (targetTab === 'tab-store-billing') {
+    loadStoreBilling();
+  }
+  if (targetTab === 'tab-admin-store-orders') {
+    loadAdminStoreOrders();
+  }
+  if (targetTab === 'tab-admin-store-settings') {
+    loadAdminStoreOverview();
+    loadAdminAllStoreProducts();
+  }
 
   const mainContent = document.querySelector('.main-content');
   if (mainContent) {
     mainContent.scrollTop = 0;
+  }
+  if (typeof refreshSystemNotifications === 'function') {
+    refreshSystemNotifications();
   }
 }
 
@@ -1383,11 +1478,20 @@ async function confirmAndCreateShipment(e) {
       ? currentAuthUser.id
       : (typeof activeManagingClientId !== 'undefined' && activeManagingClientId ? activeManagingClientId : null);
 
+    const billingSel = document.getElementById('flow-checkout-billing-select');
+    const selectedOpt = billingSel && billingSel.selectedIndex >= 0 ? billingSel.options[billingSel.selectedIndex] : null;
+    const billingClientId = selectedOpt ? parseInt(selectedOpt.value, 10) : activeClientId;
+    const billingCnpj = selectedOpt ? (selectedOpt.getAttribute('data-cnpj') || '') : '';
+    const billingName = selectedOpt ? (selectedOpt.getAttribute('data-name') || '') : '';
+
     const res = await fetch('/api/shipments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         client_id: activeClientId,
+        billing_client_id: billingClientId,
+        billing_cnpj: billingCnpj,
+        billing_name: billingName,
         type: 'coletivo',
         recipient_name: recipientName,
         dest_cep: destCep,
@@ -1607,11 +1711,13 @@ function filterShipments() {
 
     // 2. Filtro por Status
     if (statusFilter !== 'all') {
-      const statusRaw = (s.status || 'separacao').toLowerCase();
+      const statusRaw = (s.status || 'em_aberto').toLowerCase();
+      const isEmAberto = statusRaw === 'em_aberto';
       const isSeparacao = ['separacao', 'em_preparacao', 'draft', 'quoted'].includes(statusRaw);
       const isACaminho = ['a_caminho', 'dispatched'].includes(statusRaw);
       const isEntregue = ['entregue', 'delivered'].includes(statusRaw);
 
+      if (statusFilter === 'em_aberto' && !isEmAberto) return false;
       if (statusFilter === 'preparacao' && !isSeparacao) return false;
       if (statusFilter === 'a_caminho' && !isACaminho) return false;
       if (statusFilter === 'entregue' && !isEntregue) return false;
@@ -1703,9 +1809,10 @@ function renderShipmentCards(detailedShipments, isFiltered = false) {
     const itemThumb = (firstItem && firstItem.image_url) ? firstItem.image_url : 'https://placehold.co/100x100?text=Produto';
 
     // Determinar Status e Etapas da Linha do Tempo
-    let statusRaw = (s.status || 'separacao').toLowerCase();
+    let statusRaw = (s.status || 'em_aberto').toLowerCase();
     
     // Normalizar status
+    let isEmAberto = statusRaw === 'em_aberto';
     let isSeparacao = ['separacao', 'em_preparacao', 'draft', 'quoted'].includes(statusRaw);
     let isACaminho = ['a_caminho', 'dispatched'].includes(statusRaw);
     let isEntregue = ['entregue', 'delivered'].includes(statusRaw);
@@ -1714,7 +1821,11 @@ function renderShipmentCards(detailedShipments, isFiltered = false) {
     let statusHeadlineText = 'Separação do pedido';
     let statusSubtitleText = 'Em breve, informaremos o horário em que vamos chegar no seu endereço.';
 
-    if (isACaminho) {
+    if (isEmAberto) {
+      statusTitleText = 'Em aberto';
+      statusHeadlineText = 'Aguardando conferência e aprovação';
+      statusSubtitleText = 'Nosso colaborador está conferindo os detalhes da sua remessa.';
+    } else if (isACaminho) {
       statusTitleText = 'Envio no prazo';
       statusHeadlineText = `Chegará em ${s.delivery_days || 3} dias úteis`;
       statusSubtitleText = s.tracking_code 
@@ -1728,14 +1839,18 @@ function renderShipmentCards(detailedShipments, isFiltered = false) {
 
     const createdDate = s.created_at ? new Date(s.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
 
+    const statusBadgeTopHTML = isEmAberto
+      ? `<span style="font-size: 0.95rem; font-weight: 700; color: #d97706;">Em aberto</span>`
+      : `<span style="font-size: 0.95rem; font-weight: 700; color: ${isEntregue ? '#16a34a' : (isACaminho ? '#0284c7' : '#d97706')};">
+           ${isEntregue ? 'Entregue' : (isACaminho ? 'A caminho' : 'Em preparação')}
+         </span>`;
+
     return `
-      <div class="shipment-card">
+      <div class="shipment-card" style="${isEmAberto ? 'border-left: 5px solid #f59e0b;' : ''}">
         <!-- Top Bar: Status & Badge do Cliente à Esquerda | Código & Transportadora à Direita -->
         <div class="shipment-card-top-bar">
           <div style="display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap;">
-            <span style="font-size: 0.95rem; font-weight: 700; color: ${isEntregue ? '#16a34a' : (isACaminho ? '#0284c7' : '#d97706')};">
-              ${isEntregue ? 'Entregue' : (isACaminho ? 'A caminho' : 'Em preparação')}
-            </span>
+            ${statusBadgeTopHTML}
 
             <!-- Identificação do Cliente (Sem ícones, neutro) -->
             <span style="font-size: 0.82rem; font-weight: 600; color: #475569; background: #ffffff; border: 1px solid #cbd5e1; padding: 0.22rem 0.65rem; border-radius: 6px;">
@@ -1768,19 +1883,30 @@ function renderShipmentCards(detailedShipments, isFiltered = false) {
               </div>
 
               <!-- Botões de Ação Inline (Fundo branco normal) -->
-              <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">
-                <button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; background: #ffffff; border: 1px solid #cbd5e1; color: #334155;" onclick="openShipmentDetailModal(${s.id})">Ver Detalhe</button>
-                <button class="btn btn-secondary admin-only ${currentRole === 'admin' ? '' : 'hidden'}" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; background: #ffffff; border: 1px solid #cbd5e1; color: #334155;" onclick="openUpdateStatusModal(${s.id}, '${s.status}', '${s.tracking_code || ''}')">Atualizar Status (Admin)</button>
+              <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap; align-items: center;">
+                <button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; background: #ffffff; border: 1px solid #cbd5e1; color: #334155;" onclick="openShipmentDetailModal(${s.id})">Ver Mais / Detalhes</button>
+                ${s.nf_url ? `<a href="${escapeHtml(s.nf_url)}" download target="_blank" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; background: #ffffff; border: 1px solid #86efac; color: #15803d; font-weight: 700; text-decoration: none;">Baixar NF</a>` : ''}
+                <button class="btn btn-secondary admin-only ${currentRole === 'admin' ? '' : 'hidden'}" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; background: #ffffff; border: 1px solid ${isEmAberto ? '#f59e0b' : '#cbd5e1'}; color: ${isEmAberto ? '#b45309' : '#334155'}; font-weight: ${isEmAberto ? '800' : '600'};" onclick="openUpdateStatusModal(${s.id}, '${s.status}', '${s.tracking_code || ''}')">
+                  ${isEmAberto ? 'Aprovar / Alterar Status (Admin)' : 'Atualizar Status (Admin)'}
+                </button>
               </div>
             </div>
           </div>
 
           <!-- Coluna Direita: Linha do Tempo Compacta -->
           <div class="shipment-timeline-compact">
-            <div class="timeline-step-compact ${isSeparacao ? 'active' : 'completed'}">
+            <div class="timeline-step-compact ${isEmAberto ? 'active' : 'completed'}">
+              <div class="timeline-dot" style="${isEmAberto ? 'background: #f59e0b; box-shadow: 0 0 0 3px #fef3c7;' : ''}"></div>
+              <div class="timeline-step-compact-title" style="${isEmAberto ? 'color: #b45309; font-weight: 800;' : ''}">
+                Em aberto ${createdDate ? `<span style="font-weight: 400; font-size: 0.74rem; color: #94a3b8;">(${createdDate})</span>` : ''}
+              </div>
+              <div class="timeline-step-compact-subtext">${isEmAberto ? 'Aguardando conferência e aprovação da equipe.' : 'Pedido conferido e aprovado.'}</div>
+            </div>
+
+            <div class="timeline-step-compact ${isSeparacao ? 'active' : ((isACaminho || isEntregue) ? 'completed' : '')}">
               <div class="timeline-dot"></div>
               <div class="timeline-step-compact-title">
-                Em preparação ${createdDate ? `<span style="font-weight: 400; font-size: 0.74rem; color: #94a3b8;">(${createdDate})</span>` : ''}
+                Em preparação
               </div>
               <div class="timeline-step-compact-subtext">Separação do pedido no estoque.</div>
             </div>
@@ -1874,8 +2000,23 @@ async function openShipmentDetailModal(shipmentId) {
       </div>
 
       <h4 style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--text-primary);">Embalagens & Cubagem:</h4>
-      <div style="font-size: 0.85rem; color: var(--text-secondary);">
+      <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.15rem;">
         Total de Volumes: <strong>${s.total_volumes} volume(s)</strong> | Peso Total: <strong>${(s.total_weight || 0).toFixed(3)} kg</strong>
+      </div>
+
+      <!-- Seção de Nota Fiscal (NF) e Boleto em Ver Mais da Remessa -->
+      <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 0.9rem 1rem;">
+        <div style="font-size: 0.78rem; font-weight: 800; text-transform: uppercase; color: #334155; margin-bottom: 0.45rem;">
+          Documentos Fiscais & Faturamento (NF / Boleto)
+        </div>
+        ${(s.nf_url || s.boleto_url)
+          ? `<div style="display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap;">
+               ${s.nf_number ? `<span style="font-size: 0.82rem; font-weight: 700; color: #0f172a;">Nº NF: ${escapeHtml(s.nf_number)}</span>` : ''}
+               ${s.nf_url ? `<a href="${escapeHtml(s.nf_url)}" download target="_blank" class="btn btn-sm" style="background: #16a34a; color: #ffffff; text-decoration: none; font-size: 0.78rem; font-weight: 700; padding: 0.4rem 0.85rem; border-radius: 6px;">Baixar Nota Fiscal (NF)</a>` : ''}
+               ${s.boleto_url ? `<a href="${escapeHtml(s.boleto_url)}" download target="_blank" class="btn btn-sm" style="background: #2563eb; color: #ffffff; text-decoration: none; font-size: 0.78rem; font-weight: 700; padding: 0.4rem 0.85rem; border-radius: 6px;">Baixar Boleto</a>` : ''}
+             </div>`
+          : `<div style="font-size: 0.82rem; color: #64748b;">Nenhuma Nota Fiscal ou Boleto anexado para esta remessa até o momento.</div>`
+        }
       </div>
     `;
 
@@ -2163,8 +2304,9 @@ function openUpdateStatusModal(shipmentId, currentStatus, currentTracking) {
   
   let select = document.getElementById('select-shipment-status');
   if (select) {
-    let normalized = (currentStatus || 'separacao').toLowerCase();
-    if (['separacao', 'em_preparacao', 'draft', 'quoted'].includes(normalized)) select.value = 'separacao';
+    let normalized = (currentStatus || 'em_aberto').toLowerCase();
+    if (normalized === 'em_aberto') select.value = 'em_aberto';
+    else if (['separacao', 'em_preparacao', 'draft', 'quoted'].includes(normalized)) select.value = 'separacao';
     else if (['a_caminho', 'dispatched'].includes(normalized)) select.value = 'a_caminho';
     else if (['entregue', 'delivered'].includes(normalized)) select.value = 'entregue';
   }
@@ -3018,35 +3160,186 @@ async function fetchViaCEPAux(cep, streetId, bairroId, cityId, ufId) {
 }
 
 /* ==========================================================================
-   CARTEIRA & CONTROLE DE FATURAMENTO
+   CARTEIRA UNIFICADA & CONTROLE DE FATURAMENTO (FLOW + LOJA VIRTUAL)
    ========================================================================== */
 
 let windowBillingShipments = [];
+let windowBillingStoreOrders = [];
+let activeReceiveBillingItems = [];
 
 async function loadBillingData() {
   try {
-    // 1. Carregar resumo financeiro
-    const summaryRes = await fetch('/api/billing/summary');
-    if (summaryRes.ok) {
-      const summary = await summaryRes.json();
-      const openEl = document.getElementById('billing-total-open');
-      const paidEl = document.getElementById('billing-total-paid');
-      if (openEl) openEl.textContent = `R$ ${parseFloat(summary.total_em_aberto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      if (paidEl) paidEl.textContent = `R$ ${parseFloat(summary.total_pago || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const [shipmentsRes, storeOrdersRes] = await Promise.all([
+      fetch('/api/billing/shipments'),
+      fetch('/api/store/orders')
+    ]);
+
+    const rawShipments = shipmentsRes.ok ? await shipmentsRes.json() : [];
+    // Garantir que pedidos com status operacional 'em_aberto' ou 'draft' NÃO entrem na carteira
+    windowBillingShipments = Array.isArray(rawShipments)
+      ? rawShipments.filter(s => s.shipment_status !== 'em_aberto' && s.shipment_status !== 'draft' && s.status !== 'em_aberto' && s.status !== 'draft')
+      : [];
+
+    const rawStoreOrders = storeOrdersRes.ok ? await storeOrdersRes.json() : [];
+    // Garantir que pedidos da loja com status 'em_aberto', 'aguardando_aprovacao_mae', 'recusado_matriz' ou 'cancelado' NÃO entrem na carteira
+    windowBillingStoreOrders = Array.isArray(rawStoreOrders)
+      ? rawStoreOrders.filter(o => !['cancelado', 'em_aberto', 'aguardando_aprovacao_mae', 'recusado_matriz'].includes(o.status))
+      : [];
+    allStoreBillingOrders = windowBillingStoreOrders;
+
+    // Calcular totais unificados (Flow + Loja)
+    let flowOpen = 0;
+    let flowPaid = 0;
+    (windowBillingShipments || []).forEach(s => {
+      const val = parseFloat(s.final_freight_price) || 0;
+      if (s.payment_status === 'pago') flowPaid += val;
+      else flowOpen += val;
+    });
+
+    let storeOpen = 0;
+    let storePaid = 0;
+    (windowBillingStoreOrders || []).forEach(o => {
+      const val = parseFloat(o.total_amount) || 0;
+      if (o.payment_status === 'pago') storePaid += val;
+      else storeOpen += val;
+    });
+
+    const totalOpen = flowOpen + storeOpen;
+    const totalPaid = flowPaid + storePaid;
+
+    const openEl = document.getElementById('billing-total-open');
+    const breakdownEl = document.getElementById('billing-open-breakdown');
+    const paidEl = document.getElementById('billing-total-paid');
+
+    if (openEl) openEl.textContent = formatCurrencyBR(totalOpen);
+    if (breakdownEl) {
+      breakdownEl.textContent = `(Envios Flow: ${formatCurrencyBR(flowOpen)} • Compras Loja: ${formatCurrencyBR(storeOpen)})`;
+    }
+    if (paidEl) paidEl.textContent = formatCurrencyBR(totalPaid);
+
+    // Popular opções de Condição de Faturamento no filtro
+    const methodSelect = document.getElementById('filter-billing-method');
+    if (methodSelect) {
+      const currentVal = methodSelect.value;
+      const storeMethods = [...new Set((windowBillingStoreOrders || []).map(o => o.payment_method || '30 DIAS BOLETO').filter(Boolean))];
+      const allMethods = ['Frete Remessa Flow', ...storeMethods];
+      methodSelect.innerHTML = '<option value="">Todas as condições</option>' +
+        allMethods.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+      methodSelect.value = currentVal;
     }
 
-    // 2. Carregar extrato de envios
-    const shipmentsRes = await fetch('/api/billing/shipments');
-    if (shipmentsRes.ok) {
-      windowBillingShipments = await shipmentsRes.json();
-      renderBillingShipmentsTable(windowBillingShipments);
-    }
+    renderUnifiedBillingTable();
+    if (typeof refreshSystemNotifications === 'function') refreshSystemNotifications();
   } catch (err) {
-    console.error('Erro ao carregar dados da carteira:', err);
+    console.error('Erro ao carregar dados da carteira unificada:', err);
   }
 }
 
-function renderBillingShipmentsTable(shipments) {
+function handleBillingPeriodChange(periodVal) {
+  const fromEl = document.getElementById('filter-billing-date-from');
+  const toEl = document.getElementById('filter-billing-date-to');
+
+  if (periodVal !== 'custom') {
+    if (fromEl) fromEl.value = '';
+    if (toEl) toEl.value = '';
+  }
+  renderUnifiedBillingTable();
+}
+window.handleBillingPeriodChange = handleBillingPeriodChange;
+
+function handleBillingCustomDateChange() {
+  const periodEl = document.getElementById('filter-billing-period');
+  const fromVal = document.getElementById('filter-billing-date-from')?.value || '';
+  const toVal = document.getElementById('filter-billing-date-to')?.value || '';
+
+  if ((fromVal || toVal) && periodEl) {
+    periodEl.value = 'custom';
+  }
+  renderUnifiedBillingTable();
+}
+window.handleBillingCustomDateChange = handleBillingCustomDateChange;
+
+function clearUnifiedBillingFilters() {
+  const per = document.getElementById('filter-billing-period');
+  const dFrom = document.getElementById('filter-billing-date-from');
+  const dTo = document.getElementById('filter-billing-date-to');
+  const orig = document.getElementById('filter-billing-origin');
+  const stat = document.getElementById('filter-billing-status');
+  const meth = document.getElementById('filter-billing-method');
+  if (per) per.value = 'all';
+  if (dFrom) dFrom.value = '';
+  if (dTo) dTo.value = '';
+  if (orig) orig.value = '';
+  if (stat) stat.value = '';
+  if (meth) meth.value = '';
+  renderUnifiedBillingTable();
+}
+window.clearUnifiedBillingFilters = clearUnifiedBillingFilters;
+
+let receiveBillingReturnTab = 'tab-billing';
+
+function normalizeBillingPaymentStatus(rawStatus) {
+  if (rawStatus === 'pago') return 'pago';
+  if (rawStatus === 'aguardando_pagamento') return 'aguardando_pagamento';
+  return 'em_aberto';
+}
+
+function getUnifiedApprovedBillingEntries() {
+  const flowEntries = (windowBillingShipments || []).map(s => {
+    const branchLabel = s.client_branch ? `[Sede ${s.client_branch}] ` : '';
+    const billingTarget = s.billing_cnpj ? ` • Faturar p/: ${s.billing_name || ''} (${s.billing_cnpj})` : '';
+    return {
+      uid: `flow-${s.id}`,
+      id: s.id,
+      origin: 'flow',
+      code: s.code,
+      created_at: s.created_at,
+      billed_at: s.billed_at,
+      amount: parseFloat(s.final_freight_price) || 0,
+      payment_status: normalizeBillingPaymentStatus(s.payment_status),
+      payment_method: 'Frete Remessa Flow',
+      client_name: `${branchLabel}${s.client_name || ''}`,
+      billing_cnpj: s.billing_cnpj || '',
+      billing_name: s.billing_name || '',
+      nf_url: s.nf_url || '',
+      nf_number: s.nf_number || '',
+      boleto_url: s.boleto_url || '',
+      description: `Envio de remessa — ${s.recipient_name || 'Destinatário'} (${s.dest_city || ''}/${s.dest_state || ''})${billingTarget}`
+    };
+  });
+
+  const storeEntries = (windowBillingStoreOrders || []).map(o => {
+    const itemsText = (o.items || []).map(it => `${it.product_name} (${it.tier_qty} pçs)`).join(', ');
+    const branchLabel = o.client_branch ? `[Sede ${o.client_branch}] ` : '';
+    const billingTarget = o.billing_cnpj ? ` • Faturar p/: ${o.billing_name || ''} (${o.billing_cnpj})` : '';
+    return {
+      uid: `store-${o.id}`,
+      id: o.id,
+      origin: 'store',
+      code: o.code,
+      created_at: o.created_at,
+      billed_at: o.billed_at,
+      amount: parseFloat(o.total_amount) || 0,
+      payment_status: normalizeBillingPaymentStatus(o.payment_status),
+      payment_method: o.payment_method || '30 DIAS BOLETO',
+      client_name: `${branchLabel}${o.client_name || ''}`,
+      billing_cnpj: o.billing_cnpj || '',
+      billing_name: o.billing_name || '',
+      nf_url: o.nf_url || '',
+      nf_number: o.nf_number || '',
+      boleto_url: o.boleto_url || '',
+      description: `Compra Loja (${o.delivery_type === 'flow' ? 'Envio Flow' : 'Envio Direto'})${itemsText ? ' — ' + itemsText : ''}${billingTarget}`
+    };
+  });
+
+  return [...flowEntries, ...storeEntries].sort((a, b) => {
+    const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
+    return tB - tA;
+  });
+}
+
+function renderUnifiedBillingTable() {
   const tbody = document.getElementById('billing-shipments-tbody');
   if (!tbody) return;
 
@@ -3054,14 +3347,7 @@ function renderBillingShipmentsTable(shipments) {
   if (selectAllCb) selectAllCb.checked = false;
   updateSelectedBillingCount();
 
-  if (!shipments || shipments.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">Nenhum lançamento financeiro registrado.</td></tr>`;
-    return;
-  }
-
   const isAdmin = currentRole === 'admin';
-
-  // Garantir visibilidade dos elementos admin-only apenas dentro da Carteira (sem afetar abas/páginas)
   document.querySelectorAll('#tab-billing .admin-only').forEach(el => {
     if (!el.classList.contains('tab-page')) {
       if (isAdmin) el.classList.remove('hidden');
@@ -3069,64 +3355,190 @@ function renderBillingShipmentsTable(shipments) {
     }
   });
 
-  tbody.innerHTML = shipments.map(s => {
-    const isPaid = s.payment_status === 'pago';
+  let combined = getUnifiedApprovedBillingEntries();
 
-    // Valor
-    const priceFormatted = `R$ ${parseFloat(s.final_freight_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    const valueHTML = `<strong style="color: ${isPaid ? '#16a34a' : '#dc2626'}; font-size: 0.88rem;">${priceFormatted}</strong>`;
+  const periodFilter = document.getElementById('filter-billing-period')?.value || 'all';
+  const dateFromStr = document.getElementById('filter-billing-date-from')?.value || '';
+  const dateToStr = document.getElementById('filter-billing-date-to')?.value || '';
+  const originFilter = document.getElementById('filter-billing-origin')?.value || '';
+  const statusFilter = document.getElementById('filter-billing-status')?.value || '';
+  const methodFilter = document.getElementById('filter-billing-method')?.value || '';
 
-    // Pedido / Remessa (Clicável para abrir modal Ver Detalhes)
-    const orderHTML = `
-      <button type="button" onclick="openShipmentDetailModal(${s.id})" 
-              style="background: none; border: none; padding: 0; color: #4f46e5; font-weight: 700; font-family: monospace; font-size: 0.88rem; text-decoration: underline; cursor: pointer;" 
-              title="Clique para ver os detalhes da remessa e produtos">
-        ${s.code}
-      </button>
-    `;
+  // Filtro por Data / Período
+  const now = new Date();
+  if (periodFilter === 'today') {
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    combined = combined.filter(item => {
+      if (!item.created_at) return false;
+      const ts = new Date(item.created_at).getTime();
+      return !isNaN(ts) && ts >= startOfToday;
+    });
+  } else if (periodFilter === 'this_month') {
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    combined = combined.filter(item => {
+      if (!item.created_at) return false;
+      const ts = new Date(item.created_at).getTime();
+      return !isNaN(ts) && ts >= startOfMonth;
+    });
+  } else if (periodFilter === '7d' || periodFilter === '30d' || periodFilter === '90d') {
+    const daysMap = { '7d': 7, '30d': 30, '90d': 90 };
+    const cutoff = now.getTime() - daysMap[periodFilter] * 86400000;
+    combined = combined.filter(item => {
+      if (!item.created_at) return false;
+      const ts = new Date(item.created_at).getTime();
+      return !isNaN(ts) && ts >= cutoff;
+    });
+  } else if (dateFromStr || dateToStr) {
+    const startTs = dateFromStr ? new Date(dateFromStr + 'T00:00:00').getTime() : null;
+    const endTs = dateToStr ? new Date(dateToStr + 'T23:59:59').getTime() : null;
+    combined = combined.filter(item => {
+      if (!item.created_at) return false;
+      const ts = new Date(item.created_at).getTime();
+      if (isNaN(ts)) return false;
+      if (startTs !== null && ts < startTs) return false;
+      if (endTs !== null && ts > endTs) return false;
+      return true;
+    });
+  }
 
-    // Data
-    const formattedDate = new Date(s.created_at).toLocaleDateString('pt-BR');
+  if (originFilter) {
+    combined = combined.filter(item => item.origin === originFilter);
+  }
+  if (statusFilter) {
+    combined = combined.filter(item => item.payment_status === statusFilter);
+  }
+  if (methodFilter) {
+    combined = combined.filter(item => item.payment_method === methodFilter);
+  }
 
-    // Observações / Destino
-    const obsText = `Envio de remessa — ${s.recipient_name || 'Destinatário'} (${s.dest_city || ''}/${s.dest_state || ''})`;
+  if (combined.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${isAdmin ? 9 : 8}" style="text-align: center; color: var(--text-muted); padding: 1.75rem; font-size: 0.76rem;">Nenhum lançamento financeiro aprovado encontrado para os filtros selecionados.</td></tr>`;
+    return;
+  }
 
-    // Checkbox Admin
+  tbody.innerHTML = combined.map(item => {
+    const isPaid = item.payment_status === 'pago';
+    const isStore = item.origin === 'store';
+    const formattedDate = item.created_at ? new Date(item.created_at).toLocaleDateString('pt-BR') : '-';
+    const priceFormatted = formatCurrencyBR(item.amount);
+    const valueHTML = `<strong style="color: ${isPaid ? '#16a34a' : '#dc2626'}; font-size: 0.77rem;">${priceFormatted}</strong>`;
+
+    const originBadgeHTML = isStore
+      ? `<span style="color: #59338f; font-size: 0.72rem; font-weight: 700;">Loja</span>`
+      : `<span style="color: #334155; font-size: 0.72rem; font-weight: 700;">Flow</span>`;
+
+    const orderHTML = isStore
+      ? `<button type="button" onclick="openStoreOrderDetailPage(${item.id}, 'tab-billing')"
+                 style="background: none; border: none; padding: 0; color: #59338f; font-weight: 800; font-family: monospace; font-size: 0.76rem; text-decoration: underline; cursor: pointer;"
+                 title="Clique para abrir o Resumo do Pedido da Loja">
+           ${escapeHtml(item.code)}
+         </button>`
+      : `<button type="button" onclick="openShipmentDetailModal(${item.id})"
+                 style="background: none; border: none; padding: 0; color: #4f46e5; font-weight: 700; font-family: monospace; font-size: 0.76rem; text-decoration: underline; cursor: pointer;"
+                 title="Clique para ver os detalhes da remessa">
+           ${escapeHtml(item.code)}
+         </button>`;
+
+    const methodBadgeHTML = isStore
+      ? `<span style="color: #59338f; font-weight: 700; font-size: 0.71rem;">${escapeHtml(item.payment_method)}</span>`
+      : `<span style="font-size: 0.71rem; color: #64748b; font-weight: 600;">Frete Flow</span>`;
+
+    const descWithClient = (isAdmin && item.client_name)
+      ? `<strong style="color: #0f172a;">${escapeHtml(item.client_name)}</strong> — ${escapeHtml(item.description)}`
+      : escapeHtml(item.description);
+
     const checkboxHTML = isAdmin
-      ? `<td style="text-align: center; padding: 0.75rem 0.5rem;">
-           <input type="checkbox" class="billing-item-checkbox" data-id="${s.id}" onchange="updateSelectedBillingCount()" style="cursor: pointer;">
+      ? `<td style="text-align: center; padding: 0.45rem 0.35rem;">
+           <input type="checkbox" class="billing-item-checkbox"
+                  data-id="${item.id}"
+                  data-origin="${item.origin}"
+                  data-code="${escapeHtml(item.code)}"
+                  data-amount="${item.amount}"
+                  data-nf-number="${escapeHtml(item.nf_number || '')}"
+                  data-nf-url="${escapeHtml(item.nf_url || '')}"
+                  data-boleto-url="${escapeHtml(item.boleto_url || '')}"
+                  data-status="${item.payment_status}"
+                  onchange="updateSelectedBillingCount()" style="cursor: pointer; width: 14px; height: 14px;">
          </td>`
       : ``;
 
-    // Status Pagamento (Bolinha de status + Botão direto para Dar Baixa ou Reabrir)
-    const statusDotColor = isPaid ? '#22c55e' : '#ef4444';
+    // Coluna de Documentos: Boleto e NF (sem emojis e sem balão, apenas cor e sublinhado)
+    const docsParts = [];
+    if (item.boleto_url) {
+      docsParts.push(`<a href="${escapeHtml(item.boleto_url)}" download target="_blank" style="color: #2563eb; font-size: 0.71rem; font-weight: 700; text-decoration: underline;" title="Baixar Boleto">Boleto</a>`);
+    }
+    if (item.nf_url) {
+      const nfLabel = item.nf_number ? `NF ${escapeHtml(item.nf_number)}` : 'NF';
+      docsParts.push(`<a href="${escapeHtml(item.nf_url)}" download target="_blank" style="color: #15803d; font-size: 0.71rem; font-weight: 700; text-decoration: underline;" title="Baixar Nota Fiscal">${nfLabel}</a>`);
+    } else if (item.nf_number) {
+      docsParts.push(`<span style="font-size: 0.71rem; color: #475569; font-weight: 700;">NF: ${escapeHtml(item.nf_number)}</span>`);
+    }
+    const docsCellHTML = docsParts.length > 0
+      ? `<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">${docsParts.join('')}</div>`
+      : `<span style="color: #94a3b8; font-size: 0.68rem;">Pendente</span>`;
+
+    const toggleReopenFn = isStore
+      ? `toggleStoreOrderPaymentStatus(${item.id}, 'em_aberto')`
+      : `setShipmentPaymentStatus(${item.id}, 'em_aberto')`;
+
+    const approvePayFn = isStore
+      ? `toggleStoreOrderPaymentStatus(${item.id}, 'pago')`
+      : `setShipmentPaymentStatus(${item.id}, 'pago')`;
+
+    const isWaitingPay = item.payment_status === 'aguardando_pagamento';
+
+    let statusBadgeTextHTML = '';
+    if (isPaid) {
+      statusBadgeTextHTML = `<span style="font-size: 0.71rem; font-weight: 700; color: #16a34a; white-space: nowrap;">Pago</span>`;
+    } else if (isWaitingPay) {
+      statusBadgeTextHTML = `<span style="font-size: 0.71rem; font-weight: 700; color: #d97706; white-space: nowrap;">Aguard. Pagamento</span>`;
+    } else {
+      statusBadgeTextHTML = `<span style="font-size: 0.71rem; font-weight: 700; color: #dc2626; white-space: nowrap;">Em Aberto</span>`;
+    }
 
     const statusCellHTML = isAdmin
-      ? `<div style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;">
-           <span title="${isPaid ? 'Quitado' : 'Em Aberto'}" style="width: 10px; height: 10px; border-radius: 50%; background-color: ${statusDotColor}; display: inline-block; flex-shrink: 0;"></span>
-           <span style="font-size: 0.8rem; font-weight: 700; color: ${isPaid ? '#15803d' : '#dc2626'};">${isPaid ? 'Pago' : 'Em Aberto'}</span>
-           ${!isPaid 
-             ? `<button type="button" onclick="setShipmentPaymentStatus(${s.id}, 'pago')" class="btn btn-sm" style="background: #16a34a; color: #fff; font-size: 0.74rem; font-weight: 700; padding: 3px 9px; border: none; border-radius: 5px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.06); transition: all 0.15s ease;" onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'" title="Dar baixa neste pedido">Dar Baixa</button>` 
-             : `<button type="button" onclick="setShipmentPaymentStatus(${s.id}, 'em_aberto')" class="btn btn-sm" style="background: #f8fafc; color: #64748b; font-size: 0.74rem; padding: 3px 8px; border: 1px solid #cbd5e1; border-radius: 5px; cursor: pointer; transition: all 0.15s ease;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'" title="Reverter para Em Aberto">Reabrir</button>`}
-           <button type="button" onclick="deleteBillingShipment(${s.id}, '${s.code}')" class="btn btn-sm" style="background: #fff; color: #ef4444; border: 1px solid #fecaca; font-size: 0.72rem; padding: 3px 6px; border-radius: 5px; cursor: pointer; margin-left: 2px;" title="Excluir este lançamento">Excluir</button>
+      ? `<div style="display: flex; align-items: center; gap: 5px; flex-wrap: nowrap;">
+           ${statusBadgeTextHTML}
+           ${!isPaid && !isWaitingPay
+             ? `<button type="button" onclick="openSingleReceiveBillingModal(${item.id}, '${item.origin}')" class="btn btn-sm" style="background: #2563eb; color: #fff; font-size: 0.67rem; font-weight: 700; padding: 2px 8px; border: none; border-radius: 4px; cursor: pointer;" title="Gerar cobrança (Aguard. Pagamento) e anexar NF / Boleto">
+                  Receber
+                </button>`
+             : ''}
+           ${isWaitingPay
+             ? `<button type="button" onclick="${approvePayFn}" class="btn btn-sm" style="background: #16a34a; color: #fff; font-size: 0.67rem; font-weight: 700; padding: 2px 8px; border: none; border-radius: 4px; cursor: pointer;" title="Aprovar pagamento deste pedido">
+                  Aprovar
+                </button>
+                <button type="button" onclick="openSingleReceiveBillingModal(${item.id}, '${item.origin}')" class="btn btn-sm" style="background: #eff6ff; color: #1d4ed8; font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border: 1px solid #bfdbfe; border-radius: 4px; cursor: pointer;" title="Alterar NF ou Boleto">
+                  NF/Boleto
+                </button>`
+             : ''}
+           ${isPaid
+             ? `<button type="button" onclick="openSingleReceiveBillingModal(${item.id}, '${item.origin}')" class="btn btn-sm" style="background: #eff6ff; color: #1d4ed8; font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border: 1px solid #bfdbfe; border-radius: 4px; cursor: pointer;" title="Ver ou alterar NF e Boleto">NF/Boleto</button>
+                <button type="button" onclick="${toggleReopenFn}" class="btn btn-sm" style="background: #f8fafc; color: #64748b; font-size: 0.65rem; padding: 2px 6px; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer;">Reabrir</button>`
+             : ''}
+           ${!isStore
+             ? `<button type="button" onclick="deleteBillingShipment(${item.id}, '${escapeHtml(item.code)}')" class="btn btn-sm" style="background: #fff; color: #ef4444; border: 1px solid #fecaca; font-size: 0.66rem; padding: 2px 5px; border-radius: 4px; cursor: pointer;" title="Excluir lançamento">&times;</button>`
+             : ''}
          </div>`
-      : (isPaid
-          ? `<span style="display: inline-flex; align-items: center; gap: 0.35rem; color: #15803d; font-weight: 600;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e;"></span> Pago</span>`
-          : `<span style="display: inline-flex; align-items: center; gap: 0.35rem; color: #dc2626; font-weight: 600;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></span> Em Aberto</span>`
-        );
+      : statusBadgeTextHTML;
 
     return `
       <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
         ${checkboxHTML}
-        <td style="padding: 0.75rem 1rem; color: #475569;">${formattedDate}</td>
-        <td style="padding: 0.75rem 1rem;">${valueHTML}</td>
-        <td style="padding: 0.75rem 1rem;">${orderHTML}</td>
-        <td style="padding: 0.75rem 1rem; color: #64748b; font-size: 0.8rem;">${obsText}</td>
-        <td style="padding: 0.75rem 1rem;">${statusCellHTML}</td>
+        <td style="padding: 0.48rem 0.65rem; color: #475569; white-space: nowrap;">${formattedDate}</td>
+        <td style="padding: 0.48rem 0.65rem;">${originBadgeHTML}</td>
+        <td style="padding: 0.48rem 0.65rem; white-space: nowrap;">${valueHTML}</td>
+        <td style="padding: 0.48rem 0.65rem; white-space: nowrap;">${orderHTML}</td>
+        <td style="padding: 0.48rem 0.65rem; white-space: nowrap;">${methodBadgeHTML}</td>
+        <td style="padding: 0.48rem 0.65rem; color: #64748b; font-size: 0.72rem; max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(item.description)}">${descWithClient}</td>
+        <td style="padding: 0.48rem 0.65rem;">${docsCellHTML}</td>
+        <td style="padding: 0.48rem 0.65rem;">${statusCellHTML}</td>
       </tr>
     `;
   }).join('');
 }
+window.renderUnifiedBillingTable = renderUnifiedBillingTable;
+window.renderBillingShipmentsTable = renderUnifiedBillingTable;
 
 function toggleSelectAllBillingShipments(checked) {
   const checkboxes = document.querySelectorAll('.billing-item-checkbox');
@@ -3150,27 +3562,334 @@ function getSelectedBillingShipmentIds() {
   return Array.from(selected).map(cb => parseInt(cb.getAttribute('data-id'), 10));
 }
 
-async function batchSetPaymentStatus(targetStatus) {
-  const ids = getSelectedBillingShipmentIds();
-  if (ids.length === 0) {
-    showToast('Selecione pelo menos um pedido para dar baixa.', 'warning');
+function openSingleReceiveBillingModal(itemId, origin) {
+  let found = null;
+  if (origin === 'store') {
+    const o = (windowBillingStoreOrders || []).find(x => x.id === itemId) || (allStoreBillingOrders || []).find(x => x.id === itemId);
+    if (o) {
+      found = {
+        id: o.id,
+        origin: 'store',
+        code: o.code,
+        amount: parseFloat(o.total_amount) || 0,
+        nf_number: o.nf_number || '',
+        nf_url: o.nf_url || '',
+        boleto_url: o.boleto_url || '',
+        payment_status: o.payment_status || 'em_aberto'
+      };
+    }
+  } else {
+    const s = (windowBillingShipments || []).find(x => x.id === itemId);
+    if (s) {
+      found = {
+        id: s.id,
+        origin: 'flow',
+        code: s.code,
+        amount: parseFloat(s.final_freight_price) || 0,
+        nf_number: s.nf_number || '',
+        nf_url: s.nf_url || '',
+        boleto_url: s.boleto_url || '',
+        payment_status: s.payment_status || 'em_aberto'
+      };
+    }
+  }
+
+  if (!found && Array.isArray(window._lastClientBillingCombined)) {
+    const cItem = window._lastClientBillingCombined.find(x => x.id === itemId && x.origin === origin);
+    if (cItem) {
+      found = {
+        id: cItem.id,
+        origin: cItem.origin,
+        code: cItem.code,
+        amount: cItem.amount || 0,
+        nf_number: cItem.nf_number || '',
+        nf_url: cItem.nf_url || '',
+        boleto_url: cItem.boleto_url || '',
+        payment_status: cItem.payment_status || 'em_aberto'
+      };
+    }
+  }
+
+  if (!found) {
+    found = { id: itemId, origin: origin || 'flow', code: `#${itemId}`, amount: 0, nf_number: '', nf_url: '', boleto_url: '', payment_status: 'em_aberto' };
+  }
+
+  openReceiveBillingModalWithItems([found]);
+}
+window.openSingleReceiveBillingModal = openSingleReceiveBillingModal;
+
+function openReceiveBillingModalFromSelection(source = 'main') {
+  const selector = source === 'client' ? '.client-billing-item-checkbox:checked' : '.billing-item-checkbox:checked';
+  const checked = document.querySelectorAll(selector);
+  if (!checked || checked.length === 0) {
+    showToast('Selecione pelo menos um pedido para receber ou cobrar.', 'warning');
     return;
   }
 
+  const items = Array.from(checked).map(cb => ({
+    id: parseInt(cb.getAttribute('data-id'), 10),
+    origin: cb.getAttribute('data-origin') || 'flow',
+    code: cb.getAttribute('data-code') || '',
+    amount: parseFloat(cb.getAttribute('data-amount')) || 0,
+    nf_number: cb.getAttribute('data-nf-number') || '',
+    nf_url: cb.getAttribute('data-nf-url') || '',
+    boleto_url: cb.getAttribute('data-boleto-url') || '',
+    payment_status: cb.getAttribute('data-status') || 'em_aberto'
+  }));
+
+  openReceiveBillingModalWithItems(items);
+}
+window.openReceiveBillingModalFromSelection = openReceiveBillingModalFromSelection;
+
+function openReceiveBillingModalWithItems(items) {
+  activeReceiveBillingItems = items || [];
+  const form = document.getElementById('form-billing-receive');
+  if (form) form.reset();
+
+  // Identifica de qual página o usuário veio para retornar sem usar popup
+  const activePage = document.querySelector('.tab-page:not(.hidden)');
+  if (activePage && activePage.id === 'page-client-detail') {
+    receiveBillingReturnTab = 'page-client-detail';
+  } else if (activePage && activePage.id !== 'page-billing-receive') {
+    receiveBillingReturnTab = activePage.id;
+  } else {
+    receiveBillingReturnTab = 'tab-billing';
+  }
+
+  const backLabel = document.getElementById('receive-billing-back-label');
+  if (backLabel) {
+    backLabel.textContent = receiveBillingReturnTab === 'page-client-detail'
+      ? 'Voltar para Carteira do Cliente'
+      : 'Voltar para Carteira';
+  }
+
+  const countEl = document.getElementById('receive-modal-count');
+  const totalEl = document.getElementById('receive-modal-total');
+  const listEl = document.getElementById('receive-modal-items-list');
+  const nfNumInput = document.getElementById('receive-nf-number');
+  const statusInput = document.getElementById('receive-payment-status');
+  const existingNfInfo = document.getElementById('receive-existing-nf-info');
+  const existingBoletoInfo = document.getElementById('receive-existing-boleto-info');
+
+  const totalAmount = activeReceiveBillingItems.reduce((acc, it) => acc + (parseFloat(it.amount) || 0), 0);
+  if (countEl) countEl.textContent = activeReceiveBillingItems.length;
+  if (totalEl) totalEl.textContent = formatCurrencyBR(totalAmount);
+
+  if (listEl) {
+    listEl.innerHTML = activeReceiveBillingItems.map(it => `
+      <div style="display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dashed #e2e8f0;">
+        <span><strong style="font-family: monospace;">${escapeHtml(it.code)}</strong> (${it.origin === 'store' ? 'Loja Virtual' : 'Envio Flow'})</span>
+        <strong>${formatCurrencyBR(it.amount)}</strong>
+      </div>
+    `).join('');
+  }
+
+  const first = activeReceiveBillingItems[0] || {};
+  if (nfNumInput) nfNumInput.value = first.nf_number || '';
+  if (statusInput) {
+    statusInput.value = 'aguardando_pagamento';
+  }
+
+  if (existingNfInfo) {
+    if (first.nf_url) {
+      existingNfInfo.style.display = 'block';
+      existingNfInfo.innerHTML = `Já possui NF anexada (<a href="${escapeHtml(first.nf_url)}" target="_blank" style="color: #15803d; font-weight: 700;">Ver atual</a>). Envie outro arquivo apenas se quiser substituir.`;
+    } else {
+      existingNfInfo.style.display = 'none';
+      existingNfInfo.innerHTML = '';
+    }
+  }
+
+  if (existingBoletoInfo) {
+    if (first.boleto_url) {
+      existingBoletoInfo.style.display = 'block';
+      existingBoletoInfo.innerHTML = `Já possui Boleto anexado (<a href="${escapeHtml(first.boleto_url)}" target="_blank" style="color: #1d4ed8; font-weight: 700;">Ver atual</a>). Envie outro arquivo apenas se quiser substituir.`;
+    } else {
+      existingBoletoInfo.style.display = 'none';
+      existingBoletoInfo.innerHTML = '';
+    }
+  }
+
+  switchTab('page-billing-receive');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function closeReceiveBillingPage() {
+  switchTab(receiveBillingReturnTab || 'tab-billing');
+}
+window.closeReceiveBillingPage = closeReceiveBillingPage;
+
+async function submitReceiveBillingForm(e) {
+  if (e) e.preventDefault();
+  if (!activeReceiveBillingItems || activeReceiveBillingItems.length === 0) return;
+
+  const btn = document.getElementById('btn-submit-receive-billing');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Salvando...';
+  }
+
   try {
-    const res = await fetch('/api/billing/shipments/update-status', {
+    const formData = new FormData();
+    formData.append('items', JSON.stringify(activeReceiveBillingItems.map(i => ({ id: i.id, origin: i.origin }))));
+    formData.append('nf_number', document.getElementById('receive-nf-number')?.value.trim() || '');
+    // Sempre que gerar um receber ele fica com status de Aguard. Pagamento
+    formData.append('payment_status', 'aguardando_pagamento');
+
+    const nfFile = document.getElementById('receive-nf-file')?.files[0];
+    const boletoFile = document.getElementById('receive-boleto-file')?.files[0];
+    if (nfFile) formData.append('nf_file', nfFile);
+    if (boletoFile) formData.append('boleto_file', boletoFile);
+
+    const res = await fetch('/api/billing/receive', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ shipment_ids: ids, payment_status: targetStatus })
+      body: formData
     });
 
     const data = await res.json();
-    if (!res.ok) {
-      showToast('Erro: ' + (data.error || 'Não foi possível atualizar'), 'error');
-      return;
+    if (!res.ok) throw new Error(data.error || 'Erro ao salvar recebimento/cobrança.');
+
+    showToast(data.message || 'Cobrança gerada (Aguard. Pagamento) com sucesso!', 'success');
+    closeReceiveBillingPage();
+
+    await loadBillingData();
+    if (activeManagingClientId) {
+      await loadClientBilling(activeManagingClientId);
+    }
+    if (typeof loadClients === 'function') {
+      await loadClients();
+    }
+    if (typeof loadInvoicesNfData === 'function') {
+      loadInvoicesNfData();
+    }
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Gerar Recebimento (Aguard. Pagamento)';
+    }
+  }
+}
+window.submitReceiveBillingForm = submitReceiveBillingForm;
+
+async function loadInvoicesNfData() {
+  await loadBillingData();
+  renderInvoicesNfTable();
+}
+window.loadInvoicesNfData = loadInvoicesNfData;
+
+function renderInvoicesNfTable() {
+  const tbody = document.getElementById('invoices-nf-tbody');
+  if (!tbody) return;
+
+  const searchVal = (document.getElementById('filter-nf-search')?.value || '').trim().toLowerCase();
+  const originVal = document.getElementById('filter-nf-origin')?.value || '';
+
+  // Mostra todos os lançamentos aprovados que possuem NF anexada (ou número de NF / Boleto) ou permite consultar todos os faturados
+  let entries = getUnifiedApprovedBillingEntries().filter(item => item.nf_url || item.nf_number || item.boleto_url);
+
+  if (originVal) {
+    entries = entries.filter(item => item.origin === originVal);
+  }
+  if (searchVal) {
+    entries = entries.filter(item =>
+      (item.nf_number || '').toLowerCase().includes(searchVal) ||
+      (item.code || '').toLowerCase().includes(searchVal) ||
+      (item.client_name || '').toLowerCase().includes(searchVal) ||
+      (item.description || '').toLowerCase().includes(searchVal)
+    );
+  }
+
+  if (entries.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: #64748b; font-size: 0.78rem;">Nenhuma Nota Fiscal emitida/anexada encontrada para os filtros selecionados.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = entries.map(item => {
+    const isStore = item.origin === 'store';
+    const isPaid = item.payment_status === 'pago';
+    const dateStr = (item.billed_at || item.created_at) ? new Date(item.billed_at || item.created_at).toLocaleDateString('pt-BR') : '-';
+    const nfBadge = item.nf_number
+      ? `<strong style="font-family: monospace; color: #0f172a; font-size: 0.8rem;">${escapeHtml(item.nf_number)}</strong>`
+      : `<span style="color: #64748b; font-size: 0.74rem;">NF Anexada</span>`;
+
+    const orderBtn = isStore
+      ? `<button type="button" onclick="openStoreOrderDetailPage(${item.id}, 'tab-invoices-nf')" style="background: none; border: none; padding: 0; color: #59338f; font-weight: 800; font-family: monospace; font-size: 0.78rem; text-decoration: underline; cursor: pointer;">${escapeHtml(item.code)}</button>`
+      : `<button type="button" onclick="openShipmentDetailModal(${item.id})" style="background: none; border: none; padding: 0; color: #4f46e5; font-weight: 700; font-family: monospace; font-size: 0.78rem; text-decoration: underline; cursor: pointer;">${escapeHtml(item.code)}</button>`;
+
+    const originBadge = isStore
+      ? `<span style="color: #59338f; font-size: 0.74rem; font-weight: 700;">Loja Virtual</span>`
+      : `<span style="color: #334155; font-size: 0.74rem; font-weight: 700;">Envio Flow</span>`;
+
+    const clientAndDesc = item.client_name
+      ? `<strong>${escapeHtml(item.client_name)}</strong> — ${escapeHtml(item.description)}`
+      : escapeHtml(item.description);
+
+    return `
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 0.55rem 0.75rem;">${nfBadge}</td>
+        <td style="padding: 0.55rem 0.75rem; color: #475569;">${dateStr}</td>
+        <td style="padding: 0.55rem 0.75rem;">${orderBtn}</td>
+        <td style="padding: 0.55rem 0.75rem;">${originBadge}</td>
+        <td style="padding: 0.55rem 0.75rem; color: #475569; max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${clientAndDesc}</td>
+        <td style="padding: 0.55rem 0.75rem; font-weight: 700; color: #0f172a;">${formatCurrencyBR(item.amount)}</td>
+        <td style="padding: 0.55rem 0.75rem;">
+          <span style="font-weight: 700; color: ${isPaid ? '#16a34a' : (item.payment_status === 'aguardando_pagamento' ? '#d97706' : '#dc2626')}; font-size: 0.74rem;">
+            ${isPaid ? 'Pago' : (item.payment_status === 'aguardando_pagamento' ? 'Aguard. Pagamento' : 'Em Aberto')}
+          </span>
+        </td>
+        <td style="padding: 0.55rem 0.75rem; text-align: right;">
+          <div style="display: inline-flex; gap: 6px; align-items: center;">
+            ${item.nf_url
+              ? `<a href="${escapeHtml(item.nf_url)}" download target="_blank" style="background: #16a34a; color: #ffffff; font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 5px; text-decoration: none;">Baixar NF</a>`
+              : ''}
+            ${item.boleto_url
+              ? `<a href="${escapeHtml(item.boleto_url)}" download target="_blank" style="background: #2563eb; color: #ffffff; font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 5px; text-decoration: none;">Baixar Boleto</a>`
+              : ''}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+window.renderInvoicesNfTable = renderInvoicesNfTable;
+
+async function batchSetPaymentStatus(targetStatus) {
+  const selected = document.querySelectorAll('.billing-item-checkbox:checked');
+  if (selected.length === 0) {
+    showToast('Selecione pelo menos um lançamento para dar baixa.', 'warning');
+    return;
+  }
+
+  const flowIds = [];
+  const storeIds = [];
+  selected.forEach(cb => {
+    const id = parseInt(cb.getAttribute('data-id'), 10);
+    const orig = cb.getAttribute('data-origin') || 'flow';
+    if (orig === 'store') storeIds.push(id);
+    else flowIds.push(id);
+  });
+
+  try {
+    if (flowIds.length > 0) {
+      await fetch('/api/billing/shipments/update-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shipment_ids: flowIds, payment_status: targetStatus })
+      });
+    }
+    if (storeIds.length > 0) {
+      await Promise.all(storeIds.map(id =>
+        fetch(`/api/store/orders/${id}/payment-status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ payment_status: targetStatus })
+        })
+      ));
     }
 
-    showToast(`${data.message}`, 'success');
+    showToast('Status financeiro atualizado para os lançamentos selecionados!', 'success');
     await loadBillingData();
     if (activeManagingClientId) {
       await loadClientBilling(activeManagingClientId);
@@ -3363,30 +4082,42 @@ function renderClientsTable(clients) {
     return;
   }
 
-  tbody.innerHTML = clients.map(client => `
-    <tr>
-      <td style="font-weight: 700;">${escapeHtml(client.name)}</td>
-      <td style="font-size: 0.82rem; color: var(--text-secondary);">${escapeHtml(client.cnpj_cpf || client.cnpj || 'Não informado')}</td>
-      <td style="font-size: 0.82rem;">${escapeHtml(client.email)}</td>
-      <td style="font-size: 0.82rem;">${escapeHtml(client.phone || '-')}</td>
-      <td><span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 700;">${client.total_products || 0} prod.</span></td>
-      <td><span class="badge" style="background: rgba(148, 163, 184, 0.15); color: #94a3b8; font-weight: 700;">${client.total_shipments || 0} envios</span></td>
-      <td style="font-weight: 700; color: ${(client.open_balance ?? client.total_open ?? 0) > 0 ? '#ef4444' : 'var(--text-muted)'};">
-        R$ ${parseFloat(client.open_balance ?? client.total_open ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-      </td>
-      <td style="font-weight: 700; color: #22c55e;">
-        R$ ${parseFloat(client.paid_balance ?? client.total_paid ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-      </td>
-      <td>
-        <button class="btn btn-secondary btn-sm" onclick="openClientDetailPage(${client.id})" style="padding: 0.3rem 0.6rem; font-size: 0.78rem;">
-          Gerenciar Cliente
-        </button>
-        <button class="btn btn-secondary btn-sm" onclick="deleteClientAccount(${client.id}, '${escapeHtml(client.name)}')" style="padding: 0.3rem 0.5rem; font-size: 0.78rem; color: #ef4444;" title="Excluir Cliente">
-          Excluir
-        </button>
-      </td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = clients.map(client => {
+    const isChild = Boolean(client.parent_client_id);
+    const hierarchyTag = isChild
+      ? `<div style="font-size: 0.72rem; color: #64748b; font-weight: 600;">Sede ${escapeHtml(client.branch_number || '')} • Matriz: ${escapeHtml(client.parent_name || '#' + client.parent_client_id)}</div>`
+      : (client.total_branches > 0
+          ? `<div style="font-size: 0.72rem; color: #59338f; font-weight: 700;">Conta Mãe (${client.total_branches} ${client.total_branches === 1 ? 'sede filha' : 'sedes filhas'})</div>`
+          : `<div style="font-size: 0.72rem; color: #64748b; font-weight: 600;">Conta Principal</div>`);
+
+    return `
+      <tr>
+        <td>
+          <div style="font-weight: 700;">${escapeHtml(client.name)}</div>
+          ${hierarchyTag}
+        </td>
+        <td style="font-size: 0.82rem; color: var(--text-secondary);">${escapeHtml(client.cnpj_cpf || client.cnpj || 'Não informado')}</td>
+        <td style="font-size: 0.82rem;">${escapeHtml(client.email)}</td>
+        <td style="font-size: 0.82rem;">${escapeHtml(client.phone || '-')}</td>
+        <td><span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 700;">${client.total_products || 0} prod.</span></td>
+        <td><span class="badge" style="background: rgba(148, 163, 184, 0.15); color: #94a3b8; font-weight: 700;">${client.total_shipments || 0} envios</span></td>
+        <td style="font-weight: 700; color: ${(client.open_balance ?? client.total_open ?? 0) > 0 ? '#ef4444' : 'var(--text-muted)'};">
+          R$ ${parseFloat(client.open_balance ?? client.total_open ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+        </td>
+        <td style="font-weight: 700; color: #22c55e;">
+          R$ ${parseFloat(client.paid_balance ?? client.total_paid ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+        </td>
+        <td>
+          <button class="btn btn-secondary btn-sm" onclick="openClientDetailPage(${client.id})" style="padding: 0.3rem 0.6rem; font-size: 0.78rem;">
+            Gerenciar Cliente
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="deleteClientAccount(${client.id}, '${escapeHtml(client.name)}')" style="padding: 0.3rem 0.5rem; font-size: 0.78rem; color: #ef4444;" title="Excluir Cliente">
+            Excluir
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
 function openAddClientPage() {
@@ -3471,12 +4202,16 @@ async function openClientDetailPage(clientId) {
 
   loadClientProducts(clientId);
   loadClientBilling(clientId);
+  loadClientStoreAdmin(clientId);
+  if (typeof loadAdminClientBranches === 'function') {
+    loadAdminClientBranches(clientId);
+  }
 }
 window.openClientDetailPage = openClientDetailPage;
 window.openManageClientModal = openClientDetailPage;
 
 function switchClientDetailTab(tabName) {
-  const tabs = ['products', 'billing', 'info'];
+  const tabs = ['products', 'store', 'billing', 'branches', 'info'];
   tabs.forEach(t => {
     const btn = document.getElementById(`btn-client-tab-${t}`);
     const content = document.getElementById(`client-subtab-${t}`);
@@ -3485,6 +4220,12 @@ function switchClientDetailTab(tabName) {
   });
   if (tabName === 'billing' && activeManagingClientId) {
     loadClientBilling(activeManagingClientId);
+  }
+  if (tabName === 'store' && activeManagingClientId) {
+    loadClientStoreAdmin(activeManagingClientId);
+  }
+  if (tabName === 'branches' && activeManagingClientId && typeof loadAdminClientBranches === 'function') {
+    loadAdminClientBranches(activeManagingClientId);
   }
 }
 
@@ -3523,78 +4264,234 @@ async function loadClientBilling(clientId) {
   const openBalEl = document.getElementById('client-open-balance');
   const paidBalEl = document.getElementById('client-paid-balance');
 
-  if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 1.5rem;">Carregando carteira...</td></tr>';
+  if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 1.25rem; font-size: 0.76rem;">Carregando carteira unificada...</td></tr>';
 
   try {
-    const [summaryRes, shipmentsRes] = await Promise.all([
-      fetch(`/api/billing/summary?client_id=${clientId}`),
-      fetch(`/api/billing/shipments?client_id=${clientId}`)
+    const [cfgRes, shipmentsRes, storeOrdersRes] = await Promise.all([
+      fetch(`/api/store/client-config/${clientId}`),
+      fetch(`/api/billing/shipments?client_id=${clientId}`),
+      fetch(`/api/store/orders?client_id=${clientId}`)
     ]);
 
-    const summary = await summaryRes.json();
-    const shipments = await shipmentsRes.json();
+    if (cfgRes.ok) {
+      currentClientStoreConfig = await cfgRes.json();
+      renderClientPaymentMethodsTags();
+    }
 
-    if (openBalEl) openBalEl.innerText = `R$ ${parseFloat(summary.total_em_aberto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-    if (paidBalEl) paidBalEl.innerText = `R$ ${parseFloat(summary.total_pago || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    const rawShipments = shipmentsRes.ok ? await shipmentsRes.json() : [];
+    const shipments = Array.isArray(rawShipments)
+      ? rawShipments.filter(s => s.shipment_status !== 'em_aberto' && s.shipment_status !== 'draft' && s.status !== 'em_aberto' && s.status !== 'draft')
+      : [];
+
+    const rawStoreOrders = storeOrdersRes.ok ? await storeOrdersRes.json() : [];
+    const storeOrders = Array.isArray(rawStoreOrders)
+      ? rawStoreOrders.filter(o => !['cancelado', 'em_aberto', 'aguardando_aprovacao_mae', 'recusado_matriz'].includes(o.status))
+      : [];
+    allStoreBillingOrders = storeOrders;
+
+    let openTotal = 0;
+    let paidTotal = 0;
+
+    const flowItems = (shipments || []).map(s => {
+      const val = parseFloat(s.final_freight_price) || 0;
+      const pStatus = normalizeBillingPaymentStatus(s.payment_status);
+      const isPaid = pStatus === 'pago';
+      if (isPaid) paidTotal += val;
+      else openTotal += val;
+      const branchPart = s.client_branch ? `[Sede ${s.client_branch}] ` : '';
+      const billPart = s.billing_cnpj ? ` • Faturar p/: ${s.billing_name || ''} (${s.billing_cnpj})` : '';
+      return {
+        id: s.id,
+        origin: 'flow',
+        code: s.code,
+        created_at: s.created_at,
+        info: `${branchPart}Frete Remessa — ${s.dest_city || ''}/${s.dest_state || ''}${billPart}`,
+        amount: val,
+        nf_url: s.nf_url || '',
+        nf_number: s.nf_number || '',
+        boleto_url: s.boleto_url || '',
+        payment_status: pStatus,
+        isPaid
+      };
+    });
+
+    const storeItems = (storeOrders || []).map(o => {
+      const val = parseFloat(o.total_amount) || 0;
+      const pStatus = normalizeBillingPaymentStatus(o.payment_status);
+      const isPaid = pStatus === 'pago';
+      if (isPaid) paidTotal += val;
+      else openTotal += val;
+      const methodLabel = o.payment_method || '30 DIAS BOLETO';
+      const branchPart = o.client_branch ? `[Sede ${o.client_branch} - ${o.client_name || ''}] ` : '';
+      const billPart = o.billing_cnpj ? ` • Faturar p/: ${o.billing_name || ''} (${o.billing_cnpj})` : '';
+      return {
+        id: o.id,
+        origin: 'store',
+        code: o.code,
+        created_at: o.created_at,
+        info: `${branchPart}${methodLabel} (${o.delivery_type === 'flow' ? 'Envio Flow' : 'Envio Direto'})${billPart}`,
+        amount: val,
+        nf_url: o.nf_url || '',
+        nf_number: o.nf_number || '',
+        boleto_url: o.boleto_url || '',
+        payment_status: pStatus,
+        isPaid
+      };
+    });
+
+    if (openBalEl) openBalEl.innerText = formatCurrencyBR(openTotal);
+    if (paidBalEl) paidBalEl.innerText = formatCurrencyBR(paidTotal);
 
     const selectAllCb = document.getElementById('client-billing-select-all');
     if (selectAllCb) selectAllCb.checked = false;
     updateSelectedClientBillingCount();
 
-    if (!shipments || shipments.length === 0) {
-      if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">Nenhuma remessa registrada para este cliente.</td></tr>';
-      return;
-    }
+    const combined = [...flowItems, ...storeItems].sort((a, b) => {
+      const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return tB - tA;
+    });
 
-    if (tbody) {
-      tbody.innerHTML = shipments.map(s => {
-        const isPaid = s.payment_status === 'pago';
-        const formattedDate = s.created_at ? new Date(s.created_at).toLocaleDateString('pt-BR') : '-';
-        const priceFormatted = `R$ ${parseFloat(s.final_freight_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-
-        return `
-          <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-            <td style="text-align: center; padding: 0.75rem 0.5rem;">
-              <input type="checkbox" class="client-billing-item-checkbox" data-id="${s.id}" onchange="updateSelectedClientBillingCount()" style="cursor: pointer;">
-            </td>
-            <td style="font-weight: 700; font-family: monospace; padding: 0.75rem 1rem;">
-              <button type="button" onclick="openShipmentDetailModal(${s.id})" 
-                      style="background: none; border: none; padding: 0; color: #4f46e5; font-weight: 700; font-family: monospace; font-size: 0.85rem; text-decoration: underline; cursor: pointer;"
-                      title="Ver detalhes desta remessa">
-                ${escapeHtml(s.code)}
-              </button>
-            </td>
-            <td style="padding: 0.75rem 1rem; color: #64748b; font-size: 0.82rem;">${formattedDate}</td>
-            <td style="padding: 0.75rem 1rem; color: #334155;">${escapeHtml(s.dest_city || '')} / ${escapeHtml(s.dest_state || '')}</td>
-            <td style="padding: 0.75rem 1rem; font-weight: 700; color: ${isPaid ? '#16a34a' : '#dc2626'};">${priceFormatted}</td>
-            <td style="padding: 0.75rem 1rem;">
-              ${isPaid 
-                ? '<span class="badge" style="background: #dcfce7; color: #166534; font-weight: 700; padding: 3px 8px; border-radius: 6px; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 4px;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #22c55e;"></span> Pago</span>' 
-                : '<span class="badge" style="background: #fee2e2; color: #991b1b; font-weight: 700; padding: 3px 8px; border-radius: 6px; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 4px;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #ef4444;"></span> Em Aberto</span>'}
-            </td>
-            <td style="padding: 0.75rem 1rem; text-align: center;">
-              ${!isPaid
-                ? `<button type="button" class="btn btn-sm" onclick="setShipmentPaymentStatus(${s.id}, 'pago')" 
-                           style="background: #16a34a; color: #ffffff; border: none; padding: 0.4rem 0.85rem; border-radius: 6px; font-weight: 700; font-size: 0.78rem; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.06); transition: all 0.15s ease;"
-                           onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'"
-                           title="Dar baixa e marcar como pago">
-                     Dar Baixa
-                   </button>`
-                : `<button type="button" class="btn btn-sm" onclick="setShipmentPaymentStatus(${s.id}, 'em_aberto')" 
-                           style="background: #f8fafc; color: #64748b; border: 1px solid #cbd5e1; padding: 0.35rem 0.75rem; border-radius: 6px; font-weight: 600; font-size: 0.75rem; cursor: pointer; transition: all 0.15s ease;"
-                           onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'"
-                           title="Reverter para Em Aberto">
-                     Reabrir
-                   </button>`}
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
+    window._lastClientBillingCombined = combined;
+    renderClientBillingTable();
   } catch (err) {
-    if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="color: #ef4444; padding: 1.5rem;">Erro ao carregar carteira.</td></tr>`;
+    if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="color: #ef4444; padding: 1.5rem;">Erro ao carregar carteira.</td></tr>`;
   }
 }
+
+function clearClientBillingFilters() {
+  const dFrom = document.getElementById('filter-client-billing-date-from');
+  const dTo = document.getElementById('filter-client-billing-date-to');
+  const stat = document.getElementById('filter-client-billing-status');
+  if (dFrom) dFrom.value = '';
+  if (dTo) dTo.value = '';
+  if (stat) stat.value = '';
+  renderClientBillingTable();
+}
+window.clearClientBillingFilters = clearClientBillingFilters;
+
+function renderClientBillingTable() {
+  const tbody = document.getElementById('client-shipments-tbody');
+  if (!tbody) return;
+
+  const selectAllCb = document.getElementById('client-billing-select-all');
+  if (selectAllCb) selectAllCb.checked = false;
+  updateSelectedClientBillingCount();
+
+  let combined = Array.isArray(window._lastClientBillingCombined) ? [...window._lastClientBillingCombined] : [];
+
+  const dateFromStr = document.getElementById('filter-client-billing-date-from')?.value || '';
+  const dateToStr = document.getElementById('filter-client-billing-date-to')?.value || '';
+  const statusFilter = document.getElementById('filter-client-billing-status')?.value || '';
+
+  if (dateFromStr || dateToStr) {
+    const startTs = dateFromStr ? new Date(dateFromStr + 'T00:00:00').getTime() : null;
+    const endTs = dateToStr ? new Date(dateToStr + 'T23:59:59').getTime() : null;
+    combined = combined.filter(item => {
+      if (!item.created_at) return false;
+      const ts = new Date(item.created_at).getTime();
+      if (isNaN(ts)) return false;
+      if (startTs !== null && ts < startTs) return false;
+      if (endTs !== null && ts > endTs) return false;
+      return true;
+    });
+  }
+
+  if (statusFilter) {
+    combined = combined.filter(item => item.payment_status === statusFilter);
+  }
+
+  if (combined.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 1.5rem; font-size: 0.76rem;">Nenhuma cobrança aprovada encontrada para os filtros selecionados.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = combined.map(item => {
+    const isPaid = item.isPaid;
+    const isStore = item.origin === 'store';
+    const formattedDate = item.created_at ? new Date(item.created_at).toLocaleDateString('pt-BR') : '-';
+    const priceFormatted = formatCurrencyBR(item.amount);
+
+    const originBadge = isStore
+      ? `<span style="color: #59338f; font-size: 0.72rem; font-weight: 700;">Loja</span>`
+      : `<span style="color: #334155; font-size: 0.72rem; font-weight: 700;">Flow</span>`;
+
+    const codeBtn = isStore
+      ? `<button type="button" onclick="openStoreOrderDetailPage(${item.id}, 'page-client-detail')" style="background: none; border: none; padding: 0; color: #59338f; font-weight: 800; font-family: monospace; font-size: 0.76rem; text-decoration: underline; cursor: pointer;">${escapeHtml(item.code)}</button>`
+      : `<button type="button" onclick="openShipmentDetailModal(${item.id})" style="background: none; border: none; padding: 0; color: #4f46e5; font-weight: 700; font-family: monospace; font-size: 0.76rem; text-decoration: underline; cursor: pointer;">${escapeHtml(item.code)}</button>`;
+
+    const reopenClick = isStore
+      ? `toggleStoreOrderPaymentStatus(${item.id}, 'em_aberto')`
+      : `setShipmentPaymentStatus(${item.id}, 'em_aberto')`;
+
+    const approveClick = isStore
+      ? `toggleStoreOrderPaymentStatus(${item.id}, 'pago')`
+      : `setShipmentPaymentStatus(${item.id}, 'pago')`;
+
+    const isWaitingPay = item.payment_status === 'aguardando_pagamento';
+
+    let clientStatusBadge = '';
+    if (isPaid) {
+      clientStatusBadge = '<span style="color: #16a34a; font-weight: 700; font-size: 0.71rem; white-space: nowrap;">Pago</span>';
+    } else if (isWaitingPay) {
+      clientStatusBadge = '<span style="color: #d97706; font-weight: 700; font-size: 0.71rem; white-space: nowrap;">Aguard. Pagamento</span>';
+    } else {
+      clientStatusBadge = '<span style="color: #dc2626; font-weight: 700; font-size: 0.71rem; white-space: nowrap;">Em Aberto</span>';
+    }
+
+    const docsParts = [];
+    if (item.boleto_url) {
+      docsParts.push(`<a href="${escapeHtml(item.boleto_url)}" download target="_blank" style="color: #2563eb; font-size: 0.71rem; font-weight: 700; text-decoration: underline;">Boleto</a>`);
+    }
+    if (item.nf_url) {
+      const nfLabel = item.nf_number ? `NF ${escapeHtml(item.nf_number)}` : 'NF';
+      docsParts.push(`<a href="${escapeHtml(item.nf_url)}" download target="_blank" style="color: #15803d; font-size: 0.71rem; font-weight: 700; text-decoration: underline;">${nfLabel}</a>`);
+    }
+    const docsHTML = docsParts.length > 0 ? `<div style="display: flex; gap: 8px; flex-wrap: wrap;">${docsParts.join('')}</div>` : `<span style="color: #94a3b8; font-size: 0.68rem;">Pendente</span>`;
+
+    return `
+      <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+        <td style="text-align: center; padding: 0.45rem 0.35rem;">
+          <input type="checkbox" class="client-billing-item-checkbox"
+                 data-id="${item.id}"
+                 data-origin="${item.origin}"
+                 data-code="${escapeHtml(item.code)}"
+                 data-amount="${item.amount}"
+                 data-nf-number="${escapeHtml(item.nf_number || '')}"
+                 data-nf-url="${escapeHtml(item.nf_url || '')}"
+                 data-boleto-url="${escapeHtml(item.boleto_url || '')}"
+                 data-status="${item.payment_status}"
+                 onchange="updateSelectedClientBillingCount()" style="cursor: pointer; width: 14px; height: 14px;">
+        </td>
+        <td style="font-weight: 700; font-family: monospace; padding: 0.48rem 0.65rem;">${codeBtn}</td>
+        <td style="padding: 0.48rem 0.65rem;">${originBadge}</td>
+        <td style="padding: 0.48rem 0.65rem; color: #64748b; font-size: 0.73rem;">${formattedDate}</td>
+        <td style="padding: 0.48rem 0.65rem; color: #334155; font-weight: 600; font-size: 0.73rem;">${escapeHtml(item.info)}</td>
+        <td style="padding: 0.48rem 0.65rem; font-weight: 700; color: ${isPaid ? '#16a34a' : '#dc2626'}; font-size: 0.76rem;">${priceFormatted}</td>
+        <td style="padding: 0.48rem 0.65rem;">${docsHTML}</td>
+        <td style="padding: 0.48rem 0.65rem;">
+          ${clientStatusBadge}
+        </td>
+        <td style="padding: 0.48rem 0.65rem; text-align: center;">
+          <div style="display: flex; justify-content: center; gap: 5px; flex-wrap: nowrap;">
+            ${!isPaid && !isWaitingPay
+              ? `<button type="button" class="btn btn-sm" onclick="openSingleReceiveBillingModal(${item.id}, '${item.origin}')" style="background: #2563eb; color: #ffffff; border: none; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.67rem; cursor: pointer;">Receber</button>`
+              : ''}
+            ${isWaitingPay
+              ? `<button type="button" class="btn btn-sm" onclick="${approveClick}" style="background: #16a34a; color: #ffffff; border: none; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.67rem; cursor: pointer;">Aprovar</button>
+                 <button type="button" class="btn btn-sm" onclick="openSingleReceiveBillingModal(${item.id}, '${item.origin}')" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 0.65rem; cursor: pointer;">NF/Boleto</button>`
+              : ''}
+            ${isPaid
+              ? `<button type="button" class="btn btn-sm" onclick="openSingleReceiveBillingModal(${item.id}, '${item.origin}')" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 0.65rem; cursor: pointer;">NF/Boleto</button>
+                 <button type="button" class="btn btn-sm" onclick="${reopenClick}" style="background: #f8fafc; color: #64748b; border: 1px solid #cbd5e1; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 0.65rem; cursor: pointer;">Reabrir</button>`
+              : ''}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+window.renderClientBillingTable = renderClientBillingTable;
 
 function toggleSelectAllClientBilling(checked) {
   const checkboxes = document.querySelectorAll('.client-billing-item-checkbox');
@@ -3617,27 +4514,39 @@ window.updateSelectedClientBillingCount = updateSelectedClientBillingCount;
 
 async function batchSetClientPaymentStatus(targetStatus) {
   const selected = document.querySelectorAll('.client-billing-item-checkbox:checked');
-  const ids = Array.from(selected).map(cb => parseInt(cb.getAttribute('data-id'), 10));
-
-  if (ids.length === 0) {
-    showToast('Selecione pelo menos um pedido para dar baixa.', 'warning');
+  if (selected.length === 0) {
+    showToast('Selecione pelo menos um lançamento para dar baixa.', 'warning');
     return;
   }
 
-  try {
-    const res = await fetch('/api/billing/shipments/update-status', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ shipment_ids: ids, payment_status: targetStatus })
-    });
+  const flowIds = [];
+  const storeIds = [];
+  selected.forEach(cb => {
+    const id = parseInt(cb.getAttribute('data-id'), 10);
+    const orig = cb.getAttribute('data-origin') || 'flow';
+    if (orig === 'store') storeIds.push(id);
+    else flowIds.push(id);
+  });
 
-    const data = await res.json();
-    if (!res.ok) {
-      showToast('Erro: ' + (data.error || 'Falha ao processar'), 'error');
-      return;
+  try {
+    if (flowIds.length > 0) {
+      await fetch('/api/billing/shipments/update-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shipment_ids: flowIds, payment_status: targetStatus })
+      });
+    }
+    if (storeIds.length > 0) {
+      await Promise.all(storeIds.map(id =>
+        fetch(`/api/store/orders/${id}/payment-status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ payment_status: targetStatus })
+        })
+      ));
     }
 
-    showToast(`${data.message}`, 'success');
+    showToast('Status financeiro atualizado para os lançamentos selecionados!', 'success');
 
     if (activeManagingClientId) {
       await loadClientBilling(activeManagingClientId);
@@ -3807,5 +4716,2763 @@ function togglePasswordVisibility(inputId, btn) {
   }
 }
 window.togglePasswordVisibility = togglePasswordVisibility;
+
+/* ==========================================================================
+   CATEGORIAS MÃE DO MENU LATERAL (FLOW & LOJA VIRTUAL)
+   ========================================================================== */
+function toggleMenuCategory(groupId) {
+  const group = document.getElementById(groupId);
+  if (!group) return;
+  group.classList.toggle('collapsed');
+}
+window.toggleMenuCategory = toggleMenuCategory;
+
+/* ==========================================================================
+   MÓDULO LOJA VIRTUAL B2B (ADMIN & CLIENTE - SEM POPUPS / MODAIS)
+   ========================================================================== */
+
+let storeProductFormReturnTab = 'tab-admin-store-settings';
+let currentStoreProductGallery = [];
+let currentClientStoreConfig = null;
+let allStoreCatalogProducts = [];
+let selectedTierByProduct = {}; // { [productId]: 20 | 50 | 100 | 200 | 500 | 1000 }
+let storeCartState = { items: [], subtotal: 0, total_pieces: 0, payment_methods: ['30 DIAS BOLETO'] };
+let selectedStoreDeliveryType = 'flow'; // 'flow' ou 'normal'
+let selectedStorePaymentMethod = '30 DIAS BOLETO';
+let selectedStoreFreightQuote = null;
+let allAdminStoreOrders = [];
+let allStoreBillingOrders = [];
+let allAdminStoreProducts = [];
+
+function formatCurrencyBR(val) {
+  const num = parseFloat(val) || 0;
+  return `R$ ${num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+// --------------------------------------------------------------------------
+// 1. GESTÃO DA LOJA DO CLIENTE (DENTRO DE GERENCIAR CLIENTE - ADMIN)
+// --------------------------------------------------------------------------
+
+async function loadClientStoreAdmin(clientId) {
+  if (!clientId) return;
+  const badgeEl = document.getElementById('client-store-badge');
+  const btnToggle = document.getElementById('btn-toggle-client-store');
+  const titleEl = document.getElementById('client-store-status-title');
+  const tbody = document.getElementById('client-store-products-tbody');
+
+  if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 1.5rem;">Carregando catálogo da loja...</td></tr>';
+  }
+
+  try {
+    const [cfgRes, prodRes] = await Promise.all([
+      fetch(`/api/store/client-config/${clientId}`),
+      fetch(`/api/store/products?client_id=${clientId}`)
+    ]);
+
+    const cfg = await cfgRes.json();
+    const prods = await prodRes.json();
+    currentClientStoreConfig = cfg;
+
+    if (titleEl && cfg.client_name) {
+      titleEl.textContent = `Loja Corporativa — ${cfg.client_name}`;
+    }
+
+    if (badgeEl) {
+      if (cfg.is_enabled) {
+        badgeEl.className = 'badge badge-success';
+        badgeEl.textContent = 'Loja Ativa';
+      } else {
+        badgeEl.className = 'badge badge-secondary';
+        badgeEl.textContent = cfg.has_store ? 'Loja Inativa' : 'Não Ativada';
+      }
+    }
+
+    if (btnToggle) {
+      btnToggle.textContent = cfg.is_enabled ? 'Desativar Loja deste Cliente' : 'Criar / Ativar Loja para este Cliente';
+    }
+
+    renderClientPaymentMethodsTags();
+
+    if (tbody) {
+      if (!prods || prods.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; color: var(--text-muted); padding: 2rem;">Nenhum produto cadastrado na loja deste cliente. Clique em "Cadastrar Produto na Loja" acima para adicionar.</td></tr>';
+      } else {
+        tbody.innerHTML = prods.map(p => {
+          const img = (p.images && p.images[0]) || p.image_url || '/images/logow2.png';
+          return `
+            <tr>
+              <td>
+                <img src="${escapeHtml(img)}" alt="${escapeHtml(p.name)}" style="width: 42px; height: 42px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color);">
+              </td>
+              <td style="font-weight: 700; font-family: monospace;">${escapeHtml(p.code)}</td>
+              <td>
+                <div style="font-weight: 700; color: var(--text-primary);">${escapeHtml(p.name)}</div>
+                <div style="font-size: 0.78rem; color: var(--text-muted); max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(p.description || '')}</div>
+              </td>
+              <td><span class="badge badge-secondary" style="font-size: 0.76rem;">${p.production_days || 7} dias</span></td>
+              <td>${formatCurrencyBR(p.price_20)}</td>
+              <td>${formatCurrencyBR(p.price_50)}</td>
+              <td>${formatCurrencyBR(p.price_100)}</td>
+              <td>${formatCurrencyBR(p.price_200)}</td>
+              <td>${formatCurrencyBR(p.price_500)}</td>
+              <td>${formatCurrencyBR(p.price_1000)}</td>
+              <td>
+                <div style="display: flex; gap: 0.4rem;">
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="openEditStoreProduct(${p.id}, 'page-client-detail')">Editar</button>
+                  <button type="button" class="btn btn-secondary btn-sm" style="color: #ef4444; border-color: #fecaca;" onclick="deleteStoreProduct(${p.id}, ${clientId})">Excluir</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+  } catch (err) {
+    console.error('Erro ao carregar loja do cliente:', err);
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="11" style="color: #ef4444; text-align: center; padding: 1.5rem;">Erro ao carregar produtos da loja.</td></tr>';
+    }
+  }
+}
+window.loadClientStoreAdmin = loadClientStoreAdmin;
+
+async function toggleClientStoreStatus() {
+  if (!activeManagingClientId) return;
+  const nextState = !(currentClientStoreConfig && currentClientStoreConfig.is_enabled);
+
+  try {
+    const res = await fetch(`/api/store/client-config/${activeManagingClientId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        is_enabled: nextState ? 1 : 0,
+        store_title: currentClientStoreConfig ? currentClientStoreConfig.store_title : ''
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao atualizar status da loja.');
+
+    if (typeof showToast === 'function') showToast(data.message, 'success');
+    await loadClientStoreAdmin(activeManagingClientId);
+  } catch (err) {
+    alert(err.message);
+  }
+}
+window.toggleClientStoreStatus = toggleClientStoreStatus;
+
+function renderClientPaymentMethodsTags() {
+  const container = document.getElementById('client-store-payment-methods-tags');
+  if (!container) return;
+
+  const methods = (currentClientStoreConfig && Array.isArray(currentClientStoreConfig.payment_methods) && currentClientStoreConfig.payment_methods.length > 0)
+    ? currentClientStoreConfig.payment_methods
+    : ['30 DIAS BOLETO'];
+
+  container.innerHTML = methods.map((m, idx) => `
+    <span style="display: inline-flex; align-items: center; gap: 0.45rem; background: #f5f3ff; border: 1px solid #ddd6fe; color: #59338f; font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.7rem; border-radius: 6px;">
+      <span>${escapeHtml(m)}</span>
+      <button type="button" onclick="removeClientPaymentMethod(${idx})" title="Remover esta opção de pagamento" style="background: none; border: none; color: #59338f; cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 2px; opacity: 0.75;">&times;</button>
+    </span>
+  `).join('');
+}
+
+async function saveClientPaymentMethodsConfig(updatedMethods) {
+  if (!activeManagingClientId) return;
+  try {
+    const res = await fetch(`/api/store/client-config/${activeManagingClientId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        is_enabled: currentClientStoreConfig && currentClientStoreConfig.is_enabled ? 1 : 0,
+        store_title: currentClientStoreConfig ? currentClientStoreConfig.store_title : '',
+        payment_methods: updatedMethods
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao salvar meios de pagamento.');
+
+    if (currentClientStoreConfig) {
+      currentClientStoreConfig.payment_methods = data.payment_methods || updatedMethods;
+    }
+    renderClientPaymentMethodsTags();
+    if (typeof showToast === 'function') showToast('Meios de pagamento do cliente atualizados!', 'success');
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function addClientPaymentMethod(presetVal) {
+  if (!activeManagingClientId) return;
+  const input = document.getElementById('input-new-client-payment-method');
+  const rawVal = presetVal ? String(presetVal) : (input ? input.value : '');
+  const cleanVal = rawVal.trim().toUpperCase();
+  if (!cleanVal) return;
+
+  const currentList = (currentClientStoreConfig && Array.isArray(currentClientStoreConfig.payment_methods))
+    ? [...currentClientStoreConfig.payment_methods]
+    : ['30 DIAS BOLETO'];
+
+  if (!currentList.includes(cleanVal)) {
+    currentList.push(cleanVal);
+  }
+  if (!presetVal && input) {
+    input.value = '';
+  }
+
+  await saveClientPaymentMethodsConfig(currentList);
+}
+window.addClientPaymentMethod = addClientPaymentMethod;
+
+async function removeClientPaymentMethod(idx) {
+  if (!activeManagingClientId) return;
+  const currentList = (currentClientStoreConfig && Array.isArray(currentClientStoreConfig.payment_methods))
+    ? [...currentClientStoreConfig.payment_methods]
+    : ['30 DIAS BOLETO'];
+
+  if (currentList.length <= 1) {
+    alert('O cliente precisa ter pelo menos 1 condição de faturamento cadastrada.');
+    return;
+  }
+
+  currentList.splice(idx, 1);
+  await saveClientPaymentMethodsConfig(currentList);
+}
+window.removeClientPaymentMethod = removeClientPaymentMethod;
+
+// --------------------------------------------------------------------------
+// 2. FORMULÁRIO DEDICADO DE PRODUTO DA LOJA (SEM POPUP)
+// --------------------------------------------------------------------------
+
+async function populateStoreProductClientSelect(selectedClientId) {
+  const select = document.getElementById('store-prod-client-select');
+  if (!select) return;
+
+  try {
+    const res = await fetch('/api/clients');
+    const clients = await res.json();
+    const clientList = Array.isArray(clients) ? clients.filter(c => c.role === 'client') : [];
+
+    select.innerHTML = '<option value="">Selecione o cliente...</option>' +
+      clientList.map(c => `<option value="${c.id}">${escapeHtml(c.name)} (${escapeHtml(c.email)})</option>`).join('');
+
+    if (selectedClientId) {
+      select.value = String(selectedClientId);
+    }
+  } catch (e) {
+    console.error('Erro ao popular clientes da loja:', e);
+  }
+}
+
+function openNewStoreProductForClient() {
+  openStoreProductForm(null, activeManagingClientId, 'page-client-detail');
+}
+window.openNewStoreProductForClient = openNewStoreProductForClient;
+
+function openNewStoreProductGlobal(preselectedClientId) {
+  openStoreProductForm(null, preselectedClientId || null, 'tab-admin-store-settings');
+}
+window.openNewStoreProductGlobal = openNewStoreProductGlobal;
+
+async function openStoreProductForm(productData, targetClientId, returnTab) {
+  storeProductFormReturnTab = returnTab || 'tab-admin-store-settings';
+  const backLabel = document.getElementById('store-product-form-back-label');
+  if (backLabel) {
+    backLabel.textContent = storeProductFormReturnTab === 'page-client-detail'
+      ? 'Voltar para Gerenciar Cliente'
+      : 'Voltar para Loja & Configurações';
+  }
+
+  const form = document.getElementById('form-store-product');
+  if (form) form.reset();
+
+  await populateStoreProductClientSelect(targetClientId || (productData ? productData.client_id : null));
+
+  const titleEl = document.getElementById('store-product-form-title');
+  if (productData) {
+    if (titleEl) titleEl.textContent = `Editar Produto da Loja: ${productData.name}`;
+    document.getElementById('store-prod-id').value = productData.id;
+    document.getElementById('store-prod-client-select').value = String(productData.client_id || '');
+    document.getElementById('store-prod-code').value = productData.code || '';
+    document.getElementById('store-prod-name').value = productData.name || '';
+    if (document.getElementById('store-prod-production-days')) {
+      document.getElementById('store-prod-production-days').value = productData.production_days || 7;
+    }
+    document.getElementById('store-prod-description').value = productData.description || '';
+    document.getElementById('store-price-20').value = productData.price_20 || 0;
+    document.getElementById('store-price-50').value = productData.price_50 || 0;
+    document.getElementById('store-price-100').value = productData.price_100 || 0;
+    document.getElementById('store-price-200').value = productData.price_200 || 0;
+    document.getElementById('store-price-500').value = productData.price_500 || 0;
+    document.getElementById('store-price-1000').value = productData.price_1000 || 0;
+
+    document.getElementById('store-unit-weight').value = productData.unit_weight || 0.3;
+    document.getElementById('store-max-qty-box').value = productData.max_qty_per_box || 20;
+    document.getElementById('store-box-height').value = productData.box_height || 30;
+    document.getElementById('store-box-width').value = productData.box_width || 40;
+    document.getElementById('store-box-length').value = productData.box_length || 40;
+
+    currentStoreProductGallery = Array.isArray(productData.images) && productData.images.length > 0
+      ? [...productData.images]
+      : (productData.image_url ? [productData.image_url] : []);
+  } else {
+    if (titleEl) titleEl.textContent = 'Cadastrar Produto na Loja do Cliente';
+    document.getElementById('store-prod-id').value = '';
+    document.getElementById('store-prod-code').value = 'LJ-' + Math.floor(1000 + Math.random() * 9000);
+    if (document.getElementById('store-prod-production-days')) {
+      document.getElementById('store-prod-production-days').value = 7;
+    }
+    currentStoreProductGallery = [];
+  }
+
+  renderStoreProductGalleryPreview();
+  updateStoreTierPreview();
+  switchTab('page-store-product-form');
+}
+window.openStoreProductForm = openStoreProductForm;
+
+async function openEditStoreProduct(productId, returnTab) {
+  try {
+    const res = await fetch('/api/store/products');
+    const prods = await res.json();
+    const found = (prods || []).find(p => p.id === productId);
+    if (!found) {
+      alert('Produto não encontrado.');
+      return;
+    }
+    openStoreProductForm(found, found.client_id, returnTab || 'tab-admin-store-settings');
+  } catch (err) {
+    alert('Erro ao carregar dados do produto.');
+  }
+}
+window.openEditStoreProduct = openEditStoreProduct;
+
+function closeStoreProductForm() {
+  switchTab(storeProductFormReturnTab || 'tab-admin-store-settings');
+  if (storeProductFormReturnTab === 'page-client-detail' && activeManagingClientId) {
+    switchClientDetailTab('store');
+    loadClientStoreAdmin(activeManagingClientId);
+  }
+}
+window.closeStoreProductForm = closeStoreProductForm;
+
+function updateStoreTierPreview() {
+  const tiers = [20, 50, 100, 200, 500, 1000];
+  tiers.forEach(t => {
+    const input = document.getElementById(`store-price-${t}`);
+    const preview = document.getElementById(`store-total-preview-${t}`);
+    if (input && preview) {
+      const unitVal = parseFloat(input.value) || 0;
+      const totalVal = unitVal * t;
+      preview.textContent = `Lote: ${formatCurrencyBR(totalVal)}`;
+    }
+  });
+}
+window.updateStoreTierPreview = updateStoreTierPreview;
+
+function renderStoreProductGalleryPreview() {
+  const container = document.getElementById('store-prod-gallery-preview');
+  if (!container) return;
+
+  if (!currentStoreProductGallery || currentStoreProductGallery.length === 0) {
+    container.innerHTML = '<span style="font-size: 0.82rem; color: var(--text-muted);">Nenhuma foto adicionada ainda.</span>';
+    return;
+  }
+
+  container.innerHTML = currentStoreProductGallery.map((url, idx) => `
+    <div style="position: relative; width: 76px; height: 76px; border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden; background: #fff;">
+      <img src="${escapeHtml(url)}" alt="Foto ${idx + 1}" style="width: 100%; height: 100%; object-fit: cover;">
+      <button type="button" onclick="removeStoreProductGalleryImage(${idx})" title="Remover foto" style="position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%; background: rgba(15,23,42,0.75); color: #fff; border: none; font-size: 12px; line-height: 1; cursor: pointer;">&times;</button>
+    </div>
+  `).join('');
+}
+
+function removeStoreProductGalleryImage(idx) {
+  currentStoreProductGallery.splice(idx, 1);
+  renderStoreProductGalleryPreview();
+}
+window.removeStoreProductGalleryImage = removeStoreProductGalleryImage;
+
+function addStoreImageUrlManual() {
+  const input = document.getElementById('store-prod-image-url');
+  if (!input || !input.value.trim()) return;
+  currentStoreProductGallery.push(input.value.trim());
+  input.value = '';
+  renderStoreProductGalleryPreview();
+}
+window.addStoreImageUrlManual = addStoreImageUrlManual;
+
+async function uploadStoreProductImages(fileInput) {
+  if (!fileInput.files || fileInput.files.length === 0) return;
+  const formData = new FormData();
+  Array.from(fileInput.files).forEach(f => formData.append('images', f));
+
+  try {
+    const res = await fetch('/api/store/upload', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro no upload das fotos.');
+
+    if (Array.isArray(data.urls)) {
+      currentStoreProductGallery.push(...data.urls);
+    } else if (data.imageUrl) {
+      currentStoreProductGallery.push(data.imageUrl);
+    }
+    fileInput.value = '';
+    renderStoreProductGalleryPreview();
+    if (typeof showToast === 'function') showToast('Fotos enviadas com sucesso!', 'success');
+  } catch (err) {
+    alert(err.message);
+  }
+}
+window.uploadStoreProductImages = uploadStoreProductImages;
+
+async function submitStoreProductForm(event) {
+  event.preventDefault();
+
+  const prodId = document.getElementById('store-prod-id').value;
+  const clientId = document.getElementById('store-prod-client-select').value;
+  const code = document.getElementById('store-prod-code').value.trim();
+  const name = document.getElementById('store-prod-name').value.trim();
+  const description = document.getElementById('store-prod-description').value.trim();
+
+  const manualUrlInput = document.getElementById('store-prod-image-url');
+  if (manualUrlInput && manualUrlInput.value.trim()) {
+    currentStoreProductGallery.push(manualUrlInput.value.trim());
+    manualUrlInput.value = '';
+  }
+
+  const payload = {
+    client_id: parseInt(clientId, 10),
+    code,
+    name,
+    description,
+    image_url: currentStoreProductGallery[0] || '',
+    images: currentStoreProductGallery,
+    price_20: parseFloat(document.getElementById('store-price-20').value) || 0,
+    price_50: parseFloat(document.getElementById('store-price-50').value) || 0,
+    price_100: parseFloat(document.getElementById('store-price-100').value) || 0,
+    price_200: parseFloat(document.getElementById('store-price-200').value) || 0,
+    price_500: parseFloat(document.getElementById('store-price-500').value) || 0,
+    price_1000: parseFloat(document.getElementById('store-price-1000').value) || 0,
+    unit_weight: parseFloat(document.getElementById('store-unit-weight').value) || 0.3,
+    max_qty_per_box: parseInt(document.getElementById('store-max-qty-box').value, 10) || 20,
+    box_height: parseFloat(document.getElementById('store-box-height').value) || 30,
+    box_width: parseFloat(document.getElementById('store-box-width').value) || 40,
+    box_length: parseFloat(document.getElementById('store-box-length').value) || 40,
+    production_days: parseInt(document.getElementById('store-prod-production-days')?.value, 10) || 7
+  };
+
+  try {
+    const url = prodId ? `/api/store/products/${prodId}` : '/api/store/products';
+    const method = prodId ? 'PUT' : 'POST';
+
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao salvar produto da loja.');
+
+    if (typeof showToast === 'function') showToast(data.message, 'success');
+    closeStoreProductForm();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+window.submitStoreProductForm = submitStoreProductForm;
+
+async function deleteStoreProduct(prodId, clientId) {
+  if (!confirm('Deseja realmente remover este produto da loja?')) return;
+  try {
+    const res = await fetch(`/api/store/products/${prodId}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao remover produto.');
+
+    if (typeof showToast === 'function') showToast(data.message, 'success');
+    if (clientId && activeManagingClientId === clientId) {
+      loadClientStoreAdmin(clientId);
+    }
+    loadAdminAllStoreProducts();
+    loadAdminStoreOverview();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+window.deleteStoreProduct = deleteStoreProduct;
+
+// --------------------------------------------------------------------------
+// 3. VITRINE DA LOJA VIRTUAL & PÁGINA DE DETALHES (VISÃO CLIENTE)
+// --------------------------------------------------------------------------
+
+async function loadStoreCatalog() {
+  const grid = document.getElementById('store-catalog-grid');
+  if (!grid) return;
+
+  grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: var(--text-muted);">Carregando produtos da sua loja...</div>';
+
+  try {
+    const res = await fetch('/api/store/products');
+    const prods = await res.json();
+    allStoreCatalogProducts = Array.isArray(prods) ? prods : [];
+
+    allStoreCatalogProducts.forEach(p => {
+      if (!selectedTierByProduct[p.id]) {
+        selectedTierByProduct[p.id] = 20;
+      }
+    });
+
+    renderStoreCatalogGrid(allStoreCatalogProducts);
+  } catch (err) {
+    grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #ef4444;">Erro ao carregar vitrine da loja.</div>';
+  }
+}
+window.loadStoreCatalog = loadStoreCatalog;
+
+function filterStoreCatalog() {
+  const q = (document.getElementById('search-store-catalog')?.value || '').toLowerCase().trim();
+  if (!q) {
+    renderStoreCatalogGrid(allStoreCatalogProducts);
+    return;
+  }
+  const filtered = allStoreCatalogProducts.filter(p =>
+    (p.name && p.name.toLowerCase().includes(q)) ||
+    (p.code && p.code.toLowerCase().includes(q)) ||
+    (p.description && p.description.toLowerCase().includes(q))
+  );
+  renderStoreCatalogGrid(filtered);
+}
+window.filterStoreCatalog = filterStoreCatalog;
+
+function getStoreTierPriceJS(product, qtyInput) {
+  const qty = parseInt(qtyInput, 10) || 1;
+  const p20 = parseFloat(product.price_20) || 0;
+  const p50 = parseFloat(product.price_50) || p20;
+  const p100 = parseFloat(product.price_100) || p50;
+  const p200 = parseFloat(product.price_200) || p100;
+  const p500 = parseFloat(product.price_500) || p200;
+  const p1000 = parseFloat(product.price_1000) || p500;
+
+  if (qty >= 1000) return p1000;
+  if (qty >= 500) return p500;
+  if (qty >= 200) return p200;
+  if (qty >= 100) return p100;
+  if (qty >= 50) return p50;
+  return p20;
+}
+
+function renderStoreCatalogGrid(products) {
+  const grid = document.getElementById('store-catalog-grid');
+  if (!grid) return;
+
+  if (!products || products.length === 0) {
+    grid.innerHTML = `
+      <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+        <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem;">Nenhum produto disponível na sua Loja Virtual no momento</h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem;">Assim que os layouts dos seus novos produtos forem aprovados, eles aparecerão aqui prontos para pedido.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const tiers = [20, 50, 100, 200, 500, 1000];
+
+  grid.innerHTML = products.map(p => {
+    const activeTier = selectedTierByProduct[p.id] || 20;
+    const unitPrice = getStoreTierPriceJS(p, activeTier);
+    const totalLot = unitPrice * activeTier;
+    const mainImg = (p.images && p.images[0]) || p.image_url || '/images/logow2.png';
+
+    const pillsHtml = tiers.map(t => {
+      const tPrice = getStoreTierPriceJS(p, t);
+      const isSelected = t === activeTier;
+      return `
+        <button type="button" class="store-tier-pill ${isSelected ? 'active' : ''}" onclick="selectCatalogProductTier(${p.id}, ${t})">
+          <span>${t} pçs</span>
+          <small>${formatCurrencyBR(tPrice)}/un</small>
+        </button>
+      `;
+    }).join('');
+
+    return `
+      <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; padding: 1.25rem; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+        <div>
+          <div onclick="openStoreProductDetailPage(${p.id})" style="cursor: pointer; height: 190px; background: #f8fafc; border-radius: 8px; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 1rem;">
+            <img src="${escapeHtml(mainImg)}" alt="${escapeHtml(p.name)}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+            <span style="font-size: 0.75rem; font-family: monospace; color: var(--text-muted); font-weight: 700;">${escapeHtml(p.code)}</span>
+            <button type="button" onclick="openStoreProductDetailPage(${p.id})" style="background: none; border: none; color: var(--primary); font-size: 0.78rem; font-weight: 700; cursor: pointer; text-decoration: underline;">Ver detalhes e fotos</button>
+          </div>
+
+          <h3 onclick="openStoreProductDetailPage(${p.id})" style="font-size: 1.05rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.35rem; cursor: pointer;">${escapeHtml(p.name)}</h3>
+          <div style="margin-bottom: 0.45rem;">
+            <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.74rem; font-weight: 700; color: #59338f; background: #f5f3ff; border: 1px solid #ddd6fe; padding: 2px 8px; border-radius: 6px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>Prazo de produção: ${p.production_days || 7} dias</span>
+            </span>
+          </div>
+          <p style="font-size: 0.83rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.75rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+            ${escapeHtml(p.description || 'Produto personalizado com layout aprovado.')}
+          </p>
+
+          <div style="font-size: 0.76rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Selecione a Quantidade:</div>
+          <div class="store-tier-pills">
+            ${pillsHtml}
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid var(--border-color); padding-top: 0.85rem; margin-top: 0.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.75rem;">
+            <div>
+              <span style="font-size: 0.78rem; color: var(--text-muted); display: block;">Valor Unitário (${activeTier} pçs)</span>
+              <strong style="font-size: 1rem; color: var(--text-primary);">${formatCurrencyBR(unitPrice)}</strong>
+            </div>
+            <div style="text-align: right;">
+              <span style="font-size: 0.78rem; color: var(--text-muted); display: block;">Total do Lote</span>
+              <strong style="font-size: 1.15rem; color: var(--primary); font-weight: 800;">${formatCurrencyBR(totalLot)}</strong>
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-primary" onclick="addStoreProductToCart(${p.id})" style="width: 100%; font-weight: 700; padding: 0.65rem;">
+            Adicionar ao Carrinho (${activeTier} pçs)
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function selectCatalogProductTier(productId, tier) {
+  selectedTierByProduct[productId] = tier;
+  filterStoreCatalog();
+}
+window.selectCatalogProductTier = selectCatalogProductTier;
+
+function openStoreProductDetailPage(productId) {
+  const product = allStoreCatalogProducts.find(p => p.id === productId);
+  if (!product) return;
+
+  const activeTier = selectedTierByProduct[product.id] || 20;
+  const unitPrice = getStoreTierPriceJS(product, activeTier);
+  const totalLot = unitPrice * activeTier;
+  const images = (product.images && product.images.length > 0) ? product.images : (product.image_url ? [product.image_url] : ['/images/logow2.png']);
+  const tiers = [20, 50, 100, 200, 500, 1000];
+
+  const container = document.getElementById('store-product-detail-container');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div style="display: grid; grid-template-columns: minmax(280px, 420px) 1fr; gap: 2rem; align-items: start;">
+      <div>
+        <div style="height: 340px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 0.85rem;">
+          <img id="store-detail-main-img" src="${escapeHtml(images[0])}" alt="${escapeHtml(product.name)}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+        </div>
+        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+          ${images.map((imgUrl) => `
+            <div onclick="document.getElementById('store-detail-main-img').src='${escapeHtml(imgUrl)}'" style="width: 64px; height: 64px; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; cursor: pointer; background: #fff;">
+              <img src="${escapeHtml(imgUrl)}" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div>
+        <span style="font-family: monospace; font-size: 0.82rem; color: var(--text-muted); font-weight: 700;">CÓDIGO: ${escapeHtml(product.code)}</span>
+        <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); margin: 0.25rem 0 0.65rem 0;">${escapeHtml(product.name)}</h2>
+
+        <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: #f5f3ff; border: 1px solid #ddd6fe; color: #59338f; padding: 0.45rem 0.85rem; border-radius: 8px; font-size: 0.84rem; font-weight: 700; margin-bottom: 1.15rem;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>Prazo de Produção: <strong>${product.production_days || 7} dias</strong> (Pronto em aprox. ${new Date(Date.now() + (product.production_days || 7) * 86400000).toLocaleDateString('pt-BR')})</span>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+          <h4 style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem;">Descrição e Especificações do Produto</h4>
+          <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.65; white-space: pre-line; margin: 0;">${escapeHtml(product.description || 'Sem descrição adicional.')}</p>
+        </div>
+
+        <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Tabela de Preços por Tiragem (Escolha a quantidade):</h4>
+        <div class="store-tier-pills" style="grid-template-columns: repeat(6, 1fr); margin-bottom: 1.5rem;">
+          ${tiers.map(t => {
+            const tPrice = getStoreTierPriceJS(product, t);
+            const isSel = t === activeTier;
+            return `
+              <button type="button" class="store-tier-pill ${isSel ? 'active' : ''}" onclick="selectedTierByProduct[${product.id}]=${t}; openStoreProductDetailPage(${product.id});">
+                <span>${t} pçs</span>
+                <small>${formatCurrencyBR(tPrice)}/un</small>
+              </button>
+            `;
+          }).join('')}
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; background: var(--primary-light); border: 1px solid var(--primary); border-radius: 10px; padding: 1.25rem; margin-bottom: 1.25rem;">
+          <div>
+            <span style="font-size: 0.82rem; color: var(--text-secondary); display: block;">Tiragem Selecionada: <strong>${activeTier} peças</strong></span>
+            <span style="font-size: 0.9rem; color: var(--text-primary);">Valor Unitário: <strong>${formatCurrencyBR(unitPrice)}</strong></span>
+          </div>
+          <div style="text-align: right;">
+            <span style="font-size: 0.8rem; color: var(--text-secondary); display: block;">Total para ${activeTier} pçs</span>
+            <strong style="font-size: 1.4rem; color: var(--primary); font-weight: 800;">${formatCurrencyBR(totalLot)}</strong>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem;">
+          <button type="button" class="btn btn-primary" onclick="addStoreProductToCart(${product.id}, true)" style="flex: 1; padding: 0.85rem; font-size: 0.95rem; font-weight: 800;">
+            Adicionar ${activeTier} pçs ao Carrinho da Loja
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  switchTab('page-store-product-detail');
+}
+window.openStoreProductDetailPage = openStoreProductDetailPage;
+
+// --------------------------------------------------------------------------
+// 4. CARRINHO DA LOJA & CHECKOUT (ENVIO FLOW vs ENVIO NORMAL)
+// --------------------------------------------------------------------------
+
+async function addStoreProductToCart(productId, goToCart = false) {
+  const tier = selectedTierByProduct[productId] || 20;
+  try {
+    const res = await fetch('/api/store/cart', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ store_product_id: productId, tier_qty: tier })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao adicionar ao carrinho.');
+
+    if (typeof showToast === 'function') showToast(data.message, 'success');
+    await loadStoreCart();
+    if (goToCart) {
+      switchTab('tab-store-cart');
+    }
+  } catch (err) {
+    alert(err.message);
+  }
+}
+window.addStoreProductToCart = addStoreProductToCart;
+
+async function loadStoreCart() {
+  try {
+    const res = await fetch('/api/store/cart');
+    const data = await res.json();
+    const methods = (data && Array.isArray(data.payment_methods) && data.payment_methods.length > 0)
+      ? data.payment_methods
+      : ['30 DIAS BOLETO'];
+    storeCartState = data && Array.isArray(data.items)
+      ? { ...data, payment_methods: methods }
+      : { items: [], subtotal: 0, total_pieces: 0, payment_methods: methods };
+
+    if (!selectedStorePaymentMethod || !methods.includes(selectedStorePaymentMethod)) {
+      selectedStorePaymentMethod = methods[0];
+    }
+
+    const count = storeCartState.items.length;
+    const sidebarBadge = document.getElementById('sidebar-store-cart-badge');
+    const catalogBadge = document.getElementById('store-catalog-cart-badge');
+
+    if (sidebarBadge) {
+      sidebarBadge.textContent = count;
+      sidebarBadge.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+    if (catalogBadge) {
+      catalogBadge.textContent = count;
+    }
+
+    renderStoreCartTable();
+    renderStoreCartPaymentMethods();
+    if (typeof loadNetworkBillingOptions === 'function') {
+      await loadNetworkBillingOptions('store-checkout-billing-select');
+    }
+    updateStoreCheckoutTotals();
+  } catch (err) {
+    console.error('Erro ao carregar carrinho da loja:', err);
+  }
+}
+window.loadStoreCart = loadStoreCart;
+
+function renderStoreCartPaymentMethods() {
+  const listEl = document.getElementById('store-cart-payment-methods-list');
+  if (!listEl) return;
+
+  const methods = (storeCartState && Array.isArray(storeCartState.payment_methods) && storeCartState.payment_methods.length > 0)
+    ? storeCartState.payment_methods
+    : ['30 DIAS BOLETO'];
+
+  if (!selectedStorePaymentMethod || !methods.includes(selectedStorePaymentMethod)) {
+    selectedStorePaymentMethod = methods[0];
+  }
+
+  listEl.innerHTML = methods.map((m, idx) => {
+    const isSel = selectedStorePaymentMethod === m;
+    return `
+      <div onclick="selectStorePaymentMethodByIndex(${idx})" style="border: 2px solid ${isSel ? 'var(--primary)' : 'var(--border-color)'}; background: ${isSel ? 'var(--primary-light)' : '#ffffff'}; border-radius: 10px; padding: 0.95rem 1.15rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; transition: all 0.15s ease;">
+        <div style="display: flex; align-items: center; gap: 0.65rem;">
+          <div style="width: 18px; height: 18px; border-radius: 50%; border: 2px solid ${isSel ? 'var(--primary)' : '#94a3b8'}; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            ${isSel ? '<div style="width: 9px; height: 9px; border-radius: 50%; background: var(--primary);"></div>' : ''}
+          </div>
+          <div>
+            <div style="font-weight: 800; font-size: 0.92rem; color: var(--text-primary);">${escapeHtml(m)}</div>
+            <div style="font-size: 0.76rem; color: var(--text-muted);">Condição liberada para sua empresa</div>
+          </div>
+        </div>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${isSel ? 'var(--primary)' : '#94a3b8'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      </div>
+    `;
+  }).join('');
+}
+
+function selectStorePaymentMethodByIndex(idx) {
+  const methods = (storeCartState && Array.isArray(storeCartState.payment_methods) && storeCartState.payment_methods.length > 0)
+    ? storeCartState.payment_methods
+    : ['30 DIAS BOLETO'];
+  if (!methods[idx]) return;
+  selectedStorePaymentMethod = methods[idx];
+  renderStoreCartPaymentMethods();
+  updateStoreCheckoutTotals();
+}
+window.selectStorePaymentMethodByIndex = selectStorePaymentMethodByIndex;
+
+function renderStoreCartTable() {
+  const tbody = document.getElementById('store-cart-tbody');
+  if (!tbody) return;
+
+  if (!storeCartState.items || storeCartState.items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">Seu carrinho da loja está vazio. Acesse a Vitrine da Loja para escolher seus produtos.</td></tr>';
+    return;
+  }
+
+  const tiers = [20, 50, 100, 200, 500, 1000];
+
+  tbody.innerHTML = storeCartState.items.map(item => {
+    const img = item.image_url || '/images/logow2.png';
+    const isStandardTier = tiers.includes(item.tier_qty);
+    return `
+      <tr>
+        <td>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <img src="${escapeHtml(img)}" style="width: 46px; height: 46px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color);">
+            <div>
+              <div style="font-weight: 700; color: var(--text-primary);">${escapeHtml(item.name)}</div>
+              <div style="font-size: 0.76rem; color: var(--text-muted); font-family: monospace;">${escapeHtml(item.code)} • <span style="color: var(--primary); font-family: inherit; font-weight: 700;">Prazo: ${item.production_days || 7} dias</span></div>
+            </div>
+          </div>
+        </td>
+        <td>
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <select onchange="changeStoreCartItemTier(${item.cart_item_id}, this.value)" title="Selecionar tiragem padrão" style="padding: 0.45rem 0.65rem; border: 1px solid var(--border-color); border-radius: 6px; font-weight: 700; background: #fff;">
+              ${!isStandardTier ? `<option value="${item.tier_qty}" selected>Personalizado (${item.tier_qty} pçs)</option>` : ''}
+              ${tiers.map(t => `<option value="${t}" ${t === item.tier_qty ? 'selected' : ''}>Lote ${t} pçs</option>`).join('')}
+            </select>
+            <div style="display: flex; align-items: center; gap: 0.35rem;">
+              <input type="number" id="cart-custom-qty-${item.cart_item_id}" min="1" value="${item.tier_qty}" 
+                     placeholder="Ex: 22" 
+                     title="Digite a quantidade exata desejada (ex: 22 peças)"
+                     onkeydown="if(event.key==='Enter'){ event.preventDefault(); changeStoreCartItemTier(${item.cart_item_id}, this.value); }"
+                     style="width: 82px; padding: 0.45rem 0.55rem; border: 1px solid var(--border-color); border-radius: 6px; font-weight: 700; text-align: center;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="changeStoreCartItemTier(${item.cart_item_id}, document.getElementById('cart-custom-qty-${item.cart_item_id}').value)" style="padding: 0.45rem 0.65rem; font-size: 0.76rem; font-weight: 700;">
+                Aplicar Qtd
+              </button>
+            </div>
+          </div>
+          <small style="display: block; color: var(--text-muted); font-size: 0.73rem; margin-top: 0.25rem;">Escolha o lote ou digite a quantidade exata (ex: 22 pçs)</small>
+        </td>
+        <td style="font-weight: 600;">${formatCurrencyBR(item.unit_price)} / un</td>
+        <td style="font-weight: 800; color: var(--primary);">${formatCurrencyBR(item.total_price)}</td>
+        <td>
+          <button type="button" class="btn btn-secondary btn-sm" style="color: #ef4444; border-color: #fecaca;" onclick="removeStoreCartItem(${item.cart_item_id})">Remover</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function changeStoreCartItemTier(cartItemId, newTier) {
+  const parsed = parseInt(newTier, 10);
+  if (isNaN(parsed) || parsed < 1) {
+    alert('Informe uma quantidade válida (mínimo 1 peça).');
+    return;
+  }
+  try {
+    const res = await fetch(`/api/store/cart/${cartItemId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tier_qty: parsed })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || 'Erro ao atualizar quantidade.');
+      return;
+    }
+    selectedStoreFreightQuote = null;
+    await loadStoreCart();
+    if (typeof showToast === 'function') showToast(`Quantidade atualizada para ${parsed} peças.`, 'success');
+    if (selectedStoreDeliveryType === 'normal' && document.getElementById('store-dest-cep')?.value) {
+      quoteStoreCartFreight();
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+window.changeStoreCartItemTier = changeStoreCartItemTier;
+
+async function removeStoreCartItem(cartItemId) {
+  try {
+    await fetch(`/api/store/cart/${cartItemId}`, { method: 'DELETE' });
+    selectedStoreFreightQuote = null;
+    await loadStoreCart();
+  } catch (err) {
+    console.error(err);
+  }
+}
+window.removeStoreCartItem = removeStoreCartItem;
+
+async function clearStoreCart() {
+  if (!storeCartState.items || storeCartState.items.length === 0) return;
+  if (!confirm('Deseja limpar todos os produtos do carrinho da loja?')) return;
+  try {
+    await fetch('/api/store/cart', { method: 'DELETE' });
+    selectedStoreFreightQuote = null;
+    await loadStoreCart();
+  } catch (err) {
+    console.error(err);
+  }
+}
+window.clearStoreCart = clearStoreCart;
+
+function selectStoreDeliveryType(type) {
+  selectedStoreDeliveryType = type === 'normal' ? 'normal' : 'flow';
+
+  const cardFlow = document.getElementById('card-delivery-flow');
+  const cardNormal = document.getElementById('card-delivery-normal');
+  const normalSection = document.getElementById('store-normal-shipping-section');
+
+  if (selectedStoreDeliveryType === 'flow') {
+    if (cardFlow) {
+      cardFlow.style.borderColor = 'var(--primary)';
+      cardFlow.style.background = 'var(--primary-light)';
+    }
+    if (cardNormal) {
+      cardNormal.style.borderColor = 'var(--border-color)';
+      cardNormal.style.background = '#ffffff';
+    }
+    if (normalSection) normalSection.classList.add('hidden');
+  } else {
+    if (cardNormal) {
+      cardNormal.style.borderColor = 'var(--primary)';
+      cardNormal.style.background = 'var(--primary-light)';
+    }
+    if (cardFlow) {
+      cardFlow.style.borderColor = 'var(--border-color)';
+      cardFlow.style.background = '#ffffff';
+    }
+    if (normalSection) normalSection.classList.remove('hidden');
+  }
+
+  updateStoreCheckoutTotals();
+}
+window.selectStoreDeliveryType = selectStoreDeliveryType;
+
+function updateStoreCheckoutTotals() {
+  const subtotal = parseFloat(storeCartState.subtotal) || 0;
+  const freight = (selectedStoreDeliveryType === 'normal' && selectedStoreFreightQuote)
+    ? (parseFloat(selectedStoreFreightQuote.final_price) || 0)
+    : 0;
+  const total = subtotal + freight;
+
+  const subEl = document.getElementById('store-checkout-subtotal');
+  const prodInfoEl = document.getElementById('store-checkout-production-info');
+  const delivEl = document.getElementById('store-checkout-delivery-label');
+  const payEl = document.getElementById('store-checkout-payment-label');
+  const freightEl = document.getElementById('store-checkout-freight');
+  const totalEl = document.getElementById('store-checkout-total');
+
+  if (subEl) subEl.textContent = formatCurrencyBR(subtotal);
+  if (prodInfoEl) {
+    if (!storeCartState.items || storeCartState.items.length === 0) {
+      prodInfoEl.textContent = '-';
+    } else {
+      const maxDays = storeCartState.items.reduce((m, it) => Math.max(m, parseInt(it.production_days, 10) || 7), 1);
+      const readyDateStr = new Date(Date.now() + maxDays * 86400000).toLocaleDateString('pt-BR');
+      prodInfoEl.textContent = `${maxDays} dias (Pronto em ${readyDateStr})`;
+    }
+  }
+  if (delivEl) {
+    delivEl.textContent = selectedStoreDeliveryType === 'flow'
+      ? 'Envio Flow'
+      : (selectedStoreFreightQuote ? `${selectedStoreFreightQuote.carrier} (${selectedStoreFreightQuote.service})` : 'Envio Direto (Selecione o frete)');
+  }
+  if (payEl) {
+    payEl.textContent = selectedStorePaymentMethod || '30 DIAS BOLETO';
+  }
+  const billTargetEl = document.getElementById('store-checkout-billing-target-label');
+  if (billTargetEl) {
+    const sel = document.getElementById('store-checkout-billing-select');
+    const opt = sel && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex] : null;
+    if (opt) {
+      const bName = opt.getAttribute('data-name') || '';
+      const bCnpj = opt.getAttribute('data-cnpj') || '';
+      billTargetEl.textContent = bCnpj ? `${bName} (${bCnpj})` : bName;
+    } else {
+      billTargetEl.textContent = '-';
+    }
+  }
+  if (freightEl) freightEl.textContent = formatCurrencyBR(freight);
+  if (totalEl) totalEl.textContent = formatCurrencyBR(total);
+}
+
+async function lookupStoreCep(cepVal) {
+  const clean = (cepVal || '').replace(/\D/g, '');
+  if (clean.length !== 8) return;
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
+    const data = await res.json();
+    if (!data.erro) {
+      if (data.logradouro) document.getElementById('store-dest-address').value = data.logradouro;
+      if (data.bairro) document.getElementById('store-dest-neighborhood').value = data.bairro;
+      if (data.localidade) document.getElementById('store-dest-city').value = data.localidade;
+      if (data.uf) document.getElementById('store-dest-state').value = data.uf;
+      quoteStoreCartFreight();
+    }
+  } catch (e) {
+    console.error('Erro ViaCEP loja:', e);
+  }
+}
+window.lookupStoreCep = lookupStoreCep;
+
+async function fillStoreAddressFromSaved() {
+  try {
+    const res = await fetch('/api/addresses');
+    const addrs = await res.json();
+    if (!addrs || addrs.length === 0) {
+      alert('Você ainda não possui endereços cadastrados na aba Meus Endereços.');
+      return;
+    }
+    const addr = addrs.find(a => a.is_default) || addrs[0];
+    document.getElementById('store-dest-recipient').value = addr.recipient_name || addr.title || '';
+    document.getElementById('store-dest-cep').value = addr.cep || '';
+    document.getElementById('store-dest-address').value = addr.address || '';
+    document.getElementById('store-dest-number').value = addr.number || '';
+    document.getElementById('store-dest-complement').value = addr.complement || '';
+    document.getElementById('store-dest-neighborhood').value = addr.neighborhood || '';
+    document.getElementById('store-dest-city').value = addr.city || '';
+    document.getElementById('store-dest-state').value = addr.state || '';
+    quoteStoreCartFreight();
+  } catch (err) {
+    console.error(err);
+  }
+}
+window.fillStoreAddressFromSaved = fillStoreAddressFromSaved;
+
+async function quoteStoreCartFreight() {
+  const cep = document.getElementById('store-dest-cep')?.value.trim();
+  const listEl = document.getElementById('store-freight-quotes-list');
+  if (!listEl) return;
+
+  if (!cep) {
+    alert('Informe o CEP de destino para calcular o frete.');
+    return;
+  }
+
+  listEl.innerHTML = '<div style="padding: 1rem; color: var(--text-muted);">Calculando cubagem dos lotes e cotando transportadoras...</div>';
+
+  try {
+    const res = await fetch('/api/store/quote-freight', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dest_cep: cep })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao cotar frete.');
+
+    const quotes = data.quotes || [];
+    if (quotes.length === 0) {
+      listEl.innerHTML = '<div style="padding: 1rem; color: #ef4444;">Nenhuma transportadora disponível para este CEP.</div>';
+      return;
+    }
+
+    selectedStoreFreightQuote = quotes[0];
+    renderStoreFreightQuotes(quotes);
+    updateStoreCheckoutTotals();
+  } catch (err) {
+    listEl.innerHTML = `<div style="padding: 1rem; color: #ef4444;">${escapeHtml(err.message)}</div>`;
+  }
+}
+window.quoteStoreCartFreight = quoteStoreCartFreight;
+
+function renderStoreFreightQuotes(quotes) {
+  const listEl = document.getElementById('store-freight-quotes-list');
+  if (!listEl) return;
+
+  listEl.innerHTML = quotes.map((q, idx) => {
+    const isSel = selectedStoreFreightQuote && selectedStoreFreightQuote.carrier === q.carrier && selectedStoreFreightQuote.service === q.service;
+    return `
+      <div onclick="selectStoreFreightOption(${idx})" style="border: 2px solid ${isSel ? 'var(--primary)' : 'var(--border-color)'}; background: ${isSel ? 'var(--primary-light)' : '#ffffff'}; border-radius: 8px; padding: 0.9rem 1rem; cursor: pointer; transition: all 0.15s ease;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+          <strong style="color: var(--text-primary); font-size: 0.9rem;">${escapeHtml(q.carrier)} — ${escapeHtml(q.service)}</strong>
+          <strong style="color: var(--primary); font-size: 1rem;">${formatCurrencyBR(q.final_price)}</strong>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Prazo estimado após produção: ${q.delivery_days} dias úteis</div>
+      </div>
+    `;
+  }).join('');
+
+  window._lastStoreQuotes = quotes;
+}
+
+function selectStoreFreightOption(idx) {
+  if (!window._lastStoreQuotes || !window._lastStoreQuotes[idx]) return;
+  selectedStoreFreightQuote = window._lastStoreQuotes[idx];
+  renderStoreFreightQuotes(window._lastStoreQuotes);
+  updateStoreCheckoutTotals();
+}
+window.selectStoreFreightOption = selectStoreFreightOption;
+
+async function submitStoreCheckout() {
+  if (!storeCartState.items || storeCartState.items.length === 0) {
+    alert('Adicione pelo menos um produto ao carrinho da loja antes de finalizar.');
+    return;
+  }
+
+  const billingSel = document.getElementById('store-checkout-billing-select');
+  const selectedBillOpt = billingSel && billingSel.selectedIndex >= 0 ? billingSel.options[billingSel.selectedIndex] : null;
+
+  const payload = {
+    delivery_type: selectedStoreDeliveryType,
+    payment_method: selectedStorePaymentMethod || '30 DIAS BOLETO',
+    billing_client_id: selectedBillOpt ? parseInt(selectedBillOpt.value, 10) : null,
+    billing_cnpj: selectedBillOpt ? (selectedBillOpt.getAttribute('data-cnpj') || '') : '',
+    billing_name: selectedBillOpt ? (selectedBillOpt.getAttribute('data-name') || '') : '',
+    notes: document.getElementById('store-order-notes')?.value.trim() || ''
+  };
+
+  if (selectedStoreDeliveryType === 'normal') {
+    const recipient = document.getElementById('store-dest-recipient')?.value.trim();
+    const cep = document.getElementById('store-dest-cep')?.value.trim();
+    const address = document.getElementById('store-dest-address')?.value.trim();
+    const number = document.getElementById('store-dest-number')?.value.trim();
+    const complement = document.getElementById('store-dest-complement')?.value.trim();
+    const neighborhood = document.getElementById('store-dest-neighborhood')?.value.trim();
+    const city = document.getElementById('store-dest-city')?.value.trim();
+    const state = document.getElementById('store-dest-state')?.value.trim();
+
+    if (!recipient || !cep || !address || !number || !city) {
+      alert('Preencha todos os campos obrigatórios do endereço de entrega.');
+      return;
+    }
+    if (!selectedStoreFreightQuote) {
+      alert('Realize a cotação e selecione uma opção de frete para o Envio Normal.');
+      return;
+    }
+
+    payload.recipient_name = recipient;
+    payload.dest_cep = cep;
+    payload.dest_address = address;
+    payload.dest_number = number;
+    payload.dest_complement = complement;
+    payload.dest_neighborhood = neighborhood;
+    payload.dest_city = city;
+    payload.dest_state = state;
+    payload.selected_carrier = selectedStoreFreightQuote.carrier;
+    payload.selected_service = selectedStoreFreightQuote.service;
+    payload.freight_price = selectedStoreFreightQuote.final_price;
+    payload.delivery_days = selectedStoreFreightQuote.delivery_days;
+  }
+
+  const btn = document.getElementById('btn-submit-store-order');
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/store/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao finalizar pedido.');
+
+    if (typeof showToast === 'function') showToast(data.message, 'success');
+    selectedStoreFreightQuote = null;
+    if (document.getElementById('store-order-notes')) document.getElementById('store-order-notes').value = '';
+    await loadStoreCart();
+    switchTab('tab-store-orders');
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+window.submitStoreCheckout = submitStoreCheckout;
+
+// --------------------------------------------------------------------------
+// 5. MEUS PEDIDOS DA LOJA (CLIENTE), DETALHES DO PEDIDO & PRODUÇÃO (ADMIN)
+// --------------------------------------------------------------------------
+
+let allClientStoreOrders = [];
+let storeOrderDetailReturnTab = 'tab-store-orders';
+
+function getStoreOrderStatusBadge(status) {
+  switch (status) {
+    case 'aguardando_aprovacao_mae':
+      return `<span style="display: inline-flex; align-items: center; background: transparent; color: #7c3aed; padding: 2px 6px; font-size: 0.85rem; font-weight: 700;">Aguard. Aprovação Matriz</span>`;
+    case 'recusado_matriz':
+      return `<span style="display: inline-flex; align-items: center; background: transparent; color: #dc2626; padding: 2px 6px; font-size: 0.85rem; font-weight: 700;">Recusado pela Matriz</span>`;
+    case 'em_aberto':
+      return `<span style="display: inline-flex; align-items: center; background: transparent; color: #d97706; padding: 2px 6px; font-size: 0.85rem; font-weight: 700;">Em aberto</span>`;
+    case 'aguardando_producao':
+      return `<span style="display: inline-flex; align-items: center; background: transparent; color: #ea580c; padding: 2px 6px; font-size: 0.85rem; font-weight: 700;">Aguardando produção</span>`;
+    case 'em_producao':
+      return `<span style="display: inline-flex; align-items: center; background: transparent; color: #2563eb; padding: 2px 6px; font-size: 0.85rem; font-weight: 700;">Em produção</span>`;
+    case 'produzido_estoque_flow':
+      return `<span style="display: inline-flex; align-items: center; background: transparent; color: #59338f; padding: 2px 6px; font-size: 0.85rem; font-weight: 700;">No estoque Flow</span>`;
+    case 'enviado':
+      return `<span style="display: inline-flex; align-items: center; background: transparent; color: #059669; padding: 2px 6px; font-size: 0.85rem; font-weight: 700;">Enviado ao cliente</span>`;
+    case 'cancelado':
+      return `<span style="display: inline-flex; align-items: center; background: transparent; color: #dc2626; padding: 2px 6px; font-size: 0.85rem; font-weight: 700;">Cancelado</span>`;
+    default:
+      return `<span style="font-size: 0.85rem; font-weight: 700; color: #64748b;">${escapeHtml(status)}</span>`;
+  }
+}
+
+function getStoreDeliveryTypeBadge(isFlow) {
+  if (isFlow) {
+    return `<span style="display: inline-flex; align-items: center; gap: 4px; background: #59338f; color: #ffffff; padding: 2px 8px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; width: fit-content; line-height: 1.3;">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      <span>Envio Flow</span>
+    </span>`;
+  }
+  return `<span style="display: inline-flex; align-items: center; gap: 4px; background: #334155; color: #ffffff; padding: 2px 8px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; width: fit-content; line-height: 1.3;">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+    <span>Envio Direto</span>
+  </span>`;
+}
+
+function getOrderReadyDateText(order) {
+  const prodDays = parseInt(order.production_days, 10) || 7;
+  let readyDateStr = '-';
+  if (order.estimated_ready_date) {
+    const d = new Date(order.estimated_ready_date);
+    if (!isNaN(d.getTime())) readyDateStr = d.toLocaleDateString('pt-BR');
+  } else if (order.created_at) {
+    const base = new Date(order.created_at);
+    if (!isNaN(base.getTime())) {
+      readyDateStr = new Date(base.getTime() + prodDays * 86400000).toLocaleDateString('pt-BR');
+    }
+  }
+  return { prodDays, readyDateStr };
+}
+
+async function loadClientStoreOrders() {
+  const container = document.getElementById('client-store-orders-list');
+  if (!container) return;
+
+  container.innerHTML = '<div class="card" style="text-align: center; padding: 2rem; color: var(--text-muted);">Carregando seus pedidos...</div>';
+
+  try {
+    const res = await fetch('/api/store/orders');
+    const orders = await res.json();
+    allClientStoreOrders = Array.isArray(orders) ? orders : [];
+    renderClientStoreOrders();
+  } catch (err) {
+    container.innerHTML = '<div class="card" style="color: #ef4444; padding: 1.5rem;">Erro ao carregar pedidos.</div>';
+  }
+}
+window.loadClientStoreOrders = loadClientStoreOrders;
+
+function handleClientOrdersPeriodChange(periodVal) {
+  const fromEl = document.getElementById('filter-client-orders-date-from');
+  const toEl = document.getElementById('filter-client-orders-date-to');
+
+  if (periodVal !== 'custom') {
+    if (fromEl) fromEl.value = '';
+    if (toEl) toEl.value = '';
+  }
+  renderClientStoreOrders();
+}
+window.handleClientOrdersPeriodChange = handleClientOrdersPeriodChange;
+
+function handleClientOrdersCustomDateChange() {
+  const periodEl = document.getElementById('filter-client-orders-period');
+  const fromVal = document.getElementById('filter-client-orders-date-from')?.value || '';
+  const toVal = document.getElementById('filter-client-orders-date-to')?.value || '';
+
+  if ((fromVal || toVal) && periodEl) {
+    periodEl.value = 'custom';
+  }
+  renderClientStoreOrders();
+}
+window.handleClientOrdersCustomDateChange = handleClientOrdersCustomDateChange;
+
+function clearClientStoreOrdersFilters() {
+  const periodEl = document.getElementById('filter-client-orders-period');
+  const fromEl = document.getElementById('filter-client-orders-date-from');
+  const toEl = document.getElementById('filter-client-orders-date-to');
+  const statusEl = document.getElementById('filter-client-orders-status');
+
+  if (periodEl) periodEl.value = 'all';
+  if (fromEl) fromEl.value = '';
+  if (toEl) toEl.value = '';
+  if (statusEl) statusEl.value = '';
+
+  renderClientStoreOrders();
+}
+window.clearClientStoreOrdersFilters = clearClientStoreOrdersFilters;
+
+function renderClientStoreOrders() {
+  const container = document.getElementById('client-store-orders-list');
+  const countEl = document.getElementById('client-store-orders-count');
+  if (!container) return;
+
+  if (!allClientStoreOrders || allClientStoreOrders.length === 0) {
+    if (countEl) countEl.textContent = '0 pedidos';
+    container.innerHTML = `
+      <div class="card" style="text-align: center; padding: 2.5rem;">
+        <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.4rem;">Você ainda não realizou pedidos na Loja Virtual</h3>
+        <p style="color: var(--text-muted); font-size: 0.86rem; margin-bottom: 1rem;">Acesse a Vitrine da Loja para escolher seus produtos personalizados.</p>
+        <button type="button" class="btn btn-primary" onclick="switchTab('tab-store-catalog')">Ir para a Vitrine da Loja</button>
+      </div>
+    `;
+    return;
+  }
+
+  const periodFilter = document.getElementById('filter-client-orders-period')?.value || 'all';
+  const dateFromStr = document.getElementById('filter-client-orders-date-from')?.value || '';
+  const dateToStr = document.getElementById('filter-client-orders-date-to')?.value || '';
+  const statusFilter = document.getElementById('filter-client-orders-status')?.value || '';
+
+  let filtered = [...allClientStoreOrders];
+
+  // 1. Filtro por Status
+  if (statusFilter) {
+    filtered = filtered.filter(o => o.status === statusFilter);
+  }
+
+  // 2. Filtro por Período / Intervalo de Datas / Últimos Pedidos
+  const now = new Date();
+  if (periodFilter === '7d' || periodFilter === '30d' || periodFilter === '90d') {
+    const daysMap = { '7d': 7, '30d': 30, '90d': 90 };
+    const cutoff = new Date(now.getTime() - daysMap[periodFilter] * 86400000);
+    filtered = filtered.filter(o => {
+      if (!o.created_at) return false;
+      const d = new Date(o.created_at);
+      return !isNaN(d.getTime()) && d >= cutoff;
+    });
+  } else if (dateFromStr || dateToStr) {
+    const startTs = dateFromStr ? new Date(dateFromStr + 'T00:00:00').getTime() : null;
+    const endTs = dateToStr ? new Date(dateToStr + 'T23:59:59').getTime() : null;
+    filtered = filtered.filter(o => {
+      if (!o.created_at) return false;
+      const ts = new Date(o.created_at).getTime();
+      if (isNaN(ts)) return false;
+      if (startTs !== null && ts < startTs) return false;
+      if (endTs !== null && ts > endTs) return false;
+      return true;
+    });
+  }
+
+  if (periodFilter === 'last5') {
+    filtered = filtered.slice(0, 5);
+  } else if (periodFilter === 'last10') {
+    filtered = filtered.slice(0, 10);
+  }
+
+  if (countEl) {
+    countEl.textContent = `${filtered.length} ${filtered.length === 1 ? 'pedido encontrado' : 'pedidos encontrados'}`;
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="card" style="text-align: center; padding: 2.25rem; color: var(--text-muted);">
+        Nenhum pedido encontrado com os filtros selecionados.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(o => {
+    const dateStr = o.created_at ? new Date(o.created_at).toLocaleDateString('pt-BR') : '-';
+    const isFlow = o.delivery_type === 'flow';
+    const { prodDays, readyDateStr } = getOrderReadyDateText(o);
+
+    // Todos os cards com fundo branco normal e barra frontal colorida para diferenciar
+    const cardBg = '#ffffff';
+    const cardBorder = '1px solid #e2e8f0';
+    const cardLeftAccent = isFlow ? '5px solid #59338f' : '5px solid #334155';
+
+    return `
+      <div class="card" style="padding: 1.35rem 1.5rem; background: ${cardBg}; border: ${cardBorder}; border-left: ${cardLeftAccent}; border-radius: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.85rem; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+          <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem;">
+            ${getStoreDeliveryTypeBadge(isFlow)}
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+              <span style="font-family: monospace; font-weight: 800; font-size: 1.05rem; color: var(--primary);">${escapeHtml(o.code)}</span>
+              <span style="font-size: 0.82rem; color: #475569;">Realizado em ${dateStr}</span>
+              ${o.branch_number ? `<span style="font-size: 0.78rem; font-weight: 700; color: #59338f;">Sede Nº ${escapeHtml(o.branch_number)} — ${escapeHtml(o.client_name || '')}</span>` : (o.client_name ? `<span style="font-size: 0.78rem; font-weight: 700; color: #334155;">${escapeHtml(o.client_name)}</span>` : '')}
+              ${(o.billing_name || o.billing_cnpj) ? `<span style="font-size: 0.78rem; font-weight: 700; color: #0f172a;">Faturar para: ${escapeHtml(o.billing_name || '')} ${o.billing_cnpj ? '(' + escapeHtml(o.billing_cnpj) + ')' : ''}</span>` : ''}
+            </div>
+            ${o.status === 'recusado_matriz' && o.mother_rejection_reason ? `<div style="font-size: 0.78rem; color: #dc2626; font-weight: 700;">Motivo da Recusa (Matriz): ${escapeHtml(o.mother_rejection_reason)}</div>` : ''}
+          </div>
+          <div style="display: flex; gap: 0.85rem; align-items: center; flex-wrap: wrap;">
+            ${getStoreOrderStatusBadge(o.status)}
+            ${(o.status === 'aguardando_aprovacao_mae' && (!currentAuthUser?.parent_client_id || currentRole === 'admin')) ? `
+              <button type="button" class="btn btn-primary btn-sm" onclick="handleMotherOrderApproval(${o.id}, 'approve')" style="background: #16a34a; border-color: #16a34a; font-weight: 700; padding: 0.38rem 0.75rem;">Aprovar Pedido</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="handleMotherOrderApproval(${o.id}, 'reject')" style="color: #dc2626; border-color: #fecaca; font-weight: 700; padding: 0.38rem 0.75rem;">Recusar</button>
+            ` : ''}
+            ${o.nf_url ? `<a href="${escapeHtml(o.nf_url)}" download target="_blank" class="btn btn-secondary btn-sm" style="background: #ffffff; font-weight: 700; border: 1px solid #86efac; color: #15803d; padding: 0.4rem 0.75rem; text-decoration: none;">Baixar NF</a>` : ''}
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openStoreOrderDetailPage(${o.id}, 'tab-store-orders')" style="background: #ffffff; font-weight: 700; border: 1px solid #cbd5e1; color: #0f172a; padding: 0.4rem 0.85rem;">
+              Ver Mais / Resumo
+            </button>
+          </div>
+        </div>
+
+        <div style="background: #ffffff; padding: 0; border: none;">
+          <div style="font-size: 0.76rem; font-weight: 800; text-transform: uppercase; color: #475569; margin-bottom: 0.65rem;">Resumo dos Itens Encomendados</div>
+          <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+            ${(o.items || []).map((it, idx, arr) => {
+              const thumbImg = it.product_image || '/images/logow2.png';
+              const itemDays = it.production_days || prodDays;
+              const isLast = idx === arr.length - 1;
+              return `
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.86rem; ${!isLast ? 'padding-bottom: 0.55rem; border-bottom: 1px dashed #e2e8f0;' : ''} gap: 1rem; flex-wrap: wrap;">
+                  <div style="display: flex; align-items: center; gap: 0.85rem;">
+                    <img src="${escapeHtml(thumbImg)}" alt="${escapeHtml(it.product_name)}" style="width: 48px; height: 48px; object-fit: cover; border-radius: 8px; border: 1px solid #cbd5e1; background: #ffffff; flex-shrink: 0;">
+                    <div>
+                      <div>
+                        <strong style="color: #0f172a; font-size: 0.92rem;">${escapeHtml(it.product_name)}</strong>
+                        <span style="color: #64748b; font-family: monospace; font-size: 0.78rem; margin-left: 0.35rem;">(${escapeHtml(it.product_code || '')})</span>
+                      </div>
+                      <div style="font-size: 0.8rem; font-weight: 800; color: #334155; margin-top: 0.2rem;">
+                        QUANTIDADE ${it.tier_qty} pçs
+                      </div>
+                      <div style="font-size: 0.78rem; color: #475569; margin-top: 0.15rem;">
+                        Prazo de produção: <strong>${itemDays} dias</strong> • Fica pronto em: <strong style="color: var(--primary);">${readyDateStr}</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+window.renderClientStoreOrders = renderClientStoreOrders;
+
+function openStoreOrderDetailPage(orderId, returnTab) {
+  storeOrderDetailReturnTab = returnTab || 'tab-store-orders';
+  const backLabel = document.getElementById('store-order-detail-back-label');
+  if (backLabel) {
+    if (storeOrderDetailReturnTab === 'tab-admin-store-orders') {
+      backLabel.textContent = 'Voltar para Fila de Pedidos (Admin)';
+    } else if (storeOrderDetailReturnTab === 'tab-billing') {
+      backLabel.textContent = 'Voltar para Carteira';
+    } else if (storeOrderDetailReturnTab === 'tab-invoices-nf') {
+      backLabel.textContent = 'Voltar para Notas Fiscais';
+    } else if (storeOrderDetailReturnTab === 'page-client-detail') {
+      backLabel.textContent = 'Voltar para Carteira do Cliente';
+    } else if (storeOrderDetailReturnTab === 'tab-mother-approvals') {
+      backLabel.textContent = 'Voltar para Aprovação de Compras';
+    } else {
+      backLabel.textContent = 'Voltar para Meus Pedidos';
+    }
+  }
+
+  const sourceList = [...allClientStoreOrders, ...allAdminStoreOrders, ...allStoreBillingOrders, ...(window.allMotherApprovalOrders || [])];
+
+  const order = sourceList.find(o => o.id === orderId);
+  if (!order) {
+    alert('Pedido não encontrado.');
+    return;
+  }
+
+  const container = document.getElementById('store-order-detail-container');
+  if (!container) return;
+
+  const isFlow = order.delivery_type === 'flow';
+  const dateStr = order.created_at ? new Date(order.created_at).toLocaleString('pt-BR') : '-';
+  const totalPieces = (order.items || []).reduce((acc, it) => acc + (parseInt(it.tier_qty, 10) || 0), 0);
+  const { prodDays, readyDateStr } = getOrderReadyDateText(order);
+
+  container.innerHTML = `
+    <div class="card" style="margin-bottom: 1.5rem; background: #ffffff; border: 1px solid #e2e8f0; border-left: 5px solid ${isFlow ? '#59338f' : '#334155'};">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; margin-bottom: 1.25rem;">
+        <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem;">
+          <span style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: #475569;">Resumo do Pedido</span>
+          ${getStoreDeliveryTypeBadge(isFlow)}
+          <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); font-family: monospace; margin: 0.15rem 0;">${escapeHtml(order.code)}</h2>
+          <span style="font-size: 0.85rem; color: #475569;">Realizado em ${dateStr} • Prazo de produção: <strong>${prodDays} dias</strong> (Fica pronto em: <strong style="color: var(--primary);">${readyDateStr}</strong>) ${order.client_name ? `• Cliente: <strong>${escapeHtml(order.client_name)}</strong>` : ''}</span>
+        </div>
+        <div style="display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap;">
+          ${getStoreOrderStatusBadge(order.status)}
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem;">
+        <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 1.15rem;">
+          <h4 style="font-size: 0.82rem; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 0.5rem;">Modalidade, Prazo e Destino</h4>
+          ${isFlow
+            ? `<p style="font-size: 0.9rem; color: #0f172a; line-height: 1.6; margin: 0;">
+                 <strong>Opção 1 — Envio Flow</strong><br>
+                 <strong>Prazo de Produção:</strong> ${prodDays} dias (Previsão de término: <strong>${readyDateStr}</strong>)<br>
+                 Assim que a produção terminar, todas as <strong>${totalPieces} peças</strong> serão armazenadas no seu estoque dentro do Personaliza Flow para envios sob demanda.
+               </p>`
+            : `<p style="font-size: 0.9rem; color: #0f172a; line-height: 1.6; margin: 0;">
+                 <strong>Opção 2 — Envio Direto</strong><br>
+                 <strong>Prazo de Produção:</strong> ${prodDays} dias (Previsão de término: <strong>${readyDateStr}</strong>)<br>
+                 <strong>Destinatário:</strong> ${escapeHtml(order.recipient_name || '-')}<br>
+                 <strong>Endereço:</strong> ${escapeHtml(order.dest_address)}, ${escapeHtml(order.dest_number)} ${order.dest_complement ? ' - ' + escapeHtml(order.dest_complement) : ''}<br>
+                 <strong>Bairro / Cidade:</strong> ${escapeHtml(order.dest_neighborhood || '-')} — ${escapeHtml(order.dest_city)}/${escapeHtml(order.dest_state)}<br>
+                 <strong>CEP:</strong> ${escapeHtml(order.dest_cep)}<br>
+                 <strong>Transportadora:</strong> ${escapeHtml(order.selected_carrier)} (${escapeHtml(order.selected_service)})
+               </p>`
+          }
+        </div>
+
+        <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 1.15rem;">
+          <h4 style="font-size: 0.82rem; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 0.5rem;">Resumo Financeiro & Faturamento</h4>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.45rem; font-size: 0.9rem;">
+            <span style="color: #475569;">Sede Solicitante:</span>
+            <strong style="color: #0f172a;">${order.branch_number ? `Sede Nº ${escapeHtml(order.branch_number)} - ` : ''}${escapeHtml(order.client_name || '-')}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.45rem; font-size: 0.9rem;">
+            <span style="color: #475569;">Faturar para (CNPJ Pagador):</span>
+            <strong style="color: var(--primary);">${escapeHtml(order.billing_name || order.client_name || '-')} ${order.billing_cnpj ? '(' + escapeHtml(order.billing_cnpj) + ')' : ''}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.45rem; font-size: 0.9rem;">
+            <span style="color: #475569;">Condição de Faturamento:</span>
+            <strong style="color: #0f172a;">${escapeHtml(order.payment_method || '30 DIAS BOLETO')}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.45rem; font-size: 0.9rem;">
+            <span style="color: #475569;">Status Financeiro:</span>
+            <strong style="color: ${order.payment_status === 'pago' ? '#16a34a' : '#d97706'};">${order.payment_status === 'pago' ? 'Quitado / Pago' : 'Em aberto'}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.45rem; font-size: 0.9rem;">
+            <span style="color: #475569;">Total de Peças Encomendadas:</span>
+            <strong>${totalPieces} peças</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.45rem; font-size: 0.9rem;">
+            <span style="color: #475569;">Subtotal dos Produtos:</span>
+            <strong>${formatCurrencyBR(order.subtotal_products)}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.65rem; font-size: 0.9rem;">
+            <span style="color: #475569;">Frete (${isFlow ? 'Isento - Envio Flow' : escapeHtml(order.selected_carrier || 'Envio Direto')}):</span>
+            <strong>${formatCurrencyBR(order.freight_price)}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding-top: 0.65rem; border-top: 1px solid #e2e8f0; font-size: 1.15rem; font-weight: 800; color: var(--primary);">
+            <span>Valor Total do Pedido:</span>
+            <span>${formatCurrencyBR(order.total_amount)}</span>
+          </div>
+          <div style="margin-top: 0.85rem; padding-top: 0.75rem; border-top: 1px dashed #cbd5e1;">
+            <div style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #334155; margin-bottom: 0.4rem;">Documentos Fiscais (NF & Boleto)</div>
+            ${(order.nf_url || order.boleto_url)
+              ? `<div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                   ${order.nf_number ? `<span style="font-size: 0.8rem; font-weight: 700; color: #0f172a;">Nº NF: ${escapeHtml(order.nf_number)}</span>` : ''}
+                   ${order.nf_url ? `<a href="${escapeHtml(order.nf_url)}" download target="_blank" class="btn btn-sm" style="background: #16a34a; color: #fff; text-decoration: none; font-size: 0.76rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 6px;">Baixar Nota Fiscal (NF)</a>` : ''}
+                   ${order.boleto_url ? `<a href="${escapeHtml(order.boleto_url)}" download target="_blank" class="btn btn-sm" style="background: #2563eb; color: #fff; text-decoration: none; font-size: 0.76rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 6px;">Baixar Boleto</a>` : ''}
+                 </div>`
+              : `<div style="font-size: 0.8rem; color: #64748b;">Nota Fiscal e Boleto ainda não anexados para este pedido.</div>`
+            }
+          </div>
+        </div>
+      </div>
+
+      ${order.notes ? `
+        <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 1rem 1.15rem; margin-bottom: 1.5rem;">
+          <h4 style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 0.35rem;">Observações do Pedido</h4>
+          <p style="font-size: 0.9rem; color: #0f172a; margin: 0;">${escapeHtml(order.notes)}</p>
+        </div>
+      ` : ''}
+
+      <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 1.25rem;">
+        <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-primary); margin-bottom: 1rem;">Produtos Encomendados neste Pedido</h3>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Foto</th>
+                <th>Código / SKU</th>
+                <th>Produto</th>
+                <th>Prazo de Produção</th>
+                <th>Quantidade Encomendada</th>
+                <th>Valor Unitário</th>
+                <th>Subtotal do Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(order.items || []).map(it => {
+                const img = it.product_image || '/images/logow2.png';
+                return `
+                  <tr>
+                    <td>
+                      <img src="${escapeHtml(img)}" alt="${escapeHtml(it.product_name)}" style="width: 52px; height: 52px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-color);">
+                    </td>
+                    <td style="font-family: monospace; font-weight: 700;">${escapeHtml(it.product_code || '-')}</td>
+                    <td style="font-weight: 700; color: var(--text-primary);">${escapeHtml(it.product_name)}</td>
+                    <td><span class="badge badge-secondary" style="font-size: 0.8rem;">${it.production_days || prodDays} dias (Pronto em ${readyDateStr})</span></td>
+                    <td><span class="badge badge-primary" style="font-size: 0.85rem;">${it.tier_qty} peças</span></td>
+                    <td style="font-weight: 600;">${formatCurrencyBR(it.unit_price)} / un</td>
+                    <td style="font-weight: 800; color: var(--primary); font-size: 0.95rem;">${formatCurrencyBR(it.total_price)}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+
+  switchTab('page-store-order-detail');
+}
+window.openStoreOrderDetailPage = openStoreOrderDetailPage;
+
+function closeStoreOrderDetailPage() {
+  switchTab(storeOrderDetailReturnTab || 'tab-store-orders');
+}
+window.closeStoreOrderDetailPage = closeStoreOrderDetailPage;
+
+async function loadAdminStoreOrders() {
+  const container = document.getElementById('admin-store-orders-container');
+  if (!container) return;
+
+  container.innerHTML = '<div class="card" style="text-align: center; padding: 2rem;">Carregando fila de pedidos de produção...</div>';
+
+  try {
+    const res = await fetch('/api/store/orders');
+    allAdminStoreOrders = await res.json();
+    renderAdminStoreOrders();
+  } catch (err) {
+    container.innerHTML = '<div class="card" style="color: #ef4444; padding: 1.5rem;">Erro ao carregar pedidos da loja.</div>';
+  }
+}
+window.loadAdminStoreOrders = loadAdminStoreOrders;
+
+function renderAdminStoreOrders() {
+  const container = document.getElementById('admin-store-orders-container');
+  if (!container) return;
+
+  const statusFilter = document.getElementById('filter-admin-store-orders-status')?.value || '';
+  const list = statusFilter
+    ? (allAdminStoreOrders || []).filter(o => o.status === statusFilter)
+    : (allAdminStoreOrders || []);
+
+  if (list.length === 0) {
+    container.innerHTML = '<div class="card" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">Nenhum pedido da loja encontrado para este filtro.</div>';
+    return;
+  }
+
+  container.innerHTML = list.map(o => {
+    const dateStr = o.created_at ? new Date(o.created_at).toLocaleString('pt-BR') : '-';
+    const isFlow = o.delivery_type === 'flow';
+    const { prodDays, readyDateStr } = getOrderReadyDateText(o);
+    const cardBg = '#ffffff';
+    const cardBorder = '1px solid #e2e8f0';
+    const cardLeftAccent = isFlow ? '5px solid #59338f' : '5px solid #334155';
+
+    return `
+      <div class="card" style="padding: 1.25rem 1.5rem; background: ${cardBg}; border: ${cardBorder}; border-left: ${cardLeftAccent}; border-radius: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.85rem; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+          <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem;">
+            ${getStoreDeliveryTypeBadge(isFlow)}
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+              <span style="font-family: monospace; font-weight: 800; font-size: 1.05rem; color: var(--primary);">${escapeHtml(o.code)}</span>
+              <span style="font-weight: 700; color: var(--text-primary);">${o.branch_number ? `Sede Nº ${escapeHtml(o.branch_number)} - ` : ''}${escapeHtml(o.client_name || 'Cliente #' + o.client_id)}</span>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">${dateStr}</span>
+              <span style="font-size: 0.78rem; color: #334155; background: #f8fafc; padding: 2px 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                Prazo: <strong>${prodDays} dias</strong> • Pronto em: <strong style="color: var(--primary);">${readyDateStr}</strong>
+              </span>
+              <span style="font-size: 0.78rem; color: #59338f; background: #f5f3ff; padding: 2px 8px; border-radius: 6px; border: 1px solid #ddd6fe; font-weight: 700;">
+                Faturamento: ${escapeHtml(o.payment_method || '30 DIAS BOLETO')}
+              </span>
+              ${(o.billing_name || o.billing_cnpj) ? `
+              <span style="font-size: 0.78rem; color: #0f172a; background: #f1f5f9; padding: 2px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 700;">
+                Faturar p/: ${escapeHtml(o.billing_name || '')} ${o.billing_cnpj ? '(' + escapeHtml(o.billing_cnpj) + ')' : ''}
+              </span>` : ''}
+            </div>
+            <div style="font-size: 0.82rem; color: var(--text-muted);">
+              E-mail: ${escapeHtml(o.client_email || '-')} | Contato: ${escapeHtml(o.client_phone || '-')}
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+            ${getStoreOrderStatusBadge(o.status)}
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openStoreOrderDetailPage(${o.id}, 'tab-admin-store-orders')" style="background: #ffffff; font-weight: 700; border: 1px solid #94a3b8; color: #0f172a;">
+              Resumo do Pedido
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive" style="margin-bottom: 1rem;">
+          <table>
+            <thead>
+              <tr>
+                <th>Foto</th>
+                <th>Código</th>
+                <th>Produto para Produção</th>
+                <th>Prazo</th>
+                <th>Quantidade Solicitada</th>
+                <th>Valor Unitário</th>
+                <th>Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(o.items || []).map(it => {
+                const thumbImg = it.product_image || '/images/logow2.png';
+                return `
+                  <tr>
+                    <td><img src="${escapeHtml(thumbImg)}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color);"></td>
+                    <td style="font-family: monospace; font-weight: 700;">${escapeHtml(it.product_code || '-')}</td>
+                    <td style="font-weight: 700;">${escapeHtml(it.product_name)}</td>
+                    <td><span class="badge badge-secondary">${it.production_days || prodDays} dias</span></td>
+                    <td><span class="badge badge-primary">${it.tier_qty} pçs</span></td>
+                    <td>${formatCurrencyBR(it.unit_price)}</td>
+                    <td style="font-weight: 700;">${formatCurrencyBR(it.total_price)}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: #f8fafc; padding: 0.85rem 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
+          <div style="font-size: 0.85rem; color: var(--text-secondary);">
+            ${isFlow
+              ? '<strong>Modalidade Flow:</strong> Ao concluir a produção e selecionar "Concluído (Enviar ao Estoque Flow)", o saldo de peças entrará automaticamente em "Meus Produtos" deste cliente.'
+              : `<strong>Entregar em:</strong> ${escapeHtml(o.recipient_name)} — ${escapeHtml(o.dest_address)}, ${escapeHtml(o.dest_number)} (${escapeHtml(o.dest_city)}/${escapeHtml(o.dest_state)} - CEP ${escapeHtml(o.dest_cep)}) | Frete: ${escapeHtml(o.selected_carrier)} (${formatCurrencyBR(o.freight_price)})`}
+            ${o.notes ? `<div style="margin-top: 0.3rem; color: var(--text-primary);"><strong>Obs. do Cliente:</strong> ${escapeHtml(o.notes)}</div>` : ''}
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <strong style="font-size: 1.05rem; color: var(--primary);">Total: ${formatCurrencyBR(o.total_amount)}</strong>
+            <select onchange="updateAdminStoreOrderStatus(${o.id}, this.value)" style="padding: 0.45rem 0.75rem; border: 1px solid ${o.status === 'em_aberto' ? '#f59e0b' : 'var(--border-color)'}; border-radius: 6px; font-size: 0.84rem; font-weight: 700; background: #fff; color: ${o.status === 'em_aberto' ? '#d97706' : '#0f172a'};">
+              <option value="aguardando_aprovacao_mae" ${o.status === 'aguardando_aprovacao_mae' ? 'selected' : ''}>Aguard. Aprovação Matriz</option>
+              <option value="recusado_matriz" ${o.status === 'recusado_matriz' ? 'selected' : ''}>Recusado pela Matriz</option>
+              <option value="em_aberto" ${o.status === 'em_aberto' ? 'selected' : ''}>0. Em Aberto (Aprovado Matriz / Aguard. Admin)</option>
+              <option value="aguardando_producao" ${o.status === 'aguardando_producao' ? 'selected' : ''}>1. Aguardando Produção (Aprova p/ Carteira)</option>
+              <option value="em_producao" ${o.status === 'em_producao' ? 'selected' : ''}>2. Em Produção</option>
+              <option value="produzido_estoque_flow" ${o.status === 'produzido_estoque_flow' ? 'selected' : ''}>3. Concluído (Enviar ao Estoque Flow)</option>
+              <option value="enviado" ${o.status === 'enviado' ? 'selected' : ''}>4. Concluído (Enviado ao Cliente)</option>
+              <option value="cancelado" ${o.status === 'cancelado' ? 'selected' : ''}>Cancelado</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+window.renderAdminStoreOrders = renderAdminStoreOrders;
+
+async function updateAdminStoreOrderStatus(orderId, newStatus) {
+  try {
+    const res = await fetch(`/api/store/orders/${orderId}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao atualizar status.');
+
+    if (typeof showToast === 'function') showToast(data.message, 'success');
+    await loadAdminStoreOrders();
+    if (typeof refreshSystemNotifications === 'function') refreshSystemNotifications();
+    if (data.synced_to_flow && typeof loadProducts === 'function') {
+      loadProducts();
+    }
+  } catch (err) {
+    alert(err.message);
+  }
+}
+window.updateAdminStoreOrderStatus = updateAdminStoreOrderStatus;
+
+// --------------------------------------------------------------------------
+// 5.5 FATURAMENTO — COMPRAS DA LOJA VIRTUAL (CLIENTE E ADMIN)
+// --------------------------------------------------------------------------
+
+async function loadStoreBilling() {
+  const tbody = document.getElementById('store-billing-tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 2rem; color: var(--text-muted);">Carregando faturamento da loja...</td></tr>';
+
+  try {
+    const res = await fetch('/api/store/orders');
+    const orders = await res.json();
+    allStoreBillingOrders = Array.isArray(orders) ? orders : [];
+
+    // Popular filtro de condições de faturamento
+    const methodSelect = document.getElementById('filter-store-billing-method');
+    if (methodSelect) {
+      const currentVal = methodSelect.value;
+      const uniqueMethods = [...new Set(allStoreBillingOrders.map(o => o.payment_method || '30 DIAS BOLETO').filter(Boolean))];
+      methodSelect.innerHTML = '<option value="">Todas as condições</option>' +
+        uniqueMethods.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+      methodSelect.value = currentVal;
+    }
+
+    renderStoreBilling();
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 1.5rem; color: #ef4444;">Erro ao carregar faturamento da loja.</td></tr>';
+  }
+}
+window.loadStoreBilling = loadStoreBilling;
+
+function clearStoreBillingFilters() {
+  const st = document.getElementById('filter-store-billing-status');
+  const mt = document.getElementById('filter-store-billing-method');
+  if (st) st.value = '';
+  if (mt) mt.value = '';
+  renderStoreBilling();
+}
+window.clearStoreBillingFilters = clearStoreBillingFilters;
+
+function renderStoreBilling() {
+  const tbody = document.getElementById('store-billing-tbody');
+  if (!tbody) return;
+
+  const isAdmin = currentRole === 'admin';
+  const thClient = document.getElementById('th-store-billing-client');
+  if (thClient) {
+    if (isAdmin) thClient.classList.remove('hidden');
+    else thClient.classList.add('hidden');
+  }
+
+  const activeOrders = (allStoreBillingOrders || []).filter(o => o.status !== 'cancelado');
+
+  // Atualizar KPIs
+  let openSum = 0;
+  let paidSum = 0;
+  activeOrders.forEach(o => {
+    const val = parseFloat(o.total_amount) || 0;
+    if (o.payment_status === 'pago') paidSum += val;
+    else openSum += val;
+  });
+
+  const openEl = document.getElementById('store-billing-open-total');
+  const paidEl = document.getElementById('store-billing-paid-total');
+  const allEl = document.getElementById('store-billing-all-total');
+  if (openEl) openEl.textContent = formatCurrencyBR(openSum);
+  if (paidEl) paidEl.textContent = formatCurrencyBR(paidSum);
+  if (allEl) allEl.textContent = formatCurrencyBR(openSum + paidSum);
+
+  // Filtros
+  const statusFilter = document.getElementById('filter-store-billing-status')?.value || '';
+  const methodFilter = document.getElementById('filter-store-billing-method')?.value || '';
+
+  let filtered = [...activeOrders];
+  if (statusFilter) {
+    filtered = filtered.filter(o => (o.payment_status || 'em_aberto') === statusFilter);
+  }
+  if (methodFilter) {
+    filtered = filtered.filter(o => (o.payment_method || '30 DIAS BOLETO') === methodFilter);
+  }
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${isAdmin ? 9 : 8}" style="text-align: center; padding: 2.25rem; color: var(--text-muted);">Nenhum pedido faturado encontrado para os filtros selecionados.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(o => {
+    const dateStr = o.created_at ? new Date(o.created_at).toLocaleDateString('pt-BR') : '-';
+    const isFlow = o.delivery_type === 'flow';
+    const isPaid = o.payment_status === 'pago';
+    const methodLabel = o.payment_method || '30 DIAS BOLETO';
+    const itemsSummary = (o.items || []).map(it => `${it.product_name} (${it.tier_qty} pçs)`).join(', ');
+
+    return `
+      <tr>
+        <td style="font-family: monospace; font-weight: 800; color: var(--primary);">${escapeHtml(o.code)}</td>
+        <td>${dateStr}</td>
+        ${isAdmin ? `<td style="font-weight: 700;">${escapeHtml(o.client_name || 'Cliente #' + o.client_id)}</td>` : ''}
+        <td style="max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(itemsSummary)}">${escapeHtml(itemsSummary || '-')}</td>
+        <td>
+          <span style="display: inline-flex; align-items: center; background: #f5f3ff; color: #59338f; border: 1px solid #ddd6fe; font-weight: 700; font-size: 0.76rem; padding: 3px 8px; border-radius: 6px;">
+            ${escapeHtml(methodLabel)}
+          </span>
+        </td>
+        <td>${getStoreDeliveryTypeBadge(isFlow)}</td>
+        <td style="font-weight: 800; color: var(--text-primary);">${formatCurrencyBR(o.total_amount)}</td>
+        <td>
+          ${isPaid
+            ? '<span style="color: #16a34a; font-weight: 700; font-size: 0.84rem;">Quitado</span>'
+            : '<span style="color: #d97706; font-weight: 700; font-size: 0.84rem;">Em aberto</span>'}
+        </td>
+        <td style="text-align: right;">
+          <div style="display: flex; justify-content: flex-end; gap: 0.45rem; align-items: center;">
+            ${isAdmin
+              ? (isPaid
+                  ? `<button type="button" class="btn btn-secondary btn-sm" onclick="toggleStoreOrderPaymentStatus(${o.id}, 'em_aberto')" style="font-size: 0.76rem; padding: 0.3rem 0.65rem;">Reabrir</button>`
+                  : `<button type="button" class="btn btn-primary btn-sm" onclick="toggleStoreOrderPaymentStatus(${o.id}, 'pago')" style="background: #16a34a; border-color: #16a34a; font-size: 0.76rem; padding: 0.3rem 0.65rem;">Dar Baixa</button>`)
+              : ''}
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openStoreOrderDetailPage(${o.id}, 'tab-store-billing')" style="font-size: 0.76rem; padding: 0.3rem 0.65rem;">
+              Resumo do Pedido
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+window.renderStoreBilling = renderStoreBilling;
+
+async function toggleStoreOrderPaymentStatus(orderId, nextStatus) {
+  try {
+    const res = await fetch(`/api/store/orders/${orderId}/payment-status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payment_status: nextStatus })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao atualizar status financeiro.');
+
+    if (typeof showToast === 'function') showToast(data.message, 'success');
+    await loadBillingData();
+    if (activeManagingClientId) {
+      await loadClientBilling(activeManagingClientId);
+    }
+    if (typeof loadClients === 'function') {
+      await loadClients();
+    }
+  } catch (err) {
+    alert(err.message);
+  }
+}
+window.toggleStoreOrderPaymentStatus = toggleStoreOrderPaymentStatus;
+
+// --------------------------------------------------------------------------
+// 6. ABA LOJA & CONFIGURAÇÕES GERAIS (ADMIN)
+// --------------------------------------------------------------------------
+
+async function loadAdminStoreOverview() {
+  const tbody = document.getElementById('admin-store-overview-tbody');
+  const filterSelect = document.getElementById('filter-admin-store-products-client');
+  if (!tbody) return;
+
+  try {
+    const res = await fetch('/api/store/overview');
+    const rows = await res.json();
+
+    if (filterSelect) {
+      const currentVal = filterSelect.value;
+      filterSelect.innerHTML = '<option value="">Todos os Clientes</option>' +
+        (rows || []).map(r => `<option value="${r.client_id}">${escapeHtml(r.client_name)}</option>`).join('');
+      filterSelect.value = currentVal;
+    }
+
+    if (!rows || rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 1.5rem; color: var(--text-muted);">Nenhum cliente cadastrado.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td style="font-weight: 700;">${escapeHtml(r.client_name)}</td>
+        <td>${escapeHtml(r.client_email)}</td>
+        <td>
+          ${r.is_enabled
+            ? '<span class="badge badge-success">Loja Ativa</span>'
+            : '<span class="badge badge-secondary">Inativa</span>'}
+        </td>
+        <td><strong>${r.products_count || 0}</strong> produtos</td>
+        <td><strong>${r.orders_count || 0}</strong> pedidos</td>
+        <td style="font-weight: 700; color: var(--primary);">${formatCurrencyBR(r.total_revenue)}</td>
+        <td>
+          <div style="display: flex; gap: 0.4rem;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openClientDetailStoreTab(${r.client_id})">Gerenciar Loja</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="openNewStoreProductGlobal(${r.client_id})">+ Produto</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    console.error(err);
+  }
+}
+window.loadAdminStoreOverview = loadAdminStoreOverview;
+
+async function openClientDetailStoreTab(clientId) {
+  await openClientDetailPage(clientId);
+  switchClientDetailTab('store');
+}
+window.openClientDetailStoreTab = openClientDetailStoreTab;
+
+async function loadAdminAllStoreProducts() {
+  const tbody = document.getElementById('admin-all-store-products-tbody');
+  if (!tbody) return;
+
+  const clientId = document.getElementById('filter-admin-store-products-client')?.value || '';
+  const url = clientId ? `/api/store/products?client_id=${clientId}` : '/api/store/products';
+
+  try {
+    const res = await fetch(url);
+    const prods = await res.json();
+    allAdminStoreProducts = prods || [];
+
+    if (!prods || prods.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="12" style="text-align: center; padding: 2rem; color: var(--text-muted);">Nenhum produto cadastrado nas lojas.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = prods.map(p => {
+      const img = (p.images && p.images[0]) || p.image_url || '/images/logow2.png';
+      return `
+        <tr>
+          <td><img src="${escapeHtml(img)}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color);"></td>
+          <td style="font-weight: 600;">${escapeHtml(p.client_name || '-')}</td>
+          <td style="font-family: monospace; font-weight: 700;">${escapeHtml(p.code)}</td>
+          <td style="font-weight: 700;">${escapeHtml(p.name)}</td>
+          <td><span class="badge badge-secondary" style="font-size: 0.76rem;">${p.production_days || 7} dias</span></td>
+          <td>${formatCurrencyBR(p.price_20)}</td>
+          <td>${formatCurrencyBR(p.price_50)}</td>
+          <td>${formatCurrencyBR(p.price_100)}</td>
+          <td>${formatCurrencyBR(p.price_200)}</td>
+          <td>${formatCurrencyBR(p.price_500)}</td>
+          <td>${formatCurrencyBR(p.price_1000)}</td>
+          <td>
+            <div style="display: flex; gap: 0.4rem;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="openEditStoreProduct(${p.id}, 'tab-admin-store-settings')">Editar</button>
+              <button type="button" class="btn btn-secondary btn-sm" style="color: #ef4444; border-color: #fecaca;" onclick="deleteStoreProduct(${p.id})">Excluir</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error(err);
+  }
+}
+window.loadAdminAllStoreProducts = loadAdminAllStoreProducts;
+
+// --------------------------------------------------------------------------
+// 7. HIERARQUIA CONTA MÃE & SEDES FILHAS, MULTI-CNPJ ("FATURAR PARA") E APROVAÇÃO DE COMPRAS
+// --------------------------------------------------------------------------
+
+let allMotherBranchesList = [];
+let allMotherApprovalOrders = [];
+window.allMotherApprovalOrders = allMotherApprovalOrders;
+let branchFormReturnTab = 'tab-mother-branches';
+
+async function loadNetworkBillingOptions(selectId) {
+  const selectEl = document.getElementById(selectId);
+  if (!selectEl) return;
+
+  try {
+    let url = '/api/clients/network/billing-options';
+    if (currentRole === 'admin' && typeof activeManagingClientId !== 'undefined' && activeManagingClientId) {
+      url += `?client_id=${activeManagingClientId}`;
+    }
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const options = await res.json();
+
+    if (!Array.isArray(options) || options.length === 0) {
+      selectEl.innerHTML = `<option value="${currentAuthUser?.id || ''}" data-cnpj="${escapeHtml(currentAuthUser?.cnpj || '')}" data-name="${escapeHtml(currentAuthUser?.name || '')}">${escapeHtml(currentAuthUser?.name || 'Minha Conta')} ${currentAuthUser?.cnpj ? '— CNPJ: ' + escapeHtml(currentAuthUser.cnpj) : ''}</option>`;
+      handleStoreBillingOptionChange();
+      return;
+    }
+
+    const myId = (currentRole === 'admin' && typeof activeManagingClientId !== 'undefined' && activeManagingClientId) ? Number(activeManagingClientId) : Number(currentAuthUser?.id);
+    selectEl.innerHTML = options.map(opt => {
+      const prefix = opt.is_mother
+        ? '[MATRIZ]'
+        : (opt.branch_number ? `[SEDE Nº ${opt.branch_number}]` : '[SEDE]');
+      const cnpjText = opt.cnpj ? ` — CNPJ: ${opt.cnpj}` : ' (Sem CNPJ informado)';
+      const isSelected = Number(opt.id) === myId ? 'selected' : '';
+      return `<option value="${opt.id}" data-cnpj="${escapeHtml(opt.cnpj || '')}" data-name="${escapeHtml(opt.name || '')}" ${isSelected}>${escapeHtml(prefix)} ${escapeHtml(opt.name)}${escapeHtml(cnpjText)}</option>`;
+    }).join('');
+
+    handleStoreBillingOptionChange();
+  } catch (err) {
+    console.error('Erro ao carregar CNPJs da rede para faturamento:', err);
+  }
+}
+window.loadNetworkBillingOptions = loadNetworkBillingOptions;
+
+function handleStoreBillingOptionChange() {
+  const selectEl = document.getElementById('store-checkout-billing-select');
+  const labelEl = document.getElementById('store-checkout-billing-target-label');
+  if (!selectEl || !labelEl) return;
+
+  const opt = selectEl.options[selectEl.selectedIndex];
+  if (!opt) {
+    labelEl.textContent = '-';
+    return;
+  }
+  const bName = opt.getAttribute('data-name') || opt.textContent || '-';
+  const bCnpj = opt.getAttribute('data-cnpj') || '';
+  labelEl.textContent = bCnpj ? `${bName} (${bCnpj})` : bName;
+}
+window.handleStoreBillingOptionChange = handleStoreBillingOptionChange;
+
+async function loadMotherBranches() {
+  const tbody = document.getElementById('mother-branches-tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">Carregando sedes e cooperativas vinculadas...</td></tr>';
+
+  try {
+    const res = await fetch('/api/clients/branches/list');
+    const data = await res.json();
+    allMotherBranchesList = Array.isArray(data) ? data : [];
+    renderMotherBranchesTable();
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 1.5rem; color: #dc2626;">Erro ao carregar sedes filhas.</td></tr>';
+  }
+}
+window.loadMotherBranches = loadMotherBranches;
+
+function renderMotherBranchesTable() {
+  const tbody = document.getElementById('mother-branches-tbody');
+  const countEl = document.getElementById('mother-branches-count');
+  if (!tbody) return;
+
+  const searchInput = document.getElementById('search-mother-branches') || document.getElementById('filter-mother-branches-search');
+  const searchQ = (searchInput?.value || '').trim().toLowerCase();
+  const filtered = allMotherBranchesList.filter(b => {
+    if (!searchQ) return true;
+    const str = `${b.branch_number || ''} ${b.name || ''} ${b.cnpj_cpf || b.cnpj || ''} ${b.email || ''} ${b.city || ''} ${b.state || ''}`.toLowerCase();
+    return str.includes(searchQ);
+  });
+
+  if (countEl) {
+    countEl.textContent = `${filtered.length} ${filtered.length === 1 ? 'sede cadastrada' : 'sedes cadastradas'}`;
+  }
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2.25rem; color: var(--text-muted);">Nenhuma sede / usuário filho encontrado. Clique em "Cadastrar Nova Sede (Filho)" para criar o primeiro acesso.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(b => {
+    const canFlow = Number(b.can_access_flow) !== 0;
+    const canStore = Number(b.can_access_store) !== 0;
+    const modulesText = [
+      canFlow ? '<span style="color: #59338f; font-weight: 800; font-size: 0.78rem;">FLOW</span>' : '',
+      canStore ? '<span style="color: #2563eb; font-weight: 800; font-size: 0.78rem;">LOJA</span>' : ''
+    ].filter(Boolean).join(' + ') || '<span style="color: #94a3b8;">Nenhum</span>';
+
+    const addrLine = b.address
+      ? `${escapeHtml(b.address)}, ${escapeHtml(b.address_number || 'S/N')} — ${escapeHtml(b.city || '')}/${escapeHtml(b.state || '')} (CEP: ${escapeHtml(b.cep || '-')})`
+      : '<span style="color: var(--text-muted);">Endereço não informado</span>';
+
+    const statusBadge = b.status === 'inactive'
+      ? '<span style="color: #dc2626; font-weight: 700; font-size: 0.78rem;">Inativo</span>'
+      : '<span style="color: #16a34a; font-weight: 700; font-size: 0.78rem;">Ativo</span>';
+
+    return `
+      <tr>
+        <td style="font-family: monospace; font-weight: 800; color: var(--primary);">${b.branch_number ? 'Nº ' + escapeHtml(b.branch_number) : '-'}</td>
+        <td>
+          <div style="font-weight: 700; color: var(--text-primary);">${escapeHtml(b.name)}</div>
+          ${b.phone ? `<div style="font-size: 0.76rem; color: var(--text-muted);">${escapeHtml(b.phone)}</div>` : ''}
+        </td>
+        <td style="font-family: monospace; font-weight: 600;">${escapeHtml(b.cnpj_cpf || b.cnpj || '-')}</td>
+        <td style="font-size: 0.8rem; max-width: 260px;">${addrLine}</td>
+        <td>${escapeHtml(b.email)}</td>
+        <td>${modulesText}</td>
+        <td>${statusBadge}</td>
+        <td style="text-align: right;">
+          <div style="display: flex; gap: 0.4rem; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openBranchFormPage(${b.id}, 'tab-mother-branches')">Editar</button>
+            <button type="button" class="btn btn-secondary btn-sm" style="color: #dc2626; border-color: #fecaca;" onclick="deleteBranchAccount(${b.id}, '${escapeHtml(b.name)}')">Excluir</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+window.renderMotherBranchesTable = renderMotherBranchesTable;
+
+async function loadAdminClientBranches(parentClientId) {
+  const tbody = document.getElementById('admin-client-branches-tbody');
+  if (!tbody || !parentClientId) return;
+
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 1.5rem; color: var(--text-muted);">Carregando sedes vinculadas...</td></tr>';
+
+  try {
+    const res = await fetch(`/api/clients/branches/list?parent_id=${parentClientId}`);
+    const list = await res.json();
+    allMotherBranchesList = Array.isArray(list) ? list : [];
+
+    if (allMotherBranchesList.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">Este cliente não possui sedes/usuários filhos vinculados.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = allMotherBranchesList.map(b => {
+      const canFlow = Number(b.can_access_flow) !== 0;
+      const canStore = Number(b.can_access_store) !== 0;
+      const modulesText = [
+        canFlow ? '<span style="color: #59338f; font-weight: 800; font-size: 0.78rem;">FLOW</span>' : '',
+        canStore ? '<span style="color: #2563eb; font-weight: 800; font-size: 0.78rem;">LOJA</span>' : ''
+      ].filter(Boolean).join(' + ');
+
+      const addrLine = b.address
+        ? `${escapeHtml(b.address)}, ${escapeHtml(b.address_number || 'S/N')} — ${escapeHtml(b.city || '')}/${escapeHtml(b.state || '')}`
+        : '-';
+
+      const statusBadge = b.status === 'inactive'
+        ? '<span style="color: #dc2626; font-weight: 700; font-size: 0.78rem;">Inativo</span>'
+        : '<span style="color: #16a34a; font-weight: 700; font-size: 0.78rem;">Ativo</span>';
+
+      return `
+        <tr>
+          <td style="font-family: monospace; font-weight: 800; color: var(--primary);">${b.branch_number ? 'Nº ' + escapeHtml(b.branch_number) : '-'}</td>
+          <td style="font-weight: 700;">${escapeHtml(b.name)}</td>
+          <td style="font-family: monospace;">${escapeHtml(b.cnpj_cpf || b.cnpj || '-')}</td>
+          <td style="font-size: 0.8rem;">${addrLine}</td>
+          <td>${escapeHtml(b.email)}</td>
+          <td>${modulesText}</td>
+          <td>${statusBadge}</td>
+          <td style="text-align: right;">
+            <div style="display: flex; gap: 0.4rem; justify-content: flex-end;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="openBranchFormPage(${b.id}, 'page-client-detail')">Editar</button>
+              <button type="button" class="btn btn-secondary btn-sm" style="color: #dc2626; border-color: #fecaca;" onclick="deleteBranchAccount(${b.id}, '${escapeHtml(b.name)}')">Excluir</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 1.5rem; color: #dc2626;">Erro ao carregar sedes do cliente.</td></tr>';
+  }
+}
+window.loadAdminClientBranches = loadAdminClientBranches;
+
+function openBranchFormPage(branchId = null, returnTab = 'tab-mother-branches') {
+  branchFormReturnTab = returnTab;
+  const backLabel = document.getElementById('branch-form-back-label');
+  if (backLabel) {
+    backLabel.textContent = returnTab === 'page-client-detail'
+      ? 'Voltar para Gerenciar Cliente'
+      : 'Voltar para Minhas Sedes';
+  }
+
+  const form = document.getElementById('form-branch') || document.getElementById('form-branch-account');
+  if (form) form.reset();
+
+  const idInput = document.getElementById('branch-form-id');
+  if (idInput) idInput.value = branchId ? String(branchId) : '';
+
+  const parentId = returnTab === 'page-client-detail' ? activeManagingClientId : (currentAuthUser?.id || '');
+  const parentInput = document.getElementById('branch-form-parent-id');
+  if (parentInput) parentInput.value = parentId ? String(parentId) : '';
+
+  const titleEl = document.getElementById('branch-form-title') || document.getElementById('branch-form-page-title');
+  const pwdReqEl = document.getElementById('branch-pwd-req-label');
+  const pwdInput = document.getElementById('branch-form-password');
+  const statusSelect = document.getElementById('branch-form-status');
+
+  if (branchId) {
+    const branch = allMotherBranchesList.find(b => Number(b.id) === Number(branchId));
+    if (!branch) {
+      alert('Sede não encontrada.');
+      return;
+    }
+    if (titleEl) titleEl.textContent = `Editar Sede: ${branch.name}`;
+    if (pwdReqEl) pwdReqEl.textContent = '(Deixe em branco para manter a atual)';
+    if (pwdInput) pwdInput.required = false;
+    if (statusSelect) statusSelect.value = branch.status || 'active';
+
+    document.getElementById('branch-form-number').value = branch.branch_number || '';
+    document.getElementById('branch-form-name').value = branch.name || '';
+    document.getElementById('branch-form-cnpj').value = branch.cnpj_cpf || branch.cnpj || '';
+    document.getElementById('branch-form-phone').value = branch.phone || '';
+    document.getElementById('branch-form-email').value = branch.email || '';
+    document.getElementById('branch-form-password').value = '';
+    document.getElementById('branch-form-access-flow').checked = Number(branch.can_access_flow) !== 0;
+    document.getElementById('branch-form-access-store').checked = Number(branch.can_access_store) !== 0;
+    document.getElementById('branch-form-cep').value = branch.cep || '';
+    document.getElementById('branch-form-address').value = branch.address || '';
+    document.getElementById('branch-form-addr-number').value = branch.address_number || '';
+    document.getElementById('branch-form-complement').value = branch.complement || '';
+    document.getElementById('branch-form-neighborhood').value = branch.neighborhood || '';
+    document.getElementById('branch-form-city').value = branch.city || '';
+    document.getElementById('branch-form-state').value = branch.state || '';
+  } else {
+    if (titleEl) titleEl.textContent = 'Cadastrar Nova Sede (Usuário Filho)';
+    if (pwdReqEl) pwdReqEl.textContent = '*';
+    if (pwdInput) pwdInput.required = true;
+    if (statusSelect) statusSelect.value = 'active';
+    document.getElementById('branch-form-access-flow').checked = true;
+    document.getElementById('branch-form-access-store').checked = true;
+  }
+
+  switchTab('page-branch-form');
+}
+window.openBranchFormPage = openBranchFormPage;
+
+function closeBranchFormPage() {
+  if (branchFormReturnTab === 'page-client-detail' && activeManagingClientId) {
+    switchTab('page-client-detail');
+    loadAdminClientBranches(activeManagingClientId);
+  } else {
+    switchTab('tab-mother-branches');
+  }
+}
+window.closeBranchFormPage = closeBranchFormPage;
+
+async function lookupBranchCep(rawCep) {
+  const digits = String(rawCep || '').replace(/\D/g, '');
+  if (digits.length !== 8) return;
+
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+    const data = await res.json();
+    if (data && !data.erro) {
+      if (data.logradouro) document.getElementById('branch-form-address').value = data.logradouro;
+      if (data.bairro) document.getElementById('branch-form-neighborhood').value = data.bairro;
+      if (data.localidade) document.getElementById('branch-form-city').value = data.localidade;
+      if (data.uf) document.getElementById('branch-form-state').value = data.uf;
+    }
+  } catch (err) {
+    console.warn('Falha ao consultar CEP:', err);
+  }
+}
+window.lookupBranchCep = lookupBranchCep;
+
+async function submitBranchForm(event) {
+  event.preventDefault();
+
+  const branchId = document.getElementById('branch-form-id').value;
+  const parentClientId = document.getElementById('branch-form-parent-id').value;
+  const canFlow = document.getElementById('branch-form-access-flow').checked;
+  const canStore = document.getElementById('branch-form-access-store').checked;
+
+  if (!canFlow && !canStore) {
+    alert('Selecione pelo menos um módulo liberado (FLOW ou LOJA VIRTUAL) para o usuário filho.');
+    return;
+  }
+
+  const cnpjVal = document.getElementById('branch-form-cnpj').value.trim();
+  const payload = {
+    parent_client_id: parentClientId ? Number(parentClientId) : undefined,
+    branch_number: document.getElementById('branch-form-number').value.trim(),
+    name: document.getElementById('branch-form-name').value.trim(),
+    cnpj: cnpjVal,
+    cnpj_cpf: cnpjVal,
+    phone: document.getElementById('branch-form-phone').value.trim(),
+    email: document.getElementById('branch-form-email').value.trim(),
+    password: document.getElementById('branch-form-password').value,
+    status: document.getElementById('branch-form-status')?.value || 'active',
+    can_access_flow: canFlow,
+    can_access_store: canStore,
+    cep: document.getElementById('branch-form-cep').value.trim(),
+    address: document.getElementById('branch-form-address').value.trim(),
+    address_number: document.getElementById('branch-form-addr-number').value.trim(),
+    complement: document.getElementById('branch-form-complement').value.trim(),
+    neighborhood: document.getElementById('branch-form-neighborhood').value.trim(),
+    city: document.getElementById('branch-form-city').value.trim(),
+    state: document.getElementById('branch-form-state').value.trim().toUpperCase()
+  };
+
+  try {
+    const url = branchId ? `/api/clients/branches/${branchId}` : '/api/clients/branches';
+    const method = branchId ? 'PUT' : 'POST';
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao salvar sede.');
+
+    if (typeof showToast === 'function') showToast(data.message || 'Sede salva com sucesso!', 'success');
+    closeBranchFormPage();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+window.submitBranchForm = submitBranchForm;
+
+async function deleteBranchAccount(branchId, branchName) {
+  if (!confirm(`Deseja realmente excluir ou desativar a sede "${branchName}"?`)) return;
+
+  try {
+    const res = await fetch(`/api/clients/branches/${branchId}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao remover sede.');
+
+    if (typeof showToast === 'function') showToast(data.message, 'success');
+    if (branchFormReturnTab === 'page-client-detail' && activeManagingClientId) {
+      loadAdminClientBranches(activeManagingClientId);
+    } else {
+      loadMotherBranches();
+    }
+  } catch (err) {
+    alert(err.message);
+  }
+}
+window.deleteBranchAccount = deleteBranchAccount;
+
+async function loadMotherApprovals() {
+  const container = document.getElementById('mother-approvals-list');
+  if (!container) return;
+
+  container.innerHTML = '<div class="card" style="text-align: center; padding: 2rem; color: var(--text-muted);">Carregando pedidos das sedes...</div>';
+
+  try {
+    const res = await fetch('/api/store/orders');
+    const orders = await res.json();
+    allMotherApprovalOrders = Array.isArray(orders) ? orders : [];
+    window.allMotherApprovalOrders = allMotherApprovalOrders;
+
+    refreshMotherApprovalsBadge();
+    renderMotherApprovalsList();
+  } catch (err) {
+    container.innerHTML = '<div class="card" style="padding: 1.5rem; color: #dc2626;">Erro ao carregar pedidos para aprovação.</div>';
+  }
+}
+window.loadMotherApprovals = loadMotherApprovals;
+
+async function refreshMotherApprovalsBadge() {
+  if (typeof refreshSystemNotifications === 'function') {
+    await refreshSystemNotifications();
+  }
+}
+window.refreshMotherApprovalsBadge = refreshMotherApprovalsBadge;
+
+function setNavAlertBadge(badgeId, countId, countValue) {
+  const badgeEl = document.getElementById(badgeId);
+  const countEl = document.getElementById(countId);
+  const num = Number(countValue) || 0;
+  if (!badgeEl) return;
+
+  if (num > 0) {
+    if (countEl) countEl.textContent = String(num);
+    else badgeEl.textContent = String(num);
+    badgeEl.classList.remove('hidden');
+  } else {
+    badgeEl.classList.add('hidden');
+  }
+}
+
+let latestClientBillingDocKeys = [];
+let latestClientNfDocKeys = [];
+
+function getSeenStorageKey(type) {
+  const uid = currentAuthUser && currentAuthUser.id ? currentAuthUser.id : 'default';
+  return `pf_seen_${type}_docs_${uid}`;
+}
+
+function getSeenDocSet(type) {
+  try {
+    const raw = localStorage.getItem(getSeenStorageKey(type));
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch (_) {
+    return new Set();
+  }
+}
+
+function markClientDocsAsSeen(type, keysArray) {
+  try {
+    const set = getSeenDocSet(type);
+    (keysArray || []).forEach(k => set.add(k));
+    localStorage.setItem(getSeenStorageKey(type), JSON.stringify([...set]));
+  } catch (_) {}
+}
+
+async function refreshSystemNotifications() {
+  try {
+    const res = await fetch('/api/billing/notifications-summary');
+    if (!res.ok) return;
+    const data = await res.json();
+
+    const isAdmin = currentRole === 'admin';
+    const adm = data.admin || {};
+    const cli = data.client || {};
+    const isChildBranch = Boolean(currentAuthUser && currentAuthUser.parent_client_id);
+
+    const notifications = [];
+
+    if (isAdmin) {
+      // Limpar badges exclusivos de cliente
+      setNavAlertBadge('nav-badge-client-store-orders', 'nav-badge-client-store-orders-count', 0);
+      setNavAlertBadge('badge-mother-approvals', 'badge-mother-approvals-count', 0);
+      setNavAlertBadge('nav-badge-invoices-nf', 'nav-badge-invoices-nf-count', 0);
+      setNavAlertBadge('nav-badge-billing', 'nav-badge-billing-count', 0);
+
+      // Popular badges de Admin (somente onde precisa de aprovação: Pedidos da Loja e Gestão de Remessas)
+      setNavAlertBadge('nav-badge-admin-store-orders', 'nav-badge-admin-store-orders-count', adm.open_store_orders);
+      setNavAlertBadge('nav-badge-shipments', 'nav-badge-shipments-count', adm.open_shipments);
+
+      if (adm.open_store_orders > 0) {
+        notifications.push({
+          count: adm.open_store_orders,
+          title: `${adm.open_store_orders} ${adm.open_store_orders === 1 ? 'pedido da Loja' : 'pedidos da Loja'} aguardando aprovação`,
+          sub: 'Status "Em aberto" — clique para conferir e aprovar para produção.',
+          targetTab: 'tab-admin-store-orders'
+        });
+      }
+      if (adm.open_shipments > 0) {
+        notifications.push({
+          count: adm.open_shipments,
+          title: `${adm.open_shipments} ${adm.open_shipments === 1 ? 'remessa Flow' : 'remessas Flow'} aguardando aprovação`,
+          sub: 'Status "Em aberto" — clique para conferir e liberar separação.',
+          targetTab: 'tab-shipments'
+        });
+      }
+    } else {
+      // Limpar badges exclusivos de admin
+      setNavAlertBadge('nav-badge-admin-store-orders', 'nav-badge-admin-store-orders-count', 0);
+      setNavAlertBadge('nav-badge-shipments', 'nav-badge-shipments-count', 0);
+
+      const motherPending = !isChildBranch ? (Number(cli.mother_pending_approvals) || 0) : 0;
+
+      latestClientBillingDocKeys = Array.isArray(cli.billing_doc_keys) ? cli.billing_doc_keys : [];
+      latestClientNfDocKeys = Array.isArray(cli.nf_doc_keys) ? cli.nf_doc_keys : [];
+
+      // Se o cliente já está com a página Carteira ou Notas Fiscais aberta, já dá baixa imediata no sino
+      const activePage = document.querySelector('.tab-page:not(.hidden)');
+      if (activePage && activePage.id === 'tab-billing') {
+        markClientDocsAsSeen('billing', latestClientBillingDocKeys);
+      }
+      if (activePage && activePage.id === 'tab-invoices-nf') {
+        markClientDocsAsSeen('nf', latestClientNfDocKeys);
+      }
+
+      const seenBilling = getSeenDocSet('billing');
+      const seenNf = getSeenDocSet('nf');
+
+      const unseenBillingCount = latestClientBillingDocKeys.filter(k => !seenBilling.has(k)).length;
+      const unseenNfCount = latestClientNfDocKeys.filter(k => !seenNf.has(k)).length;
+
+      // Meus Pedidos e Aprovação de Compras (Conta Mãe)
+      setNavAlertBadge('nav-badge-client-store-orders', 'nav-badge-client-store-orders-count', motherPending);
+      setNavAlertBadge('badge-mother-approvals', 'badge-mother-approvals-count', motherPending);
+
+      // Carteira e Notas Fiscais (Cliente): só aponta quando Admin lança novo Boleto/NF e dá baixa ao abrir a página
+      setNavAlertBadge('nav-badge-billing', 'nav-badge-billing-count', unseenBillingCount);
+      setNavAlertBadge('nav-badge-invoices-nf', 'nav-badge-invoices-nf-count', unseenNfCount);
+
+      if (motherPending > 0) {
+        notifications.push({
+          count: motherPending,
+          title: `${motherPending} ${motherPending === 1 ? 'pedido de sede' : 'pedidos de sedes'} para aprovar`,
+          sub: 'Compra realizada na Loja Virtual aguardando aprovação da Matriz.',
+          targetTab: 'tab-mother-approvals'
+        });
+      }
+      if (unseenBillingCount > 0) {
+        notifications.push({
+          count: unseenBillingCount,
+          title: `${unseenBillingCount} ${unseenBillingCount === 1 ? 'novo boleto / cobrança' : 'novos boletos / cobranças'} na Carteira`,
+          sub: 'O Admin lançou Boleto e/ou NF — abra a Carteira para visualizar.',
+          targetTab: 'tab-billing'
+        });
+      }
+      if (unseenNfCount > 0) {
+        notifications.push({
+          count: unseenNfCount,
+          title: `${unseenNfCount} ${unseenNfCount === 1 ? 'nova Nota Fiscal lançada' : 'novas Notas Fiscais lançadas'}`,
+          sub: 'Clique para abrir Notas Fiscais e fazer o download.',
+          targetTab: 'tab-invoices-nf'
+        });
+      }
+    }
+
+    const totalAlerts = notifications.reduce((acc, item) => acc + (Number(item.count) || 0), 0);
+
+    // Atualizar badge do Sino no canto superior direito e na barra lateral esquerda
+    const topBadge = document.getElementById('top-notification-bell-badge');
+    const stripBadge = document.getElementById('strip-notification-bell-badge');
+    const headerCountText = document.getElementById('top-bell-dropdown-badge-text');
+    const dropdownList = document.getElementById('top-notification-dropdown-list');
+
+    if (topBadge) {
+      if (totalAlerts > 0) {
+        topBadge.textContent = String(totalAlerts);
+        topBadge.classList.remove('hidden');
+      } else {
+        topBadge.classList.add('hidden');
+      }
+    }
+    if (stripBadge) {
+      if (totalAlerts > 0) {
+        stripBadge.textContent = String(totalAlerts);
+        stripBadge.classList.remove('hidden');
+      } else {
+        stripBadge.classList.add('hidden');
+      }
+    }
+    if (headerCountText) {
+      headerCountText.textContent = totalAlerts > 0 ? `${totalAlerts} pendente(s)` : 'Em dia';
+      headerCountText.style.color = totalAlerts > 0 ? '#dc2626' : '#16a34a';
+    }
+
+    if (dropdownList) {
+      if (notifications.length === 0) {
+        dropdownList.innerHTML = `
+          <div style="padding: 1.5rem 1rem; text-align: center; color: #64748b; font-size: 0.8rem;">
+            Nenhuma pendência ou notificação no momento.
+          </div>
+        `;
+      } else {
+        dropdownList.innerHTML = notifications.map(n => `
+          <div class="top-bell-item" onclick="handleTopNotificationClick('${n.targetTab}')">
+            <div class="top-bell-item-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            </div>
+            <div class="top-bell-item-body">
+              <div class="top-bell-item-title">${escapeHtml(n.title)}</div>
+              <div class="top-bell-item-sub">${escapeHtml(n.sub)}</div>
+            </div>
+            <span class="nav-alert-badge" style="align-self: center;">${n.count}</span>
+          </div>
+        `).join('');
+      }
+    }
+  } catch (err) {
+    console.warn('Falha ao atualizar notificações:', err);
+  }
+}
+window.refreshSystemNotifications = refreshSystemNotifications;
+
+function toggleTopBellDropdown(event) {
+  if (event) event.stopPropagation();
+  const dropdown = document.getElementById('top-notification-dropdown');
+  if (!dropdown) return;
+  const isHidden = dropdown.classList.contains('hidden');
+  if (isHidden) {
+    refreshSystemNotifications();
+    dropdown.classList.remove('hidden');
+  } else {
+    dropdown.classList.add('hidden');
+  }
+}
+window.toggleTopBellDropdown = toggleTopBellDropdown;
+
+function handleTopNotificationClick(targetTab) {
+  const dropdown = document.getElementById('top-notification-dropdown');
+  if (dropdown) dropdown.classList.add('hidden');
+  if (targetTab) switchTab(targetTab);
+}
+window.handleTopNotificationClick = handleTopNotificationClick;
+
+document.addEventListener('click', (e) => {
+  const dropdown = document.getElementById('top-notification-dropdown');
+  const wrapper = document.getElementById('top-bell-wrapper');
+  if (dropdown && !dropdown.classList.contains('hidden')) {
+    if (wrapper && !wrapper.contains(e.target)) {
+      dropdown.classList.add('hidden');
+    }
+  }
+});
+
+function renderMotherApprovalsList() {
+  const container = document.getElementById('mother-approvals-list');
+  if (!container) return;
+
+  const statusFilter = document.getElementById('filter-mother-approvals-status')?.value || 'pending';
+  let list = [...(allMotherApprovalOrders || [])];
+
+  if (statusFilter === 'pending' || statusFilter === 'aguardando_aprovacao_mae') {
+    list = list.filter(o => o.status === 'aguardando_aprovacao_mae');
+  } else if (statusFilter === 'approved') {
+    list = list.filter(o => o.mother_approval_status === 'approved' && o.status !== 'aguardando_aprovacao_mae');
+  } else if (statusFilter === 'rejected' || statusFilter === 'recusado_matriz') {
+    list = list.filter(o => o.status === 'recusado_matriz' || o.mother_approval_status === 'rejected');
+  }
+
+  if (list.length === 0) {
+    container.innerHTML = `
+      <div class="card" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+        Nenhum pedido encontrado com o filtro selecionado.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = list.map(o => {
+    const dateStr = o.created_at ? new Date(o.created_at).toLocaleString('pt-BR') : '-';
+    const isFlow = o.delivery_type === 'flow';
+    const isPending = o.status === 'aguardando_aprovacao_mae';
+
+    return `
+      <div class="card" style="padding: 1.25rem 1.5rem; background: #ffffff; border: 1px solid #e2e8f0; border-left: 5px solid ${isPending ? '#7c3aed' : '#16a34a'}; border-radius: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.85rem; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.85rem;">
+          <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+            ${getStoreDeliveryTypeBadge(isFlow)}
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+              <span style="font-family: monospace; font-weight: 800; font-size: 1.05rem; color: var(--primary);">${escapeHtml(o.code)}</span>
+              <span style="font-weight: 800; color: #0f172a;">${o.branch_number ? `Sede Nº ${escapeHtml(o.branch_number)} — ` : ''}${escapeHtml(o.client_name || '')}</span>
+              <span style="font-size: 0.8rem; color: #64748b;">Solicitado em ${dateStr}</span>
+            </div>
+            <div style="font-size: 0.84rem; color: #334155;">
+              <strong>Faturar para (CNPJ Pagador):</strong> <span style="color: var(--primary); font-weight: 800;">${escapeHtml(o.billing_name || o.client_name || '-')} ${o.billing_cnpj ? '(' + escapeHtml(o.billing_cnpj) + ')' : ''}</span>
+              • <strong>Condição:</strong> ${escapeHtml(o.payment_method || '30 DIAS BOLETO')}
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap;">
+            ${getStoreOrderStatusBadge(o.status)}
+            <strong style="font-size: 1.08rem; color: var(--primary); margin-left: 0.25rem;">${formatCurrencyBR(o.total_amount)}</strong>
+            ${isPending ? `
+              <button type="button" class="btn btn-primary btn-sm" onclick="handleMotherOrderApproval(${o.id}, 'approve')" style="background: #16a34a; border-color: #16a34a; font-weight: 700; padding: 0.45rem 0.9rem;">
+                Aprovar Compra
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="handleMotherOrderApproval(${o.id}, 'reject')" style="color: #dc2626; border-color: #fecaca; font-weight: 700; padding: 0.45rem 0.85rem;">
+                Recusar
+              </button>
+            ` : ''}
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openStoreOrderDetailPage(${o.id}, 'tab-mother-approvals')">
+              Ver Detalhes
+            </button>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 0.45rem;">
+          ${(o.items || []).map(it => `
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: #334155;">
+              <div><strong>${escapeHtml(it.product_name)}</strong> <span style="color: #64748b;">(${it.tier_qty} pçs × ${formatCurrencyBR(it.unit_price)})</span></div>
+              <div style="font-weight: 700; color: #0f172a;">${formatCurrencyBR(it.total_price)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+window.renderMotherApprovalsList = renderMotherApprovalsList;
+
+async function handleMotherOrderApproval(orderId, action) {
+  let rejectionReason = '';
+  if (action === 'reject') {
+    const reason = prompt('Informe o motivo da recusa deste pedido (opcional):', '');
+    if (reason === null) return;
+    rejectionReason = reason;
+  } else {
+    if (!confirm('Confirma a aprovação desta compra? O pedido será liberado para conferência e produção da gráfica.')) return;
+  }
+
+  try {
+    const res = await fetch(`/api/store/orders/${orderId}/mother-approval`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, rejection_reason: rejectionReason })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao processar aprovação.');
+
+    if (typeof showToast === 'function') showToast(data.message, 'success');
+    await loadMotherApprovals();
+    if (typeof loadClientStoreOrders === 'function') loadClientStoreOrders();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+window.handleMotherOrderApproval = handleMotherOrderApproval;
+
+
 
 

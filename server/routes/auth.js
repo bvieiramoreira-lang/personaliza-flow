@@ -36,6 +36,7 @@ function generateToken(user) {
     name: user.name,
     email: user.email,
     role: user.role,
+    parent_client_id: user.parent_client_id || null,
     timestamp: Date.now()
   };
   const str = JSON.stringify(payload);
@@ -69,7 +70,7 @@ router.post('/login', (req, res) => {
   const inputHash = hashPassword(password);
 
   db.get(
-    "SELECT id, name, email, password_hash, role, status, cnpj_cpf, phone, avatar_url FROM clients WHERE LOWER(email) = ?",
+    "SELECT id, name, email, password_hash, role, status, cnpj_cpf, phone, avatar_url, parent_client_id, branch_number, can_access_flow, can_access_store, cep, address, address_number, complement, neighborhood, city, state FROM clients WHERE LOWER(email) = ?",
     [cleanEmail],
     (err, user) => {
       if (err) {
@@ -96,7 +97,18 @@ router.post('/login', (req, res) => {
           role: user.role,
           cnpj_cpf: user.cnpj_cpf,
           phone: user.phone,
-          avatar_url: user.avatar_url || null
+          avatar_url: user.avatar_url || null,
+          parent_client_id: user.parent_client_id || null,
+          branch_number: user.branch_number || null,
+          can_access_flow: user.can_access_flow !== undefined && user.can_access_flow !== null ? Number(user.can_access_flow) : 1,
+          can_access_store: user.can_access_store !== undefined && user.can_access_store !== null ? Number(user.can_access_store) : 1,
+          cep: user.cep || null,
+          address: user.address || null,
+          address_number: user.address_number || null,
+          complement: user.complement || null,
+          neighborhood: user.neighborhood || null,
+          city: user.city || null,
+          state: user.state || null
         }
       });
     }
@@ -113,7 +125,7 @@ router.get('/me', (req, res) => {
   }
 
   db.get(
-    "SELECT id, name, email, role, status, cnpj_cpf, phone, avatar_url FROM clients WHERE id = ?",
+    "SELECT id, name, email, role, status, cnpj_cpf, phone, avatar_url, parent_client_id, branch_number, can_access_flow, can_access_store, cep, address, address_number, complement, neighborhood, city, state FROM clients WHERE id = ?",
     [decoded.id],
     (err, user) => {
       if (err || !user) {
@@ -223,7 +235,7 @@ router.put('/me', (req, res) => {
         return res.status(500).json({ error: 'Erro ao atualizar dados no banco de dados.' });
       }
       db.get(
-        "SELECT id, name, email, role, status, cnpj_cpf, phone, avatar_url FROM clients WHERE id = ?",
+        "SELECT id, name, email, role, status, cnpj_cpf, phone, avatar_url, parent_client_id, branch_number, can_access_flow, can_access_store, cep, address, address_number, complement, neighborhood, city, state FROM clients WHERE id = ?",
         [targetUserId],
         (gErr, user) => {
           if (gErr || !user) return res.json({ success: true, message: 'Perfil e senha atualizados com sucesso.' });
@@ -245,7 +257,7 @@ router.put('/me', (req, res) => {
         return res.status(500).json({ error: 'Erro ao atualizar dados no banco de dados.' });
       }
       db.get(
-        "SELECT id, name, email, role, status, cnpj_cpf, phone, avatar_url FROM clients WHERE id = ?",
+        "SELECT id, name, email, role, status, cnpj_cpf, phone, avatar_url, parent_client_id, branch_number, can_access_flow, can_access_store, cep, address, address_number, complement, neighborhood, city, state FROM clients WHERE id = ?",
         [targetUserId],
         (gErr, user) => {
           if (gErr || !user) return res.json({ success: true, message: 'Perfil atualizado com sucesso.' });

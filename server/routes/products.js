@@ -48,9 +48,9 @@ router.get('/', (req, res) => {
   const params = [];
 
   if (req.isClient) {
-    // Cliente autenticado: visualiza OBRIGATORIAMENTE apenas seus próprios produtos
+    // Cliente autenticado (Mãe ou Sede Filha): visualiza estoque vinculado à Conta Mãe (rootClientId)
     query += ` WHERE p.client_id = ?`;
-    params.push(req.clientId);
+    params.push(req.rootClientId || req.clientId);
   } else if (req.clientId) {
     // Administrador filtrando por cliente específico
     query += ` WHERE p.client_id = ?`;

@@ -158,11 +158,15 @@ router.post('/', (req, res) => {
     delivery_days,
     packages,
     cart_items,
-    client_id
+    client_id,
+    billing_client_id,
+    billing_cnpj,
+    billing_name
   } = req.body;
 
   const sessionId = getShipmentSessionId(req);
   let targetClientId = req.isClient ? req.clientId : (client_id || req.headers['x-target-client-id'] || null);
+  const parentClientId = req.isClient ? (req.parentClientId || null) : null;
 
   if (!dest_cep) {
     return res.status(400).json({ error: 'CEP de destino é obrigatório.' });
@@ -172,11 +176,12 @@ router.post('/', (req, res) => {
 
   const insertShipment = `
     INSERT INTO shipments (
-      client_id, code, type, recipient_name, dest_cep, dest_address, dest_city, dest_state,
+      client_id, parent_client_id, billing_client_id, billing_cnpj, billing_name,
+      code, type, recipient_name, dest_cep, dest_address, dest_city, dest_state,
       dest_number, dest_complement, total_weight, total_volumes, selected_carrier,
       selected_service, quoted_freight_cost, markup_percent, final_freight_price,
       delivery_days, status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const totalWeight = packages ? packages.reduce((acc, p) => acc + p.weight, 0) : 0;
@@ -187,6 +192,10 @@ router.post('/', (req, res) => {
       insertShipment,
       [
         effectiveClientId,
+        parentClientId,
+        billing_client_id || effectiveClientId,
+        billing_cnpj || null,
+        billing_name || null,
         code,
         type || 'coletivo',
         recipient_name || '',
@@ -204,7 +213,7 @@ router.post('/', (req, res) => {
         markup_percent || 10.0,
         final_freight_price || 0,
         delivery_days || 0,
-        'quoted'
+        'em_aberto'
       ],
       function (err) {
         if (err) return res.status(500).json({ error: err.message });
@@ -326,17 +335,29 @@ router.get('/', (req, res) => {
     SELECT 
       s.*,
       c.name AS client_name,
+      c.branch_number AS client_branch,
       c.email AS client_email
     FROM shipments s
     LEFT JOIN clients c ON s.client_id = c.id
   `;
   const params = [];
 
-  const filterClientId = req.isClient ? req.clientId : (req.query.client_id ? parseInt(req.query.client_id, 10) : req.clientId);
-
-  if (filterClientId) {
-    query += ' WHERE s.client_id = ?';
-    params.push(filterClientId);
+  if (req.isClient) {
+    if (!req.parentClientId) {
+      // Conta Mãe: vê suas remessas e todas as remessas das sedes filhas
+      query += ' WHERE (s.client_id = ? OR s.parent_client_id = ? OR s.billing_client_id = ?)';
+      params.push(req.clientId, req.clientId, req.clientId);
+    } else {
+      // Conta Filha: vê as que ela solicitou ou faturadas para ela
+      query += ' WHERE (s.client_id = ? OR s.billing_client_id = ?)';
+      params.push(req.clientId, req.clientId);
+    }
+  } else {
+    const filterClientId = req.query.client_id ? parseInt(req.query.client_id, 10) : req.clientId;
+    if (filterClientId) {
+      query += ' WHERE (s.client_id = ? OR s.parent_client_id = ? OR s.billing_client_id = ?)';
+      params.push(filterClientId, filterClientId, filterClientId);
+    }
   }
 
   query += ' ORDER BY s.created_at DESC';
@@ -355,6 +376,7 @@ router.get('/:id', (req, res) => {
     SELECT 
       s.*,
       c.name AS client_name,
+      c.branch_number AS client_branch,
       c.email AS client_email,
       c.cnpj_cpf AS client_cnpj_cpf,
       c.phone AS client_phone
@@ -367,7 +389,7 @@ router.get('/:id', (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!shipment) return res.status(404).json({ error: 'Solicitação de envio não encontrada.' });
 
-    if (req.isClient && shipment.client_id !== req.clientId) {
+    if (req.isClient && shipment.client_id !== req.clientId && shipment.parent_client_id !== req.clientId && shipment.billing_client_id !== req.clientId) {
       return res.status(403).json({ error: 'Você não tem permissão para visualizar esta remessa.' });
     }
 
@@ -462,7 +484,7 @@ router.put('/:id/status', (req, res) => {
   const shipmentId = req.params.id;
   const { status, tracking_code } = req.body;
 
-  const validStatuses = ['draft', 'quoted', 'separacao', 'em_preparacao', 'a_caminho', 'dispatched', 'entregue', 'delivered'];
+  const validStatuses = ['draft', 'em_aberto', 'quoted', 'separacao', 'em_preparacao', 'a_caminho', 'dispatched', 'entregue', 'delivered'];
   if (status && !validStatuses.includes(status)) {
     return res.status(400).json({ error: 'Status inválido.' });
   }

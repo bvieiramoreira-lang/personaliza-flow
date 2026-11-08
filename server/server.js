@@ -11,6 +11,7 @@ const shipmentsRouter = require('./routes/shipments');
 const settingsRouter = require('./routes/settings');
 const addressesRouter = require('./routes/addresses');
 const billingRouter = require('./routes/billing');
+const storeRouter = require('./routes/store');
 const { seedDatabase } = require('./seed');
 const tenantMiddleware = require('./middleware/tenant');
 
@@ -38,6 +39,7 @@ app.use('/api/shipments', shipmentsRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/addresses', addressesRouter);
 app.use('/api/billing', billingRouter);
+app.use('/api/store', storeRouter);
 
 // Inicializar banco com dados de exemplo se estiver vazio
 seedDatabase();

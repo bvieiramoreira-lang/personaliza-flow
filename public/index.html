@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Asap+Sharp:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=1788822000">
+  <link rel="stylesheet" href="css/style.css?v=1788823500">
 </head>
 <body>
   <div class="app-container">
@@ -43,7 +43,13 @@
           <li class="strip-item" data-tab="tab-billing" title="Carteira">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
           </li>
-          <li class="strip-item admin-only hidden" data-tab="tab-products" title="Cadastros (Admin)">
+          <li class="strip-item client-only" data-tab="tab-store-catalog" title="Loja Virtual">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          </li>
+          <li class="strip-item admin-only hidden" data-tab="tab-admin-store-orders" title="Loja Virtual (Admin)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          </li>
+          <li class="strip-item admin-only hidden" data-tab="tab-clients" title="Configuração (Clientes)">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           </li>
         </ul>
@@ -55,8 +61,9 @@
             <div class="account-tooltip">Minha conta</div>
           </div>
 
-          <div class="strip-item" title="Notificações">
+          <div class="strip-item" title="Notificações" onclick="toggleTopBellDropdown(event)" style="position: relative;">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            <span id="strip-notification-bell-badge" class="top-bell-count hidden" style="top: 2px; right: 2px; border-color: #2d174d;">0</span>
           </div>
 
           <div class="strip-item" data-tab="tab-updates" title="Ajuda e Novidades" onclick="switchTab('tab-updates')">
@@ -73,17 +80,114 @@
           </a>
         </div>
 
-        <ul class="panel-menu">
-          <li class="panel-item active" data-tab="tab-home">Início</li>
-          <li class="panel-item" data-tab="tab-my-products">Meus Produtos</li>
-          <li class="panel-item client-only" data-tab="tab-cart">Novo Envio</li>
-          <li class="panel-item" data-tab="tab-shipments">Gestão de Remessas</li>
-          <li class="panel-item client-only" data-tab="tab-addresses">Meus Endereços</li>
-          <li class="panel-item" data-tab="tab-billing">Carteira</li>
-          <li class="panel-item admin-only hidden" data-tab="tab-clients">Clientes</li>
-          <li class="panel-item admin-only hidden" data-tab="tab-settings">Configurações</li>
-          <li class="panel-item" data-tab="tab-my-account">Minha Conta</li>
-        </ul>
+        <div class="sidebar-categories-scroll" style="flex: 1; overflow-y: auto; padding-right: 2px;">
+          <!-- CATEGORIA MÃE 1: FLOW -->
+          <div class="menu-category-group" id="cat-group-flow">
+            <button type="button" class="menu-category-header" onclick="toggleMenuCategory('cat-group-flow')">
+              <span class="menu-category-title">FLOW</span>
+              <svg class="menu-category-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <ul class="panel-menu menu-category-list">
+              <li class="panel-item active" data-tab="tab-home"><span>Início</span></li>
+              <li class="panel-item" data-tab="tab-my-products"><span>Meus Produtos</span></li>
+              <li class="panel-item client-only" data-tab="tab-cart"><span>Novo Envio</span></li>
+              <li class="panel-item" data-tab="tab-shipments">
+                <span>Gestão de Remessas</span>
+                <span id="nav-badge-shipments" class="nav-alert-badge hidden" title="Remessas em aberto aguardando aprovação">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                  <span id="nav-badge-shipments-count">0</span>
+                </span>
+              </li>
+              <li class="panel-item client-only" data-tab="tab-addresses"><span>Meus Endereços</span></li>
+            </ul>
+          </div>
+
+          <!-- CATEGORIA MÃE 2: LOJA VIRTUAL -->
+          <div class="menu-category-group" id="cat-group-store" style="margin-top: 0.85rem;">
+            <button type="button" class="menu-category-header" onclick="toggleMenuCategory('cat-group-store')">
+              <span class="menu-category-title">LOJA VIRTUAL</span>
+              <svg class="menu-category-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <ul class="panel-menu menu-category-list">
+              <!-- Itens Cliente -->
+              <li class="panel-item client-only" data-tab="tab-store-catalog"><span>Vitrine da Loja</span></li>
+              <li class="panel-item client-only" data-tab="tab-store-cart" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Carrinho da Loja</span>
+                <span id="sidebar-store-cart-badge" style="background: var(--primary); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 1px 7px; border-radius: 10px; display: none;">0</span>
+              </li>
+              <li class="panel-item client-only" data-tab="tab-store-orders">
+                <span>Meus Pedidos</span>
+                <span id="nav-badge-client-store-orders" class="nav-alert-badge hidden" title="Pedidos aguardando aprovação">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                  <span id="nav-badge-client-store-orders-count">0</span>
+                </span>
+              </li>
+              <!-- Itens Admin -->
+              <li class="panel-item admin-only hidden" data-tab="tab-admin-store-orders">
+                <span>Pedidos da Loja</span>
+                <span id="nav-badge-admin-store-orders" class="nav-alert-badge hidden" title="Pedidos da Loja em aberto aguardando aprovação">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                  <span id="nav-badge-admin-store-orders-count">0</span>
+                </span>
+              </li>
+              <li class="panel-item admin-only hidden" data-tab="tab-admin-store-settings"><span>Loja & Configurações</span></li>
+            </ul>
+          </div>
+
+          <!-- CATEGORIA MÃE 3: FINANCEIRO / CARTEIRA UNIFICADA -->
+          <div class="menu-category-group" id="cat-group-finance" style="margin-top: 0.85rem;">
+            <button type="button" class="menu-category-header" onclick="toggleMenuCategory('cat-group-finance')">
+              <span class="menu-category-title">FINANCEIRO</span>
+              <svg class="menu-category-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <ul class="panel-menu menu-category-list">
+              <li class="panel-item" data-tab="tab-billing">
+                <span>Carteira</span>
+                <span id="nav-badge-billing" class="nav-alert-badge hidden" title="Cobranças / Boletos e NFs aguardando pagamento">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                  <span id="nav-badge-billing-count">0</span>
+                </span>
+              </li>
+              <li class="panel-item" data-tab="tab-invoices-nf">
+                <span>Notas Fiscais</span>
+                <span id="nav-badge-invoices-nf" class="nav-alert-badge hidden" title="Notas Fiscais disponíveis">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                  <span id="nav-badge-invoices-nf-count">0</span>
+                </span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- CATEGORIA MÃE: REDE & SEDES (CONTA MÃE CLIENTE) -->
+          <div class="menu-category-group client-only" id="cat-group-mother" style="margin-top: 0.85rem;">
+            <button type="button" class="menu-category-header" onclick="toggleMenuCategory('cat-group-mother')">
+              <span class="menu-category-title">REDE & SEDES</span>
+              <svg class="menu-category-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <ul class="panel-menu menu-category-list">
+              <li class="panel-item" data-tab="tab-mother-approvals">
+                <span>Aprovação de Compras</span>
+                <span id="badge-mother-approvals" class="nav-alert-badge hidden" title="Pedidos das sedes aguardando aprovação da Matriz">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                  <span id="badge-mother-approvals-count">0</span>
+                </span>
+              </li>
+              <li class="panel-item" data-tab="tab-mother-branches"><span>Minhas Sedes (Filhos)</span></li>
+            </ul>
+          </div>
+
+          <!-- CATEGORIA MÃE 4: CONFIGURAÇÃO (ADMIN ONLY) -->
+          <div class="menu-category-group admin-only hidden" id="cat-group-config" style="margin-top: 0.85rem;">
+            <button type="button" class="menu-category-header" onclick="toggleMenuCategory('cat-group-config')">
+              <span class="menu-category-title">CONFIGURAÇÃO</span>
+              <svg class="menu-category-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <ul class="panel-menu menu-category-list">
+              <li class="panel-item admin-only hidden" data-tab="tab-clients"><span>Clientes</span></li>
+              <li class="panel-item admin-only hidden" data-tab="tab-settings"><span>Parâmetros & Frete</span></li>
+            </ul>
+          </div>
+        </div>
 
         <div class="panel-footer">
           <button type="button" class="btn-logout-sidebar" onclick="handleLogout()" title="Sair do sistema">
@@ -106,17 +210,37 @@
     <!-- MAIN WORKSPACE -->
     <main class="main-content">
       
-      <!-- Top Bar com Saudação Dinâmica e Alternador de Perfil -->
+      <!-- Top Bar com Saudação Dinâmica, Sino de Notificações e Alternador de Perfil -->
       <div class="top-welcome-bar">
         <div id="welcome-greeting-container">
           <h1 class="welcome-title" id="welcome-greeting-text">Boa tarde, Personaliza Brindes</h1>
           <a href="javascript:void(0)" onclick="switchTab('tab-updates')" class="welcome-subtitle" title="Clique para ver o que mudou no módulo logístico">Descubra o que mudou no módulo logístico nesta semana</a>
         </div>
 
-        <!-- Seletor de Perfil (Cliente vs Admin) -->
-        <div class="role-selector" title="Alternar perfil de visualização" style="margin-left: auto;">
-          <button class="role-btn active" id="btn-role-client" onclick="setAppRole('client')">Visão Cliente</button>
-          <button class="role-btn" id="btn-role-admin" onclick="setAppRole('admin')">Visão Admin</button>
+        <!-- Ações do Topo Direito: Sino de Notificações + Seletor de Perfil -->
+        <div class="top-right-actions" id="top-right-actions-container">
+          <div class="top-bell-wrapper" id="top-bell-wrapper">
+            <button type="button" class="top-bell-btn" id="top-notification-bell-btn" onclick="toggleTopBellDropdown(event)" title="Avisos e Notificações">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+              <span id="top-notification-bell-badge" class="top-bell-count hidden">0</span>
+            </button>
+
+            <div id="top-notification-dropdown" class="top-bell-dropdown hidden">
+              <div class="top-bell-dropdown-header">
+                <span class="top-bell-dropdown-title">Notificações & Pendências</span>
+                <span id="top-bell-dropdown-badge-text" style="font-size: 0.72rem; font-weight: 800; color: #dc2626;"></span>
+              </div>
+              <div id="top-notification-dropdown-list">
+                <!-- Preenchido via JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Seletor de Perfil (Cliente vs Admin) -->
+          <div class="role-selector" title="Alternar perfil de visualização">
+            <button class="role-btn active" id="btn-role-client" onclick="setAppRole('client')">Visão Cliente</button>
+            <button class="role-btn" id="btn-role-admin" onclick="setAppRole('admin')">Visão Admin</button>
+          </div>
         </div>
       </div>
 
@@ -357,6 +481,12 @@
                 <label for="final-input-complement">Complemento (Opcional)</label>
                 <input type="text" id="final-input-complement" placeholder="Apto, Bloco, Sala...">
               </div>
+              <div class="form-group" style="grid-column: span 2;">
+                <label for="flow-checkout-billing-select">Faturar para (CNPJ Pagador) <span style="color: red;">*</span></label>
+                <select id="flow-checkout-billing-select" style="width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.88rem; background: #fff; font-weight: 600;">
+                  <!-- Preenchido via JS com os CNPJs da rede -->
+                </select>
+              </div>
             </div>
 
             <!-- Checkbox para Salvar Endereço -->
@@ -405,6 +535,7 @@
             <div style="min-width: 160px;">
               <select id="filter-shipment-status" class="form-control" onchange="filterShipments()" style="height: 38px; font-size: 0.85rem; font-weight: 500; background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px;">
                 <option value="all">Todos os Status</option>
+                <option value="em_aberto">Em aberto (Aprovar)</option>
                 <option value="preparacao">Em preparação</option>
                 <option value="a_caminho">A caminho</option>
                 <option value="entregue">Entregue</option>
@@ -448,44 +579,116 @@
         </div>
       </section>
 
-      <!-- TAB: CARTEIRA & CONTROLE DE FATURAMENTO -->
+      <!-- TAB: CARTEIRA UNIFICADA (FLOW + LOJA VIRTUAL) - REFORMULADA COM FONTES REDUZIDAS -->
       <section id="tab-billing" class="tab-page hidden">
-        <!-- Header compacto -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+        <!-- Header compacto + Indicadores Unificados (Fontes reduzidas) -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.75rem;">
           <div>
-            <h2 style="font-size: 1.35rem; font-weight: 700; color: #0f172a; margin-bottom: 0.2rem;">Controle de Faturamento</h2>
-            <div style="font-size: 0.95rem; color: #475569; font-weight: 500;">
-              Saldo em aberto: <strong id="billing-total-open" style="font-size: 1.15rem; color: #dc2626; font-weight: 800; margin-left: 0.2rem;">R$ 0,00</strong>
-              <span style="margin: 0 0.6rem; color: #cbd5e1;">|</span>
-              Total quitado: <strong id="billing-total-paid" style="font-size: 1rem; color: #16a34a; font-weight: 700; margin-left: 0.2rem;">R$ 0,00</strong>
+            <h2 style="font-size: 1.12rem; font-weight: 800; color: #0f172a; margin-bottom: 0.15rem;">Carteira & Controle de Faturamento</h2>
+            <p style="font-size: 0.75rem; color: #64748b; margin: 0 0 0.4rem 0;">Extrato financeiro unificado de pedidos aprovados (Flow + Loja Virtual). Pedidos com status "Em aberto" só entram após aprovação.</p>
+            <div style="font-size: 0.78rem; color: #475569; font-weight: 500; display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem;">
+              <span>Saldo em aberto: <strong id="billing-total-open" style="font-size: 0.92rem; color: #dc2626; font-weight: 800; margin-left: 0.1rem;">R$ 0,00</strong></span>
+              <span id="billing-open-breakdown" style="font-size: 0.71rem; color: #64748b; font-weight: 600;"></span>
+              <span style="margin: 0 0.3rem; color: #cbd5e1;">|</span>
+              <span>Total quitado: <strong id="billing-total-paid" style="font-size: 0.88rem; color: #16a34a; font-weight: 700; margin-left: 0.1rem;">R$ 0,00</strong></span>
             </div>
           </div>
 
           <!-- Barra de Ações em Lote do Admin (Visível ao selecionar caixas) -->
-          <div id="billing-admin-actions" class="admin-only hidden" style="display: flex; align-items: center; gap: 0.6rem;">
-            <div id="billing-batch-bar" style="display: none; align-items: center; gap: 0.6rem;">
-              <span style="font-size: 0.82rem; color: #475569; font-weight: 600;">(<span id="billing-selected-count">0</span>) selecionados:</span>
-              <button type="button" class="btn btn-sm btn-success" onclick="batchSetPaymentStatus('pago')" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; font-weight: 600; border-radius: 6px;">Dar Baixa nos Selecionados</button>
-              <button type="button" class="btn btn-sm" onclick="batchSetPaymentStatus('em_aberto')" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-weight: 600; border-radius: 6px;">Marcar Em Aberto</button>
-              <button type="button" class="btn btn-sm btn-danger" onclick="batchDeleteBillingShipments()" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; background: #ef4444; color: #fff; border: none; font-weight: 600; border-radius: 6px; cursor: pointer;">Excluir Selecionados</button>
+          <div id="billing-admin-actions" class="admin-only hidden" style="display: flex; align-items: center; gap: 0.45rem;">
+            <div id="billing-batch-bar" style="display: none; align-items: center; gap: 0.45rem; background: #f8fafc; border: 1px solid #cbd5e1; padding: 0.35rem 0.65rem; border-radius: 8px;">
+              <span style="font-size: 0.74rem; color: #0f172a; font-weight: 700;">(<span id="billing-selected-count">0</span>) selecionados:</span>
+              <button type="button" class="btn btn-sm" onclick="openReceiveBillingModalFromSelection('main')" style="font-size: 0.72rem; padding: 0.28rem 0.65rem; background: #2563eb; color: #ffffff; border: none; font-weight: 700; border-radius: 5px; cursor: pointer;">
+                Receber / Cobrar (NF + Boleto)
+              </button>
+              <button type="button" class="btn btn-sm" onclick="batchSetPaymentStatus('pago')" style="font-size: 0.72rem; padding: 0.28rem 0.65rem; background: #16a34a; color: #ffffff; border: none; font-weight: 700; border-radius: 5px; cursor: pointer;">
+                Aprovar Pagamento
+              </button>
+              <button type="button" class="btn btn-sm" onclick="batchSetPaymentStatus('em_aberto')" style="font-size: 0.72rem; padding: 0.28rem 0.55rem; background: #ffffff; color: #b45309; border: 1px solid #fcd34d; font-weight: 600; border-radius: 5px; cursor: pointer;">
+                Reabrir
+              </button>
+              <button type="button" class="btn btn-sm btn-danger" onclick="batchDeleteBillingShipments()" style="font-size: 0.72rem; padding: 0.28rem 0.55rem; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-weight: 600; border-radius: 5px; cursor: pointer;">
+                Excluir
+              </button>
             </div>
           </div>
         </div>
 
-        <!-- Tabela Compacta de Lançamentos -->
-        <div class="card" style="padding: 0; overflow: hidden; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+        <!-- Barra de Filtros Limpa da Carteira Unificada (Fontes reduzidas) -->
+        <div style="padding: 0.1rem 0 0.6rem 0; margin-bottom: 0.35rem;">
+          <div style="display: flex; align-items: flex-end; flex-wrap: wrap; gap: 0.65rem;">
+            <div class="form-group" style="margin: 0; min-width: 145px;">
+              <label for="filter-billing-period" style="font-size: 0.63rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.15rem; display: block;">Período</label>
+              <select id="filter-billing-period" onchange="handleBillingPeriodChange(this.value)" style="width: 100%; padding: 0.25rem 0.5rem; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 0.73rem; background: #ffffff; font-weight: 600; color: #0f172a; height: 28px;">
+                <option value="all">Todas as datas</option>
+                <option value="today">Hoje</option>
+                <option value="7d">Últimos 7 dias</option>
+                <option value="30d">Últimos 30 dias</option>
+                <option value="90d">Últimos 90 dias</option>
+                <option value="this_month">Este mês</option>
+                <option value="custom">Intervalo de datas</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="margin: 0;">
+              <label for="filter-billing-date-from" style="font-size: 0.63rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.15rem; display: block;">Data Inicial</label>
+              <input type="date" id="filter-billing-date-from" onchange="handleBillingCustomDateChange()" style="padding: 0.2rem 0.45rem; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 0.73rem; background: #ffffff; color: #0f172a; height: 28px;">
+            </div>
+
+            <div class="form-group" style="margin: 0;">
+              <label for="filter-billing-date-to" style="font-size: 0.63rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.15rem; display: block;">Data Final</label>
+              <input type="date" id="filter-billing-date-to" onchange="handleBillingCustomDateChange()" style="padding: 0.2rem 0.45rem; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 0.73rem; background: #ffffff; color: #0f172a; height: 28px;">
+            </div>
+
+            <div class="form-group" style="margin: 0; min-width: 150px;">
+              <label for="filter-billing-origin" style="font-size: 0.63rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.15rem; display: block;">Origem da Cobrança</label>
+              <select id="filter-billing-origin" onchange="renderUnifiedBillingTable()" style="width: 100%; padding: 0.25rem 0.5rem; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 0.73rem; background: #ffffff; font-weight: 600; color: #0f172a; height: 28px;">
+                <option value="">Todas (Flow + Loja)</option>
+                <option value="flow">Envios Flow (Fretes)</option>
+                <option value="store">Compras da Loja (Faturadas)</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="margin: 0; min-width: 145px;">
+              <label for="filter-billing-status" style="font-size: 0.63rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.15rem; display: block;">Status Pagamento</label>
+              <select id="filter-billing-status" onchange="renderUnifiedBillingTable()" style="width: 100%; padding: 0.25rem 0.5rem; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 0.73rem; background: #ffffff; font-weight: 600; color: #0f172a; height: 28px;">
+                <option value="">Todos os status</option>
+                <option value="em_aberto">Em Aberto</option>
+                <option value="aguardando_pagamento">Aguard. Pagamento</option>
+                <option value="pago">Pago / Quitado</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="margin: 0; min-width: 155px;">
+              <label for="filter-billing-method" style="font-size: 0.63rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.15rem; display: block;">Condição / Faturamento</label>
+              <select id="filter-billing-method" onchange="renderUnifiedBillingTable()" style="width: 100%; padding: 0.25rem 0.5rem; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 0.73rem; background: #ffffff; font-weight: 600; color: #0f172a; height: 28px;">
+                <option value="">Todas as condições</option>
+              </select>
+            </div>
+
+            <button type="button" onclick="clearUnifiedBillingFilters()" style="padding: 0 0.65rem; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 0.72rem; background: #ffffff; font-weight: 600; color: #0f172a; height: 28px; cursor: pointer;">
+              Limpar Filtros
+            </button>
+          </div>
+        </div>
+
+        <!-- Tabela Compacta de Lançamentos Unificados (Fontes Reduzidas) -->
+        <div class="card" style="padding: 0; overflow: hidden; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
           <div class="table-responsive">
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.84rem;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.75rem;">
               <thead>
-                <tr style="background: #ffffff; border-bottom: 1px solid #f1f5f9; text-align: left; color: #64748b; font-weight: 600; font-size: 0.8rem;">
-                  <th class="admin-only hidden" style="width: 38px; text-align: center; padding: 0.8rem 0.5rem;">
+                <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; text-align: left; color: #475569; font-weight: 700; font-size: 0.69rem; text-transform: uppercase; letter-spacing: 0.02em;">
+                  <th class="admin-only hidden" style="width: 32px; text-align: center; padding: 0.55rem 0.35rem;">
                     <input type="checkbox" id="billing-select-all" onclick="toggleSelectAllBillingShipments(this.checked)" style="cursor: pointer;" title="Selecionar Todos">
                   </th>
-                  <th style="padding: 0.8rem 1rem;">Data</th>
-                  <th style="padding: 0.8rem 1rem;">Valor</th>
-                  <th style="padding: 0.8rem 1rem;">Pedido / Remessa</th>
-                  <th style="padding: 0.8rem 1rem;">Observações / Destino</th>
-                  <th style="padding: 0.8rem 1rem;">Status Pagamento</th>
+                  <th style="padding: 0.55rem 0.65rem;">Data</th>
+                  <th style="padding: 0.55rem 0.65rem;">Origem</th>
+                  <th style="padding: 0.55rem 0.65rem;">Valor</th>
+                  <th style="padding: 0.55rem 0.65rem;">Pedido / Remessa</th>
+                  <th style="padding: 0.55rem 0.65rem;">Condição</th>
+                  <th style="padding: 0.55rem 0.65rem;">Cliente / Detalhes</th>
+                  <th style="padding: 0.55rem 0.65rem;">Boleto & NF</th>
+                  <th style="padding: 0.55rem 0.65rem;">Status / Receber</th>
                 </tr>
               </thead>
               <tbody id="billing-shipments-tbody">
@@ -495,6 +698,119 @@
           </div>
         </div>
       </section>
+
+      <!-- PÁGINA DEDICADA: RECEBER / FATURAR PEDIDOS (NF + BOLETO) — SEM POPUP -->
+      <section id="page-billing-receive" class="tab-page hidden admin-only">
+        <div style="margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="closeReceiveBillingPage()" style="font-weight: 700; font-size: 0.8rem; padding: 0.45rem 0.9rem; display: inline-flex; align-items: center; gap: 0.4rem;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            <span id="receive-billing-back-label">Voltar para Carteira</span>
+          </button>
+        </div>
+
+        <div class="card" style="max-width: 720px; padding: 1.5rem; border: 1px solid #e2e8f0; border-radius: 12px;">
+          <div style="padding-bottom: 0.9rem; border-bottom: 1px solid #e2e8f0; margin-bottom: 1.15rem;">
+            <h2 style="font-size: 1.18rem; font-weight: 800; color: #0f172a; margin: 0;">Receber / Gerar Cobrança do(s) Pedido(s)</h2>
+            <p style="font-size: 0.8rem; color: #64748b; margin: 0.25rem 0 0 0;">Anexe a Nota Fiscal (NF) e o Boleto de cobrança. Ao confirmar, o pedido ficará com status <strong style="color: #d97706;">Aguard. Pagamento</strong> para aprovação posterior do Admin.</p>
+          </div>
+
+          <form id="form-billing-receive" onsubmit="submitReceiveBillingForm(event)">
+            <!-- Resumo dos Pedidos Selecionados -->
+            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1.1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                <span style="font-size: 0.74rem; font-weight: 700; color: #475569; text-transform: uppercase;">Pedidos Selecionados (<span id="receive-modal-count">0</span>)</span>
+                <strong id="receive-modal-total" style="font-size: 1rem; color: #0f172a; font-weight: 800;">R$ 0,00</strong>
+              </div>
+              <div id="receive-modal-items-list" style="font-size: 0.76rem; color: #334155; max-height: 120px; overflow-y: auto; line-height: 1.5;">
+                <!-- Lista de códigos e valores -->
+              </div>
+            </div>
+
+            <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+              <div class="form-group" style="margin: 0;">
+                <label for="receive-nf-number" style="font-size: 0.76rem; font-weight: 700; color: #334155;">Número da Nota Fiscal (NF)</label>
+                <input type="text" id="receive-nf-number" placeholder="Ex: NF-001450" style="font-size: 0.82rem; padding: 0.45rem 0.75rem; height: 36px;">
+              </div>
+
+              <div class="form-group" style="margin: 0;">
+                <label style="font-size: 0.76rem; font-weight: 700; color: #334155;">Status ao Gerar Cobrança</label>
+                <div style="display: flex; align-items: center; height: 36px; color: #d97706; font-size: 0.82rem; font-weight: 700;">
+                  <span>Aguard. Pagamento (Aprovação posterior do Admin)</span>
+                </div>
+                <input type="hidden" id="receive-payment-status" value="aguardando_pagamento">
+              </div>
+            </div>
+
+            <!-- Upload de Nota Fiscal (NF) -->
+            <div class="form-group" style="margin-bottom: 1rem; background: #ffffff; border: 1px dashed #94a3b8; border-radius: 8px; padding: 0.85rem 1rem;">
+              <label for="receive-nf-file" style="font-size: 0.78rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span>Arquivo da Nota Fiscal (NF - PDF, XML ou Imagem)</span>
+              </label>
+              <input type="file" id="receive-nf-file" accept=".pdf,.xml,.png,.jpg,.jpeg" style="font-size: 0.78rem; width: 100%;">
+              <div id="receive-existing-nf-info" style="font-size: 0.74rem; color: #16a34a; margin-top: 0.35rem; display: none;"></div>
+            </div>
+
+            <!-- Upload de Boleto -->
+            <div class="form-group" style="margin-bottom: 1.25rem; background: #ffffff; border: 1px dashed #94a3b8; border-radius: 8px; padding: 0.85rem 1rem;">
+              <label for="receive-boleto-file" style="font-size: 0.78rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                <span>Arquivo do Boleto / Cobrança (PDF ou Imagem)</span>
+              </label>
+              <input type="file" id="receive-boleto-file" accept=".pdf,.png,.jpg,.jpeg" style="font-size: 0.78rem; width: 100%;">
+              <div id="receive-existing-boleto-info" style="font-size: 0.74rem; color: #2563eb; margin-top: 0.35rem; display: none;"></div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.65rem; padding-top: 0.9rem; border-top: 1px solid #e2e8f0;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="closeReceiveBillingPage()" style="font-size: 0.8rem; padding: 0.5rem 1rem;">Cancelar</button>
+              <button type="submit" class="btn btn-primary btn-sm" id="btn-submit-receive-billing" style="font-size: 0.8rem; font-weight: 700; padding: 0.5rem 1.25rem; background: #2563eb; border-color: #2563eb;">
+                Gerar Recebimento (Aguard. Pagamento)
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- TAB: NOTAS FISCAIS (ABAIXO DE CARTEIRA NO MENU FINANCEIRO) -->
+      <section id="tab-invoices-nf" class="tab-page hidden">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+          <div>
+            <h2 style="font-size: 1.18rem; font-weight: 800; color: #0f172a; margin-bottom: 0.15rem;">Notas Fiscais (NF) & Documentos de Cobrança</h2>
+            <p style="font-size: 0.78rem; color: #64748b; margin: 0;">Consulte e faça o download das Notas Fiscais e Boletos vinculados aos seus pedidos da Loja e remessas do Flow.</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <input type="text" id="filter-nf-search" placeholder="Buscar por Nº da NF, pedido ou cliente..." oninput="renderInvoicesNfTable()" style="padding: 0.35rem 0.65rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.76rem; min-width: 230px; height: 32px; background: #fff;">
+            <select id="filter-nf-origin" onchange="renderInvoicesNfTable()" style="padding: 0.3rem 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.76rem; height: 32px; background: #fff; font-weight: 600;">
+              <option value="">Todas as Origens</option>
+              <option value="store">Loja Virtual</option>
+              <option value="flow">Envios Flow</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 0; overflow: hidden; border-radius: 10px; border: 1px solid #e2e8f0;">
+          <div class="table-responsive">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.76rem;">
+              <thead>
+                <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; text-align: left; color: #475569; font-weight: 700; font-size: 0.7rem; text-transform: uppercase;">
+                  <th style="padding: 0.6rem 0.75rem;">Nº Nota Fiscal</th>
+                  <th style="padding: 0.6rem 0.75rem;">Data Emissão / Pedido</th>
+                  <th style="padding: 0.6rem 0.75rem;">Pedido / Remessa</th>
+                  <th style="padding: 0.6rem 0.75rem;">Origem</th>
+                  <th style="padding: 0.6rem 0.75rem;">Cliente / Descrição</th>
+                  <th style="padding: 0.6rem 0.75rem;">Valor</th>
+                  <th style="padding: 0.6rem 0.75rem;">Status Pagamento</th>
+                  <th style="padding: 0.6rem 0.75rem; text-align: right;">Download Documentos</th>
+                </tr>
+              </thead>
+              <tbody id="invoices-nf-tbody">
+                <!-- Renderizado via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
 
       <!-- TAB: GESTÃO DE CLIENTES (ADMIN ONLY) -->
       <section id="tab-clients" class="tab-page hidden admin-only">
@@ -529,6 +845,7 @@
           </div>
         </div>
       </section>
+
 
       <!-- PÁGINA DEDICADA: ADICIONAR NOVO CLIENTE (ADMIN ONLY) -->
       <section id="page-add-client" class="tab-page hidden admin-only">
@@ -609,7 +926,9 @@
           <!-- Sub-Abas do Cliente -->
           <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; flex-wrap: wrap;">
             <button type="button" class="btn btn-secondary client-tab-btn active" id="btn-client-tab-products" onclick="switchClientDetailTab('products')">Produtos do Cliente</button>
+            <button type="button" class="btn btn-secondary client-tab-btn" id="btn-client-tab-store" onclick="switchClientDetailTab('store')">Loja</button>
             <button type="button" class="btn btn-secondary client-tab-btn" id="btn-client-tab-billing" onclick="switchClientDetailTab('billing')">Carteira do Cliente</button>
+            <button type="button" class="btn btn-secondary client-tab-btn" id="btn-client-tab-branches" onclick="switchClientDetailTab('branches')">Sedes / Usuários Filhos</button>
             <button type="button" class="btn btn-secondary client-tab-btn" id="btn-client-tab-info" onclick="switchClientDetailTab('info')">Dados Cadastrais & Acesso</button>
           </div>
 
@@ -637,44 +956,147 @@
             </div>
           </div>
 
-          <!-- Conteúdo da Sub-Aba 2: Carteira do Cliente -->
-          <div id="client-subtab-billing" class="client-subtab-content hidden" style="margin-top: 1.5rem;">
-            <div style="display: flex; gap: 1.25rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
-              <div style="flex: 1; min-width: 220px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); padding: 1.25rem; border-radius: 12px;">
-                <div style="font-size: 0.78rem; color: #ef4444; font-weight: 700; text-transform: uppercase;">SALDO EM ABERTO</div>
-                <div id="client-open-balance" style="font-size: 1.6rem; font-weight: 800; color: #dc2626; margin-top: 0.25rem;">R$ 0,00</div>
+          <!-- Conteúdo da Sub-Aba LOJA DO CLIENTE -->
+          <div id="client-subtab-store" class="client-subtab-content hidden" style="margin-top: 1.5rem;">
+            <!-- Bloco de Status / Criação da Loja do Cliente -->
+            <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.25rem;">
+                  <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-primary); margin: 0;" id="client-store-status-title">Loja Corporativa do Cliente</h3>
+                  <span id="client-store-badge" class="badge badge-secondary" style="font-size: 0.75rem;">Não criada</span>
+                </div>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Disponibilize produtos com layout aprovado e tabela de preços (20/50/100/200/500/1000 pçs) para o cliente encomendar.</p>
               </div>
-              <div style="flex: 1; min-width: 220px; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.2); padding: 1.25rem; border-radius: 12px;">
-                <div style="font-size: 0.78rem; color: #22c55e; font-weight: 700; text-transform: uppercase;">TOTAL QUITADO</div>
-                <div id="client-paid-balance" style="font-size: 1.6rem; font-weight: 800; color: #16a34a; margin-top: 0.25rem;">R$ 0,00</div>
+              <div style="display: flex; gap: 0.75rem; align-items: center;">
+                <button type="button" class="btn btn-secondary" id="btn-toggle-client-store" onclick="toggleClientStoreStatus()">Ativar Loja para este Cliente</button>
+                <button type="button" class="btn btn-primary" onclick="openNewStoreProductForClient()">Cadastrar Produto na Loja</button>
               </div>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
-              <h3 style="font-size: 1rem; font-weight: 700; margin: 0;">Histórico de Remessas & Cobranças</h3>
-              
-              <!-- Ações em Lote para a Carteira deste Cliente -->
-              <div id="client-billing-batch-bar" style="display: none; align-items: center; gap: 0.6rem;">
-                <span style="font-size: 0.82rem; color: #475569; font-weight: 600;">(<span id="client-billing-selected-count">0</span>) selecionados:</span>
-                <button type="button" class="btn btn-sm btn-success" onclick="batchSetClientPaymentStatus('pago')" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; font-weight: 700; border-radius: 6px; background: #16a34a; color: #fff; border: none; cursor: pointer;">Dar Baixa nos Selecionados</button>
-                <button type="button" class="btn btn-sm" onclick="batchSetClientPaymentStatus('em_aberto')" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-weight: 600; border-radius: 6px; cursor: pointer;">Marcar Em Aberto</button>
-                <button type="button" class="btn btn-sm btn-danger" onclick="batchDeleteClientBillingShipments()" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; background: #ef4444; color: #fff; border: none; font-weight: 700; border-radius: 6px; cursor: pointer;">Excluir Selecionados</button>
-              </div>
+            <!-- Tabela de Produtos da Loja deste Cliente -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
+              <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary);">Catálogo de Produtos na Loja deste Cliente</h4>
             </div>
 
             <div class="table-responsive">
               <table>
                 <thead>
                   <tr>
-                    <th style="width: 38px; text-align: center; padding: 0.8rem 0.5rem;">
+                    <th>Foto</th>
+                    <th>Código</th>
+                    <th>Produto</th>
+                    <th>Prazo Prod.</th>
+                    <th>20 pçs</th>
+                    <th>50 pçs</th>
+                    <th>100 pçs</th>
+                    <th>200 pçs</th>
+                    <th>500 pçs</th>
+                    <th>1000 pçs</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="client-store-products-tbody">
+                  <!-- Render via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Conteúdo da Sub-Aba 2: Carteira do Cliente (Unificada: Regras de Faturamento + Extrato Flow & Loja) -->
+          <div id="client-subtab-billing" class="client-subtab-content hidden" style="margin-top: 1.5rem;">
+            <!-- Configuração de Faturamento / Meios de Pagamento Liberados para este Cliente -->
+            <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem 1.5rem; margin-bottom: 1.5rem;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.85rem;">
+                <div>
+                  <h4 style="font-size: 0.98rem; font-weight: 800; color: var(--text-primary); margin: 0 0 0.2rem 0;">Condições de Faturamento / Meios de Pagamento deste Cliente</h4>
+                  <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0;">Defina os prazos e formas de pagamento que este cliente poderá escolher no checkout da Loja Virtual (Ex: 30 DIAS BOLETO, 15/30 DIAS BOLETO, PIX À VISTA).</p>
+                </div>
+              </div>
+
+              <!-- Lista de Meios de Pagamento Ativos -->
+              <div id="client-store-payment-methods-tags" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
+                <!-- Render via JS -->
+              </div>
+
+              <!-- Adicionar Novo Meio de Pagamento + Atalhos Rápidos -->
+              <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 0.65rem; padding-top: 0.85rem; border-top: 1px solid #f1f5f9;">
+                <input type="text" id="input-new-client-payment-method" placeholder="Ex: 30 DIAS BOLETO, 28/56 DIAS BOLETO..." style="flex: 1; min-width: 240px; max-width: 340px; padding: 0.48rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.84rem; text-transform: uppercase;" onkeydown="if(event.key==='Enter'){event.preventDefault();addClientPaymentMethod();}">
+                <button type="button" class="btn btn-primary btn-sm" onclick="addClientPaymentMethod()" style="padding: 0.48rem 0.95rem; font-weight: 700; font-size: 0.82rem;">+ Adicionar Condição</button>
+
+                <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; margin-left: 0.25rem;">
+                  <span style="font-size: 0.74rem; color: #64748b; font-weight: 600;">Sugestões rápidas:</span>
+                  <button type="button" onclick="addClientPaymentMethod('30 DIAS BOLETO')" style="font-size: 0.72rem; padding: 0.22rem 0.55rem; border: 1px solid #cbd5e1; border-radius: 5px; background: #f8fafc; color: #334155; font-weight: 600; cursor: pointer;">30 DIAS BOLETO</button>
+                  <button type="button" onclick="addClientPaymentMethod('15/30 DIAS BOLETO')" style="font-size: 0.72rem; padding: 0.22rem 0.55rem; border: 1px solid #cbd5e1; border-radius: 5px; background: #f8fafc; color: #334155; font-weight: 600; cursor: pointer;">15/30 DIAS BOLETO</button>
+                  <button type="button" onclick="addClientPaymentMethod('28 DIAS BOLETO')" style="font-size: 0.72rem; padding: 0.22rem 0.55rem; border: 1px solid #cbd5e1; border-radius: 5px; background: #f8fafc; color: #334155; font-weight: 600; cursor: pointer;">28 DIAS BOLETO</button>
+                  <button type="button" onclick="addClientPaymentMethod('30/60 DIAS BOLETO')" style="font-size: 0.72rem; padding: 0.22rem 0.55rem; border: 1px solid #cbd5e1; border-radius: 5px; background: #f8fafc; color: #334155; font-weight: 600; cursor: pointer;">30/60 DIAS BOLETO</button>
+                  <button type="button" onclick="addClientPaymentMethod('PIX À VISTA')" style="font-size: 0.72rem; padding: 0.22rem 0.55rem; border: 1px solid #cbd5e1; border-radius: 5px; background: #f8fafc; color: #334155; font-weight: 600; cursor: pointer;">PIX À VISTA</button>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-bottom: 1.15rem; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 190px; background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.2); padding: 0.85rem 1rem; border-radius: 10px;">
+                <div style="font-size: 0.68rem; color: #ef4444; font-weight: 700; text-transform: uppercase;">SALDO EM ABERTO (APROVADOS)</div>
+                <div id="client-open-balance" style="font-size: 1.25rem; font-weight: 800; color: #dc2626; margin-top: 0.15rem;">R$ 0,00</div>
+              </div>
+              <div style="flex: 1; min-width: 190px; background: rgba(34, 197, 94, 0.06); border: 1px solid rgba(34, 197, 94, 0.2); padding: 0.85rem 1rem; border-radius: 10px;">
+                <div style="font-size: 0.68rem; color: #22c55e; font-weight: 700; text-transform: uppercase;">TOTAL QUITADO (FLOW + LOJA)</div>
+                <div id="client-paid-balance" style="font-size: 1.25rem; font-weight: 800; color: #16a34a; margin-top: 0.15rem;">R$ 0,00</div>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.55rem; flex-wrap: wrap; gap: 0.5rem;">
+              <h3 style="font-size: 0.88rem; font-weight: 700; margin: 0;">Extrato Unificado de Remessas & Compras da Loja (Aprovados)</h3>
+              
+              <!-- Ações em Lote para a Carteira deste Cliente -->
+              <div id="client-billing-batch-bar" style="display: none; align-items: center; gap: 0.45rem; background: #f8fafc; border: 1px solid #cbd5e1; padding: 0.3rem 0.6rem; border-radius: 7px;">
+                <span style="font-size: 0.74rem; color: #0f172a; font-weight: 700;">(<span id="client-billing-selected-count">0</span>) selecionados:</span>
+                <button type="button" class="btn btn-sm" onclick="openReceiveBillingModalFromSelection('client')" style="font-size: 0.72rem; padding: 0.28rem 0.65rem; font-weight: 700; border-radius: 5px; background: #2563eb; color: #fff; border: none; cursor: pointer;">Receber / Cobrar (NF + Boleto)</button>
+                <button type="button" class="btn btn-sm" onclick="batchSetClientPaymentStatus('pago')" style="font-size: 0.72rem; padding: 0.28rem 0.65rem; font-weight: 700; border-radius: 5px; background: #16a34a; color: #fff; border: none; cursor: pointer;">Aprovar Pagamento</button>
+                <button type="button" class="btn btn-sm" onclick="batchSetClientPaymentStatus('em_aberto')" style="font-size: 0.72rem; padding: 0.28rem 0.55rem; background: #ffffff; color: #b45309; border: 1px solid #fcd34d; font-weight: 600; border-radius: 5px; cursor: pointer;">Reabrir</button>
+                <button type="button" class="btn btn-sm btn-danger" onclick="batchDeleteClientBillingShipments()" style="font-size: 0.72rem; padding: 0.28rem 0.55rem; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-weight: 700; border-radius: 5px; cursor: pointer;">Excluir</button>
+              </div>
+            </div>
+
+            <!-- Filtro de Data na Carteira do Cliente -->
+            <div style="display: flex; align-items: flex-end; flex-wrap: wrap; gap: 0.65rem; margin-bottom: 0.65rem;">
+              <div class="form-group" style="margin: 0;">
+                <label for="filter-client-billing-date-from" style="font-size: 0.63rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.15rem; display: block;">Data Inicial</label>
+                <input type="date" id="filter-client-billing-date-from" onchange="renderClientBillingTable()" style="padding: 0.2rem 0.45rem; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 0.73rem; background: #ffffff; color: #0f172a; height: 28px;">
+              </div>
+              <div class="form-group" style="margin: 0;">
+                <label for="filter-client-billing-date-to" style="font-size: 0.63rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.15rem; display: block;">Data Final</label>
+                <input type="date" id="filter-client-billing-date-to" onchange="renderClientBillingTable()" style="padding: 0.2rem 0.45rem; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 0.73rem; background: #ffffff; color: #0f172a; height: 28px;">
+              </div>
+              <div class="form-group" style="margin: 0; min-width: 145px;">
+                <label for="filter-client-billing-status" style="font-size: 0.63rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.15rem; display: block;">Status Pagamento</label>
+                <select id="filter-client-billing-status" onchange="renderClientBillingTable()" style="width: 100%; padding: 0.25rem 0.5rem; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 0.73rem; background: #ffffff; font-weight: 600; color: #0f172a; height: 28px;">
+                  <option value="">Todos os status</option>
+                  <option value="em_aberto">Em Aberto</option>
+                  <option value="aguardando_pagamento">Aguard. Pagamento</option>
+                  <option value="pago">Pago / Quitado</option>
+                </select>
+              </div>
+              <button type="button" onclick="clearClientBillingFilters()" style="padding: 0 0.65rem; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 0.72rem; background: #ffffff; font-weight: 600; color: #0f172a; height: 28px; cursor: pointer;">
+                Limpar Filtros
+              </button>
+            </div>
+
+            <div class="table-responsive">
+              <table style="font-size: 0.75rem;">
+                <thead>
+                  <tr style="font-size: 0.69rem; text-transform: uppercase;">
+                    <th style="width: 34px; text-align: center; padding: 0.55rem 0.35rem;">
                       <input type="checkbox" id="client-billing-select-all" onclick="toggleSelectAllClientBilling(this.checked)" style="cursor: pointer;" title="Selecionar Todos">
                     </th>
-                    <th>Código</th>
-                    <th>Data</th>
-                    <th>Destino</th>
-                    <th>Valor</th>
-                    <th>Status Pagamento</th>
-                    <th style="text-align: center; min-width: 140px;">Ação / Dar Baixa</th>
+                    <th style="padding: 0.55rem 0.65rem;">Código</th>
+                    <th style="padding: 0.55rem 0.65rem;">Origem</th>
+                    <th style="padding: 0.55rem 0.65rem;">Data</th>
+                    <th style="padding: 0.55rem 0.65rem;">Condição / Destino</th>
+                    <th style="padding: 0.55rem 0.65rem;">Valor</th>
+                    <th style="padding: 0.55rem 0.65rem;">Boleto & NF</th>
+                    <th style="padding: 0.55rem 0.65rem;">Status</th>
+                    <th style="padding: 0.55rem 0.65rem; text-align: center; min-width: 110px;">Ação / Receber</th>
                   </tr>
                 </thead>
                 <tbody id="client-shipments-tbody">
@@ -723,8 +1145,39 @@
               </div>
             </form>
           </div>
+
+          <!-- Conteúdo da Sub-Aba 4: Sedes / Usuários Filhos (Admin) -->
+          <div id="client-subtab-branches" class="client-subtab-content hidden" style="margin-top: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+              <div>
+                <h3 style="font-size: 1rem; font-weight: 800; margin-bottom: 0.2rem;">Sedes / Usuários Filhos vinculados a esta Conta Mãe</h3>
+                <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0;">Cadastre e gerencie sedes filhas com login próprio, endereço da sede, CNPJ e permissões para Flow e Loja.</p>
+              </div>
+              <button type="button" class="btn btn-primary" onclick="openBranchFormPage(null, 'page-client-detail')">Cadastrar Nova Sede (Filho)</button>
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nº Sede</th>
+                    <th>Nome da Sede</th>
+                    <th>CNPJ</th>
+                    <th>Cidade / UF</th>
+                    <th>E-mail (Login)</th>
+                    <th>Acessos Liberados</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-client-branches-tbody">
+                  <!-- Render via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </section>
+
 
       <!-- TAB 3: PRODUTOS & REGRAS LOGÍSTICAS (ADMIN ONLY) -->
       <section id="tab-products" class="tab-page hidden admin-only">
@@ -759,6 +1212,7 @@
           </div>
         </div>
       </section>
+
 
       <!-- PÁGINA DEDICADA: CADASTRO / EDIÇÃO DE PRODUTO (ADMIN ONLY) -->
       <section id="page-product-form" class="tab-page hidden admin-only">
@@ -985,6 +1439,7 @@
         </div>
       </section>
 
+
       <!-- TAB: MINHA CONTA -->
       <section id="tab-my-account" class="tab-page hidden">
         <div style="margin-bottom: 1.5rem;">
@@ -1093,6 +1548,7 @@
           </div>
         </div>
       </section>
+
 
       <!-- TAB: ATUALIZAÇÕES DO SISTEMA, GUIA & FAQ -->
       <section id="tab-updates" class="tab-page hidden">
@@ -1318,6 +1774,761 @@
         </div>
       </section>
 
+      <!-- =========================================================================
+           MÓDULO LOJA VIRTUAL B2B (TODAS AS TELAS EM PÁGINA INTEIRA SEM POPUP)
+           ========================================================================= -->
+
+      <!-- PÁGINA DEDICADA: CADASTRO / EDIÇÃO DE PRODUTO DA LOJA (ADMIN ONLY) -->
+      <section id="page-store-product-form" class="tab-page hidden admin-only">
+        <div style="margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between;">
+          <button type="button" class="btn btn-secondary" onclick="closeStoreProductForm()" style="font-weight: 700; padding: 0.5rem 1rem;">
+            <span id="store-product-form-back-label">Voltar</span>
+          </button>
+        </div>
+
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+            <h2 class="card-title" id="store-product-form-title" style="font-size: 1.4rem; font-weight: 800; margin-bottom: 0.25rem;">Cadastrar Produto na Loja do Cliente</h2>
+            <p id="store-product-form-subtitle" style="font-size: 0.88rem; color: var(--text-muted); margin: 0;">Cadastre fotos, especificações e a tabela de valores para as quantidades de 20, 50, 100, 200, 500 e 1000 peças.</p>
+          </div>
+
+          <form id="form-store-product" onsubmit="submitStoreProductForm(event)">
+            <input type="hidden" id="store-prod-id">
+
+            <!-- BLOCO 1: DADOS DO PRODUTO, DESCRIÇÃO E FOTOS -->
+            <div style="margin-bottom: 2rem; padding-bottom: 1.75rem; border-bottom: 1px solid var(--border-color);">
+              <h3 style="color: var(--primary); font-size: 1rem; font-weight: 700; margin-bottom: 1.25rem;">
+                1. Identificação do Produto, Fotos e Descrição
+              </h3>
+
+              <div class="form-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.25rem;">
+                <div class="form-group">
+                  <label for="store-prod-client-select">Cliente da Loja <span style="color: #ef4444;">*</span></label>
+                  <select id="store-prod-client-select" required style="width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.88rem; background: #fff;">
+                    <option value="">Selecione o cliente...</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="store-prod-code">Código / SKU <span style="color: #ef4444;">*</span></label>
+                  <input type="text" id="store-prod-code" placeholder="Ex: LJ-GAR-01" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="store-prod-name">Nome do Produto <span style="color: #ef4444;">*</span></label>
+                  <input type="text" id="store-prod-name" placeholder="Ex: Garrafa Térmica Inox Personalizada" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="store-prod-production-days">Prazo de Produção (dias) <span style="color: #ef4444;">*</span></label>
+                  <input type="number" id="store-prod-production-days" min="1" value="7" placeholder="Ex: 7" required>
+                </div>
+
+                <div class="form-group" style="grid-column: span 4;">
+                  <label for="store-prod-description">Descrição Completa e Informações do Produto <span style="color: #ef4444;">*</span></label>
+                  <textarea id="store-prod-description" rows="4" placeholder="Informe detalhes técnicos, material, tipo de gravação/personalização aprovada no layout, capacidade e demais observações importantes para o cliente..." required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 0.88rem; resize: vertical;"></textarea>
+                </div>
+
+                <div class="form-group" style="grid-column: span 4;">
+                  <label>Fotos do Produto (Upload de uma ou mais fotos ou URL)</label>
+                  <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                    <input type="text" id="store-prod-image-url" placeholder="Cole uma URL de imagem ou clique em Enviar Fotos ao lado..." style="flex: 1; min-width: 240px;">
+                    <button type="button" class="btn btn-secondary" onclick="addStoreImageUrlManual()" style="white-space: nowrap; padding: 0.65rem 1rem;">Adicionar URL</button>
+                    <input type="file" id="store-prod-image-files" accept="image/*" multiple style="display: none;" onchange="uploadStoreProductImages(this)">
+                    <button type="button" class="btn btn-primary" style="white-space: nowrap; padding: 0.65rem 1.15rem;" onclick="document.getElementById('store-prod-image-files').click()">
+                      Enviar Fotos do Computador
+                    </button>
+                  </div>
+
+                  <div id="store-prod-gallery-preview" style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.85rem;">
+                    <!-- Galeria de miniaturas carregadas via JS -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- BLOCO 2: TABELA DE PREÇOS ESCALONADA (20 / 50 / 100 / 200 / 500 / 1000 PÇS) -->
+            <div style="margin-bottom: 2rem; padding-bottom: 1.75rem; border-bottom: 1px solid var(--border-color);">
+              <h3 style="color: var(--primary); font-size: 1rem; font-weight: 700; margin-bottom: 0.35rem;">
+                2. Tabela de Preços por Quantidade (Valor Unitário em R$)
+              </h3>
+              <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+                Defina o valor unitário que o cliente pagará em cada faixa de tiragem. O sistema calculará automaticamente o valor total do lote.
+              </p>
+
+              <div class="form-grid" style="grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1rem;">
+                <div class="form-group" style="background: #f8fafc; padding: 0.85rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                  <label for="store-price-20" style="font-weight: 700; color: var(--text-primary);">20 pçs (R$/un) <span style="color: #ef4444;">*</span></label>
+                  <input type="number" id="store-price-20" step="0.01" min="0" placeholder="0.00" required oninput="updateStoreTierPreview()">
+                  <small id="store-total-preview-20" style="display: block; margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-muted);">Lote: R$ 0,00</small>
+                </div>
+
+                <div class="form-group" style="background: #f8fafc; padding: 0.85rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                  <label for="store-price-50" style="font-weight: 700; color: var(--text-primary);">50 pçs (R$/un) <span style="color: #ef4444;">*</span></label>
+                  <input type="number" id="store-price-50" step="0.01" min="0" placeholder="0.00" required oninput="updateStoreTierPreview()">
+                  <small id="store-total-preview-50" style="display: block; margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-muted);">Lote: R$ 0,00</small>
+                </div>
+
+                <div class="form-group" style="background: #f8fafc; padding: 0.85rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                  <label for="store-price-100" style="font-weight: 700; color: var(--text-primary);">100 pçs (R$/un) <span style="color: #ef4444;">*</span></label>
+                  <input type="number" id="store-price-100" step="0.01" min="0" placeholder="0.00" required oninput="updateStoreTierPreview()">
+                  <small id="store-total-preview-100" style="display: block; margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-muted);">Lote: R$ 0,00</small>
+                </div>
+
+                <div class="form-group" style="background: #f8fafc; padding: 0.85rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                  <label for="store-price-200" style="font-weight: 700; color: var(--text-primary);">200 pçs (R$/un) <span style="color: #ef4444;">*</span></label>
+                  <input type="number" id="store-price-200" step="0.01" min="0" placeholder="0.00" required oninput="updateStoreTierPreview()">
+                  <small id="store-total-preview-200" style="display: block; margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-muted);">Lote: R$ 0,00</small>
+                </div>
+
+                <div class="form-group" style="background: #f8fafc; padding: 0.85rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                  <label for="store-price-500" style="font-weight: 700; color: var(--text-primary);">500 pçs (R$/un) <span style="color: #ef4444;">*</span></label>
+                  <input type="number" id="store-price-500" step="0.01" min="0" placeholder="0.00" required oninput="updateStoreTierPreview()">
+                  <small id="store-total-preview-500" style="display: block; margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-muted);">Lote: R$ 0,00</small>
+                </div>
+
+                <div class="form-group" style="background: #f8fafc; padding: 0.85rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                  <label for="store-price-1000" style="font-weight: 700; color: var(--text-primary);">1000 pçs (R$/un) <span style="color: #ef4444;">*</span></label>
+                  <input type="number" id="store-price-1000" step="0.01" min="0" placeholder="0.00" required oninput="updateStoreTierPreview()">
+                  <small id="store-total-preview-1000" style="display: block; margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-muted);">Lote: R$ 0,00</small>
+                </div>
+              </div>
+            </div>
+
+            <!-- BLOCO 3: PARÂMETROS LOGÍSTICOS PARA COTAÇÃO DE FRETE (ENVIO NORMAL) -->
+            <div style="margin-bottom: 1.5rem; padding-bottom: 0.5rem;">
+              <h3 style="color: var(--primary); font-size: 1rem; font-weight: 700; margin-bottom: 0.35rem;">
+                3. Dimensões e Embalagem (Para Cálculo de Frete no Envio Normal)
+              </h3>
+              <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+                Utilizado automaticamente quando o cliente escolhe a Opção 2 (Envio Normal direto para o endereço dele) ou quando o item entra no Estoque Flow.
+              </p>
+
+              <div class="form-grid" style="grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1rem;">
+                <div class="form-group">
+                  <label for="store-unit-weight">Peso Unit. (kg)</label>
+                  <input type="number" id="store-unit-weight" step="0.001" value="0.300" required>
+                </div>
+                <div class="form-group">
+                  <label for="store-max-qty-box">Qtd Máx / Caixa</label>
+                  <input type="number" id="store-max-qty-box" min="1" value="20" required>
+                </div>
+                <div class="form-group">
+                  <label for="store-box-height">Altura Caixa (cm)</label>
+                  <input type="number" id="store-box-height" step="0.1" value="30" required>
+                </div>
+                <div class="form-group">
+                  <label for="store-box-width">Largura Caixa (cm)</label>
+                  <input type="number" id="store-box-width" step="0.1" value="40" required>
+                </div>
+                <div class="form-group">
+                  <label for="store-box-length">Comp. Caixa (cm)</label>
+                  <input type="number" id="store-box-length" step="0.1" value="40" required>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; align-items: center; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+              <button type="button" class="btn btn-secondary" onclick="closeStoreProductForm()">Cancelar</button>
+              <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.5rem; font-weight: 700;">Salvar Produto na Loja</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- TAB LOJA VIRTUAL CLIENTE 1: VITRINE DA LOJA -->
+      <section id="tab-store-catalog" class="tab-page hidden">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary);" id="store-catalog-header-title">Loja Virtual - Catálogo de Encomendas</h2>
+            <p style="color: var(--text-muted); font-size: 0.88rem;" id="store-catalog-header-subtitle">Escolha os produtos com layout aprovado, selecione a tiragem desejada (20 a 1000 peças) e adicione ao carrinho.</p>
+          </div>
+
+          <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <input type="text" id="search-store-catalog" placeholder="Buscar produto na loja..." oninput="filterStoreCatalog()" style="min-width: 240px;">
+            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-store-orders')">Meus Pedidos</button>
+            <button type="button" class="btn" onclick="switchTab('tab-store-cart')" style="display: flex; align-items: center; gap: 0.55rem; background: #52c41a; color: #ffffff; border: 1px solid #52c41a; font-weight: 800; padding: 0.6rem 1.15rem; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 6px rgba(82, 196, 26, 0.28); transition: all 0.2s ease;" onmouseover="this.style.background='#43a813'" onmouseout="this.style.background='#52c41a'">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+              <span>Carrinho</span>
+              <span id="store-catalog-cart-badge" style="background: #ffffff; color: #389e0d; font-size: 0.75rem; font-weight: 800; padding: 1px 8px; border-radius: 12px;">0</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="store-catalog-grid" class="my-products-grid">
+          <!-- Cards da Loja renderizados via JS -->
+        </div>
+      </section>
+
+      <!-- PÁGINA DEDICADA: DETALHES DO PRODUTO DA LOJA (SEM POPUP) -->
+      <section id="page-store-product-detail" class="tab-page hidden">
+        <div style="margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
+          <button type="button" class="btn btn-secondary" onclick="switchTab('tab-store-catalog')" style="font-weight: 700;">
+            Voltar para a Vitrine da Loja
+          </button>
+          <button type="button" class="btn" onclick="switchTab('tab-store-cart')" style="display: flex; align-items: center; gap: 0.55rem; background: #52c41a; color: #ffffff; border: 1px solid #52c41a; font-weight: 800; padding: 0.6rem 1.15rem; border-radius: 8px; cursor: pointer;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            <span>Carrinho</span>
+          </button>
+        </div>
+
+        <div class="card" id="store-product-detail-container">
+          <!-- Renderizado via JS -->
+        </div>
+      </section>
+
+      <!-- TAB LOJA VIRTUAL CLIENTE 2: CARRINHO DA LOJA & CHECKOUT (COM AS 2 OPÇÕES DE ENVIO) -->
+      <section id="tab-store-cart" class="tab-page hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary);">Carrinho da Loja & Finalização de Pedido</h2>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Revise os itens selecionados, escolha a modalidade de envio (Envio Flow ou Envio Normal) e confirme seu pedido de produção.</p>
+          </div>
+          <div style="display: flex; gap: 0.75rem;">
+            <button type="button" class="btn btn-secondary" onclick="switchTab('tab-store-catalog')">Continuar Comprando</button>
+            <button type="button" class="btn btn-secondary" onclick="clearStoreCart()">Limpar Carrinho</button>
+          </div>
+        </div>
+
+        <!-- 1. Lista de Produtos no Carrinho da Loja -->
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <h3 class="card-title" style="margin-bottom: 1rem;">1. Produtos Selecionados para Encomenda</h3>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th>Quantidade (Tiragem)</th>
+                  <th>Valor Unitário</th>
+                  <th>Subtotal</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="store-cart-tbody">
+                <!-- Render via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 2. Escolha da Modalidade de Envio (Opção 1: Envio Flow vs Opção 2: Envio Normal) -->
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <h3 class="card-title" style="margin-bottom: 0.35rem;">2. Escolha a Opção de Envio após a Produção</h3>
+          <p style="color: var(--text-muted); font-size: 0.86rem; margin-bottom: 1.25rem;">
+            Defina como deseja receber seus produtos assim que a personalização e produção forem concluídas.
+          </p>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem;">
+            <!-- Card Opção 1: Envio Flow -->
+            <div id="card-delivery-flow" class="store-delivery-option active" onclick="selectStoreDeliveryType('flow')" style="border: 2px solid var(--primary); background: var(--primary-light); border-radius: 10px; padding: 1.25rem; cursor: pointer; transition: all 0.2s ease;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span style="font-weight: 800; font-size: 1rem; color: var(--text-primary);">Opção 1 — Envio Flow (Estoque Flow)</span>
+                <span class="badge badge-primary">Frete R$ 0,00 agora</span>
+              </div>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.55; margin: 0;">
+                Seus produtos serão produzidos e enviados diretamente para o seu <strong>Estoque no Personaliza Flow</strong>. Você poderá solicitar remessas fracionadas sob demanda posteriormente.
+              </p>
+            </div>
+
+            <!-- Card Opção 2: Envio Normal -->
+            <div id="card-delivery-normal" class="store-delivery-option" onclick="selectStoreDeliveryType('normal')" style="border: 2px solid var(--border-color); background: #ffffff; border-radius: 10px; padding: 1.25rem; cursor: pointer; transition: all 0.2s ease;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span style="font-weight: 800; font-size: 1rem; color: var(--text-primary);">Opção 2 — Envio Normal (Entrega Direta)</span>
+                <span class="badge badge-secondary">Cotação de Frete</span>
+              </div>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.55; margin: 0;">
+                O lote completo produzido será enviado diretamente para o endereço informado abaixo assim que sair da produção, com frete calculado.
+              </p>
+            </div>
+          </div>
+
+          <!-- Formulário de Endereço Completo e Cotação de Frete (Visível apenas na Opção 2: Envio Normal) -->
+          <div id="store-normal-shipping-section" class="hidden" style="border-top: 1px solid var(--border-color); padding-top: 1.5rem; margin-top: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+              <h4 style="font-size: 0.98rem; font-weight: 700; color: var(--text-primary);">Endereço Completo para Entrega e Cotação do Frete</h4>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="fillStoreAddressFromSaved()">Usar Endereço Padrão Cadastrado</button>
+            </div>
+
+            <div class="form-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+              <div class="form-group">
+                <label for="store-dest-recipient">Destinatário / Responsável <span style="color: #ef4444;">*</span></label>
+                <input type="text" id="store-dest-recipient" placeholder="Nome ou Empresa">
+              </div>
+              <div class="form-group">
+                <label for="store-dest-cep">CEP de Destino <span style="color: #ef4444;">*</span></label>
+                <div style="display: flex; gap: 0.4rem;">
+                  <input type="text" id="store-dest-cep" placeholder="00000-000" onblur="lookupStoreCep(this.value)">
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="quoteStoreCartFreight()" style="white-space: nowrap; font-weight: 700;">Cotar Frete</button>
+                </div>
+              </div>
+              <div class="form-group" style="grid-column: span 2;">
+                <label for="store-dest-address">Endereço (Rua / Avenida) <span style="color: #ef4444;">*</span></label>
+                <input type="text" id="store-dest-address" placeholder="Rua, Avenida...">
+              </div>
+              <div class="form-group">
+                <label for="store-dest-number">Número <span style="color: #ef4444;">*</span></label>
+                <input type="text" id="store-dest-number" placeholder="Nº">
+              </div>
+              <div class="form-group">
+                <label for="store-dest-complement">Complemento</label>
+                <input type="text" id="store-dest-complement" placeholder="Sala, Galpão, Bloco">
+              </div>
+              <div class="form-group">
+                <label for="store-dest-neighborhood">Bairro</label>
+                <input type="text" id="store-dest-neighborhood" placeholder="Bairro">
+              </div>
+              <div class="form-group">
+                <label for="store-dest-city">Cidade / UF <span style="color: #ef4444;">*</span></label>
+                <div style="display: flex; gap: 0.4rem;">
+                  <input type="text" id="store-dest-city" placeholder="Cidade" style="flex: 1;">
+                  <input type="text" id="store-dest-state" placeholder="UF" maxlength="2" style="width: 64px; text-transform: uppercase;">
+                </div>
+              </div>
+            </div>
+
+            <!-- Opções de Frete Cotadas -->
+            <div id="store-freight-quotes-wrapper" style="margin-top: 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);">Opções de Frete Disponíveis</span>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="quoteStoreCartFreight()">Atualizar Cotação de Frete</button>
+              </div>
+              <div id="store-freight-quotes-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.85rem;">
+                <div style="padding: 1rem; border: 1px dashed var(--border-color); border-radius: 8px; color: var(--text-muted); font-size: 0.85rem;">
+                  Informe o CEP de destino acima e clique em <strong>Cotar Frete</strong> para exibir as transportadoras e prazos.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Faturamento (Escolha do CNPJ "Faturar para" + Condição de Pagamento pré-definida pelo Admin) -->
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <h3 class="card-title" style="margin-bottom: 0.35rem;">3. Faturamento (CNPJ Pagador & Condição de Pagamento)</h3>
+          <p style="color: var(--text-muted); font-size: 0.86rem; margin-bottom: 1.15rem;">
+            Escolha para qual CNPJ da rede esta compra será faturada e selecione a condição de pagamento.
+          </p>
+
+          <div class="form-group" style="margin-bottom: 1.25rem; max-width: 580px;">
+            <label for="store-checkout-billing-select" style="font-weight: 700; color: var(--text-primary);">Faturar para (CNPJ Pagador) <span style="color: #ef4444;">*</span></label>
+            <select id="store-checkout-billing-select" onchange="handleStoreBillingOptionChange()" style="width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.88rem; background: #fff; font-weight: 600; color: #0f172a;">
+              <!-- Render via JS -->
+            </select>
+          </div>
+
+          <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 0.5rem;">Condição de Pagamento</label>
+          <div id="store-cart-payment-methods-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.9rem;">
+            <!-- Render via JS -->
+          </div>
+        </div>
+
+        <!-- 4. Observações e Resumo Final do Pedido -->
+        <div class="card">
+          <div style="display: grid; grid-template-columns: 1fr 340px; gap: 1.5rem; align-items: start;">
+            <div class="form-group">
+              <label for="store-order-notes">Observações do Pedido / Produção (Opcional)</label>
+              <textarea id="store-order-notes" rows="3" placeholder="Alguma observação sobre personalização, nota fiscal ou entrega?" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 0.88rem;"></textarea>
+            </div>
+
+            <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 10px; padding: 1.25rem;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.88rem; color: var(--text-secondary);">
+                <span>Subtotal dos Produtos:</span>
+                <strong id="store-checkout-subtotal">R$ 0,00</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.88rem; color: var(--text-secondary);">
+                <span>Prazo de Produção:</span>
+                <strong id="store-checkout-production-info" style="color: var(--primary);">-</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.88rem; color: var(--text-secondary);">
+                <span>Modalidade de Envio:</span>
+                <strong id="store-checkout-delivery-label">Envio Flow</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.88rem; color: var(--text-secondary); gap: 0.5rem;">
+                <span>Faturar para:</span>
+                <strong id="store-checkout-billing-target-label" style="color: #0f172a; text-align: right; font-size: 0.8rem;">-</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.88rem; color: var(--text-secondary);">
+                <span>Condição:</span>
+                <strong id="store-checkout-payment-label" style="color: #0f172a;">30 DIAS BOLETO</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.85rem; font-size: 0.88rem; color: var(--text-secondary);">
+                <span>Frete:</span>
+                <strong id="store-checkout-freight">R$ 0,00</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding-top: 0.75rem; border-top: 1px solid var(--border-color); margin-bottom: 1.25rem; font-size: 1.1rem; font-weight: 800; color: var(--text-primary);">
+                <span>Total do Pedido:</span>
+                <span id="store-checkout-total" style="color: var(--primary);">R$ 0,00</span>
+              </div>
+              <button type="button" class="btn btn-primary" id="btn-submit-store-order" onclick="submitStoreCheckout()" style="width: 100%; padding: 0.8rem; font-weight: 800; font-size: 0.95rem;">
+                Finalizar Pedido
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB LOJA VIRTUAL CLIENTE 3: MEUS PEDIDOS DA LOJA -->
+      <section id="tab-store-orders" class="tab-page hidden">
+        <div style="margin-bottom: 1.25rem;">
+          <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary);">Meus Pedidos da Loja Virtual</h2>
+          <p style="color: var(--text-muted); font-size: 0.88rem;">Acompanhe o andamento da produção das suas encomendas e o destino escolhido.</p>
+        </div>
+
+        <!-- Barra de Filtros Limpa (Sem Borda em Volta e Fontes Menores) -->
+        <div style="padding: 0.25rem 0 0.5rem 0; margin-bottom: 1rem; background: transparent; border: none; box-shadow: none;">
+          <div style="display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 0.85rem;">
+            <div style="display: flex; align-items: flex-end; flex-wrap: wrap; gap: 0.85rem; flex: 1;">
+              <!-- Filtro 1: Últimos Pedidos / Período -->
+              <div class="form-group" style="margin: 0; min-width: 170px;">
+                <label for="filter-client-orders-period" style="font-size: 0.68rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.2rem; display: block; letter-spacing: 0.02em;">Período / Últimos Pedidos</label>
+                <select id="filter-client-orders-period" onchange="handleClientOrdersPeriodChange(this.value)" style="width: 100%; padding: 0.35rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.78rem; background: #ffffff; font-weight: 600; color: #0f172a; height: 32px;">
+                  <option value="all">Todos (Mais recentes primeiro)</option>
+                  <option value="last5">Últimos 5 pedidos</option>
+                  <option value="last10">Últimos 10 pedidos</option>
+                  <option value="7d">Últimos 7 dias</option>
+                  <option value="30d">Últimos 30 dias</option>
+                  <option value="90d">Últimos 90 dias</option>
+                  <option value="custom">Intervalo de datas</option>
+                </select>
+              </div>
+
+              <!-- Intervalo de Datas (De / Até) -->
+              <div class="form-group" style="margin: 0;">
+                <label for="filter-client-orders-date-from" style="font-size: 0.68rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.2rem; display: block; letter-spacing: 0.02em;">Data Inicial</label>
+                <input type="date" id="filter-client-orders-date-from" onchange="handleClientOrdersCustomDateChange()" style="padding: 0.32rem 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.78rem; background: #ffffff; color: #0f172a; height: 32px;">
+              </div>
+
+              <div class="form-group" style="margin: 0;">
+                <label for="filter-client-orders-date-to" style="font-size: 0.68rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.2rem; display: block; letter-spacing: 0.02em;">Data Final</label>
+                <input type="date" id="filter-client-orders-date-to" onchange="handleClientOrdersCustomDateChange()" style="padding: 0.32rem 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.78rem; background: #ffffff; color: #0f172a; height: 32px;">
+              </div>
+
+              <!-- Filtro 2: Status do Pedido -->
+              <div class="form-group" style="margin: 0; min-width: 165px;">
+                <label for="filter-client-orders-status" style="font-size: 0.68rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.2rem; display: block; letter-spacing: 0.02em;">Filtrar por Status</label>
+                <select id="filter-client-orders-status" onchange="renderClientStoreOrders()" style="width: 100%; padding: 0.35rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.78rem; background: #ffffff; font-weight: 600; color: #0f172a; height: 32px;">
+                  <option value="">Todos os status</option>
+                  <option value="aguardando_aprovacao_mae">Aguard. Aprovação Matriz</option>
+                  <option value="em_aberto">Em aberto (Em análise)</option>
+                  <option value="aguardando_producao">Aguardando produção</option>
+                  <option value="em_producao">Em produção</option>
+                  <option value="produzido_estoque_flow">No estoque Flow</option>
+                  <option value="enviado">Enviado ao cliente</option>
+                  <option value="recusado_matriz">Recusado pela Matriz</option>
+                  <option value="cancelado">Cancelado</option>
+                </select>
+              </div>
+
+              <!-- Botão Limpar Filtros ao lado e no mesmo estilo -->
+              <button type="button" onclick="clearClientStoreOrdersFilters()" style="padding: 0 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.78rem; background: #ffffff; font-weight: 600; color: #0f172a; height: 32px; cursor: pointer; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
+                Limpar Filtros
+              </button>
+              <span id="client-store-orders-count" style="font-size: 0.75rem; font-weight: 600; color: #64748b; line-height: 32px;"></span>
+            </div>
+          </div>
+        </div>
+
+        <div id="client-store-orders-list" style="display: flex; flex-direction: column; gap: 1rem;">
+          <!-- Render via JS -->
+        </div>
+      </section>
+
+      <!-- PÁGINA DEDICADA: VER DETALHES DO PEDIDO DA LOJA (SEM POPUP) -->
+      <section id="page-store-order-detail" class="tab-page hidden">
+        <div style="margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeStoreOrderDetailPage()" style="font-weight: 700; display: flex; align-items: center; gap: 0.45rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            <span id="store-order-detail-back-label">Voltar para Meus Pedidos</span>
+          </button>
+        </div>
+
+        <div id="store-order-detail-container">
+          <!-- Renderizado via JS -->
+        </div>
+      </section>
+
+      <!-- TAB LOJA VIRTUAL ADMIN 1: PEDIDOS DA LOJA (SEQUÊNCIA NA PRODUÇÃO) -->
+      <section id="tab-admin-store-orders" class="tab-page hidden admin-only">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary);">Pedidos da Loja Virtual — Fila de Produção (Admin)</h2>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Gerencie os pedidos realizados pelos clientes na loja virtual, dê sequência na produção e transfira para o Estoque Flow ou expeça ao cliente.</p>
+          </div>
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <select id="filter-admin-store-orders-status" onchange="renderAdminStoreOrders()" style="padding: 0.55rem 0.85rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.85rem; background: #fff;">
+              <option value="">Todos os Status</option>
+              <option value="aguardando_aprovacao_mae">Aguard. Aprovação Matriz</option>
+              <option value="em_aberto">Em Aberto (Aprovar Pedido)</option>
+              <option value="aguardando_producao">Aguardando Produção</option>
+              <option value="em_producao">Em Produção</option>
+              <option value="produzido_estoque_flow">Concluído (Enviado ao Estoque Flow)</option>
+              <option value="enviado">Concluído (Enviado ao Cliente)</option>
+              <option value="recusado_matriz">Recusado pela Matriz</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
+            <button type="button" class="btn btn-secondary" onclick="loadAdminStoreOrders()">Atualizar Lista</button>
+          </div>
+        </div>
+
+        <div id="admin-store-orders-container" style="display: flex; flex-direction: column; gap: 1rem;">
+          <!-- Render via JS -->
+        </div>
+      </section>
+
+      <!-- TAB LOJA VIRTUAL ADMIN 2: CONFIGURAÇÕES E GESTÃO GERAL DA LOJA -->
+      <section id="tab-admin-store-settings" class="tab-page hidden admin-only">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary);">Configurações & Lojas de Clientes (Admin)</h2>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">Gerencie todas as lojas virtuais dos clientes, cadastre novos produtos com tabela de preços (20 a 1000 pçs) e acompanhe os indicadores.</p>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="openNewStoreProductGlobal()">Cadastrar Produto em Loja de Cliente</button>
+        </div>
+
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <h3 class="card-title" style="margin-bottom: 1rem;">Lojas por Cliente</h3>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>E-mail</th>
+                  <th>Status da Loja</th>
+                  <th>Produtos na Loja</th>
+                  <th>Pedidos Realizados</th>
+                  <th>Total Encomendado</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="admin-store-overview-tbody">
+                <!-- Render via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+            <h3 class="card-title" style="margin: 0;">Todos os Produtos Cadastrados nas Lojas</h3>
+            <select id="filter-admin-store-products-client" onchange="loadAdminAllStoreProducts()" style="padding: 0.5rem 0.85rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.85rem; background: #fff;">
+              <option value="">Todos os Clientes</option>
+            </select>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Foto</th>
+                  <th>Cliente</th>
+                  <th>Código</th>
+                  <th>Produto</th>
+                  <th>Prazo Prod.</th>
+                  <th>20 pçs</th>
+                  <th>50 pçs</th>
+                  <th>100 pçs</th>
+                  <th>200 pçs</th>
+                  <th>500 pçs</th>
+                  <th>1000 pçs</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="admin-all-store-products-tbody">
+                <!-- Render via JS -->
+              </tbody>
+            </table>
+          </div>
+          <div style="display: flex; justify-content: flex-end; align-items: center; margin-top: 1rem;">
+            <span style="font-size: 0.85rem; color: var(--text-muted);" id="admin-store-total-products-count"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB CONTA MÃE 1: GESTÃO DE SEDES / USUÁRIOS FILHOS -->
+      <section id="tab-mother-branches" class="tab-page hidden">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary);">Minhas Sedes / Usuários Filhos</h2>
+            <p style="color: var(--text-muted); font-size: 0.86rem; margin: 0;">Cadastre e gerencie as sedes/cooperativas vinculadas à sua conta matriz, definindo login, endereço, CNPJ e permissão para Flow e Loja.</p>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="openBranchFormPage(null, 'tab-mother-branches')">Cadastrar Nova Sede (Filho)</button>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+            <input type="text" id="search-mother-branches" placeholder="Buscar por nome da sede, nº da sede, CNPJ ou cidade..." oninput="renderMotherBranchesTable()" style="max-width: 420px; width: 100%; padding: 0.45rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.84rem;">
+            <span id="mother-branches-count" style="font-size: 0.8rem; color: #64748b; font-weight: 600;"></span>
+          </div>
+
+          <div class="table-responsive">
+            <table style="font-size: 0.82rem;">
+              <thead>
+                <tr>
+                  <th>Nº Sede</th>
+                  <th>Nome da Sede / Cooperativa</th>
+                  <th>CNPJ</th>
+                  <th>Endereço / Cidade</th>
+                  <th>Login (E-mail)</th>
+                  <th>Acessos Liberados</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="mother-branches-tbody">
+                <!-- Render via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- PÁGINA DEDICADA: CADASTRAR / EDITAR SEDE (USUÁRIO FILHO) - SEM POPUP -->
+      <section id="page-branch-form" class="tab-page hidden">
+        <div style="margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between;">
+          <button type="button" class="btn btn-secondary" onclick="closeBranchFormPage()" style="display: flex; align-items: center; gap: 0.45rem; font-weight: 700; padding: 0.5rem 1rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            <span id="branch-form-back-label">Voltar para Sedes</span>
+          </button>
+        </div>
+
+        <div class="card" style="max-width: 920px; margin-bottom: 1.5rem;">
+          <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+            <h2 class="card-title" id="branch-form-title" style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.25rem;">Cadastrar Nova Sede (Usuário Filho)</h2>
+            <p style="font-size: 0.86rem; color: var(--text-muted); margin: 0;">Configure os dados fiscais da sede, endereço completo, login de acesso e quais módulos (Flow e/ou Loja) este usuário poderá acessar.</p>
+          </div>
+
+          <form id="form-branch" onsubmit="submitBranchForm(event)">
+            <input type="hidden" id="branch-form-id">
+            <input type="hidden" id="branch-form-parent-id">
+
+            <!-- 1. Dados da Sede -->
+            <div style="margin-bottom: 1.75rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color);">
+              <h3 style="color: var(--primary); font-size: 0.96rem; font-weight: 700; margin-bottom: 1rem;">1. Identificação da Sede</h3>
+              <div class="form-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem;">
+                <div class="form-group">
+                  <label for="branch-form-number">Nº da Sede / Unidade <span style="color: #ef4444;">*</span></label>
+                  <input type="text" id="branch-form-number" placeholder="Ex: 1024 ou Sede 02" required>
+                </div>
+                <div class="form-group" style="grid-column: span 3;">
+                  <label for="branch-form-name">Nome da Sede / Cooperativa <span style="color: #ef4444;">*</span></label>
+                  <input type="text" id="branch-form-name" placeholder="Ex: Cresol Chapecó / Agência Centro" required>
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                  <label for="branch-form-cnpj">CNPJ da Sede <span style="color: #ef4444;">*</span></label>
+                  <input type="text" id="branch-form-cnpj" placeholder="00.000.000/0001-00" required>
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                  <label for="branch-form-phone">Telefone / WhatsApp</label>
+                  <input type="text" id="branch-form-phone" placeholder="(00) 00000-0000">
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Login, Senha e Permissões de Acesso (Flow / Loja) -->
+            <div style="margin-bottom: 1.75rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color);">
+              <h3 style="color: var(--primary); font-size: 0.96rem; font-weight: 700; margin-bottom: 1rem;">2. Credenciais de Login & Permissões de Módulos</h3>
+              <div class="form-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+                <div class="form-group">
+                  <label for="branch-form-email">E-mail de Login <span style="color: #ef4444;">*</span></label>
+                  <input type="email" id="branch-form-email" placeholder="sede@empresa.com.br" required>
+                </div>
+                <div class="form-group">
+                  <label for="branch-form-password" id="branch-form-password-label">Senha de Acesso <span id="branch-pwd-req-label" style="color: #ef4444;">*</span></label>
+                  <input type="password" id="branch-form-password" placeholder="Mínimo 6 caracteres">
+                </div>
+                <div class="form-group">
+                  <label for="branch-form-status">Status do Acesso</label>
+                  <select id="branch-form-status" style="width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.88rem; background: #fff;">
+                    <option value="active">Ativo</option>
+                    <option value="inactive">Inativo (Bloqueado)</option>
+                  </select>
+                </div>
+              </div>
+
+              <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 0.5rem;">Escolha o que este usuário filho poderá visualizar e utilizar:</label>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
+                <label for="branch-form-access-flow" style="display: flex; align-items: flex-start; gap: 0.65rem; padding: 0.9rem 1rem; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; background: #f8fafc;">
+                  <input type="checkbox" id="branch-form-access-flow" checked style="width: 18px; height: 18px; margin-top: 2px; cursor: pointer;">
+                  <div>
+                    <div style="font-weight: 700; font-size: 0.88rem; color: #0f172a;">Acesso ao FLOW (Estoque & Envios)</div>
+                    <div style="font-size: 0.78rem; color: #64748b; font-weight: 400; margin-top: 0.15rem;">Permite consultar produtos em estoque e solicitar remessas sob demanda.</div>
+                  </div>
+                </label>
+
+                <label for="branch-form-access-store" style="display: flex; align-items: flex-start; gap: 0.65rem; padding: 0.9rem 1rem; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; background: #f8fafc;">
+                  <input type="checkbox" id="branch-form-access-store" checked style="width: 18px; height: 18px; margin-top: 2px; cursor: pointer;">
+                  <div>
+                    <div style="font-weight: 700; font-size: 0.88rem; color: #0f172a;">Acesso à LOJA VIRTUAL (Compras)</div>
+                    <div style="font-size: 0.78rem; color: #64748b; font-weight: 400; margin-top: 0.15rem;">Permite realizar pedidos na Loja Corporativa (sujeitos à aprovação da Conta Mãe).</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- 3. Endereço Completo da Sede -->
+            <div style="margin-bottom: 1.5rem;">
+              <h3 style="color: var(--primary); font-size: 0.96rem; font-weight: 700; margin-bottom: 1rem;">3. Endereço Completo da Sede</h3>
+              <div class="form-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem;">
+                <div class="form-group">
+                  <label for="branch-form-cep">CEP da Sede <span style="color: #ef4444;">*</span></label>
+                  <input type="text" id="branch-form-cep" placeholder="00000-000" required onblur="lookupBranchCep(this.value)">
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                  <label for="branch-form-address">Endereço (Rua / Avenida) <span style="color: #ef4444;">*</span></label>
+                  <input type="text" id="branch-form-address" placeholder="Rua, Avenida..." required>
+                </div>
+                <div class="form-group">
+                  <label for="branch-form-addr-number">Número <span style="color: #ef4444;">*</span></label>
+                  <input type="text" id="branch-form-addr-number" placeholder="Nº" required>
+                </div>
+                <div class="form-group">
+                  <label for="branch-form-complement">Complemento</label>
+                  <input type="text" id="branch-form-complement" placeholder="Sala, Andar, Bloco">
+                </div>
+                <div class="form-group">
+                  <label for="branch-form-neighborhood">Bairro</label>
+                  <input type="text" id="branch-form-neighborhood" placeholder="Bairro">
+                </div>
+                <div class="form-group">
+                  <label for="branch-form-city">Cidade <span style="color: #ef4444;">*</span></label>
+                  <input type="text" id="branch-form-city" placeholder="Cidade" required>
+                </div>
+                <div class="form-group">
+                  <label for="branch-form-state">UF <span style="color: #ef4444;">*</span></label>
+                  <input type="text" id="branch-form-state" placeholder="PR" maxlength="2" style="text-transform: uppercase;" required>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem; padding-top: 1.25rem; border-top: 1px solid var(--border-color);">
+              <button type="button" class="btn btn-secondary" onclick="closeBranchFormPage()">Cancelar</button>
+              <button type="submit" class="btn btn-primary" id="btn-save-branch" style="font-weight: 700; padding: 0.65rem 1.5rem;">Salvar Sede</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- TAB CONTA MÃE 2: APROVAÇÃO DE COMPRAS DAS SEDES FILHAS -->
+      <section id="tab-mother-approvals" class="tab-page hidden">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary);">Aprovação de Compras da Rede (Conta Mãe)</h2>
+            <p style="color: var(--text-muted); font-size: 0.86rem; margin: 0;">Aprove ou recuse os pedidos realizados pelas sedes filhas na Loja Virtual antes que sigam para produção e faturamento.</p>
+          </div>
+          <div style="display: flex; gap: 0.65rem; align-items: center;">
+            <select id="filter-mother-approvals-status" onchange="renderMotherApprovalsList()" style="padding: 0.45rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.82rem; background: #fff; font-weight: 600;">
+              <option value="pending">Pendentes de Aprovação</option>
+              <option value="approved">Aprovados pela Matriz</option>
+              <option value="rejected">Recusados pela Matriz</option>
+              <option value="all">Todos os Pedidos das Sedes</option>
+            </select>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="loadMotherApprovals()">Atualizar</button>
+          </div>
+        </div>
+
+        <div id="mother-approvals-list" style="display: flex; flex-direction: column; gap: 0.85rem;">
+          <!-- Render via JS -->
+        </div>
+      </section>
+
     </main>
   </div>
 
@@ -1431,7 +2642,8 @@
         <div class="form-group" style="margin-bottom: 1.25rem;">
           <label for="select-shipment-status">Etapa do Envio <span style="color: red;">*</span></label>
           <select id="select-shipment-status" class="form-control" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
-            <option value="separacao">1. Separação do pedido (Em preparação)</option>
+            <option value="em_aberto">0. Em aberto (Aguardando conferência/aprovação)</option>
+            <option value="separacao">1. Separação do pedido (Em preparação - Aprova p/ Carteira)</option>
             <option value="a_caminho">2. A caminho (Despachado)</option>
             <option value="entregue">3. Entrega (Pedido entregue)</option>
           </select>
@@ -1575,6 +2787,6 @@
     </div>
   </div>
 
-  <script src="js/app.js?v=1788402540"></script>
+  <script src="js/app.js?v=1794210000"></script>
 </body>
 </html>
