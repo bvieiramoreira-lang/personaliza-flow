@@ -5,7 +5,9 @@ const fs = require('fs');
 const multer = require('multer');
 const db = require('../database');
 
-// Configuração do Multer para Upload de Notas Fiscais (NF) e Boletos
+const ALLOWED_FISCAL_EXTS = new Set(['.pdf', '.xml', '.png', '.jpg', '.jpeg']);
+
+// Configuração do Multer para Upload de Notas Fiscais (NF) e Boletos (Protegido)
 const fiscalStorage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadDir = path.join(__dirname, '../../uploads/fiscal');
@@ -16,13 +18,23 @@ const fiscalStorage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname) || '.pdf';
+    const ext = (path.extname(file.originalname) || '.pdf').toLowerCase();
     const prefix = file.fieldname === 'boleto_file' ? 'boleto-' : 'nf-';
-    cb(null, prefix + uniqueSuffix + ext);
+    cb(null, prefix + uniqueSuffix + (ALLOWED_FISCAL_EXTS.has(ext) ? ext : '.pdf'));
   }
 });
 
-const uploadFiscal = multer({ storage: fiscalStorage });
+const uploadFiscal = multer({
+  storage: fiscalStorage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: function (req, file, cb) {
+    const ext = (path.extname(file.originalname) || '').toLowerCase();
+    if (!ALLOWED_FISCAL_EXTS.has(ext)) {
+      return cb(new Error('Formato de arquivo inválido para NF/Boleto. Envie apenas PDF, XML, PNG ou JPG.'));
+    }
+    cb(null, true);
+  }
+});
 
 // 1. Resumo Financeiro (Total em Aberto, Total Pago, Contadores) - Somente pedidos aprovados (status != 'em_aberto')
 router.get('/summary', (req, res) => {

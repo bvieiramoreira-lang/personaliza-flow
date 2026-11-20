@@ -6,7 +6,52 @@ const multer = require('multer');
 const db = require('../database');
 const crypto = require('crypto');
 
-// Configuração do Multer para Fotos de Perfil (Avatar)
+const JWT_SECRET = process.env.JWT_SECRET || 'personaliza_secret_key_2026';
+const PASSWORD_SALT = process.env.PASSWORD_SALT || 'personaliza_salt_2026';
+const TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
+const ALLOWED_IMAGE_EXTS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif']);
+
+// Controle de Rate Limit de Login contra Força Bruta (por IP)
+const loginAttemptsMap = new Map();
+const LOGIN_MAX_ATTEMPTS = 10;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000; // 15 minutos
+
+function getClientIp(req) {
+  const xff = req.headers['x-forwarded-for'];
+  if (xff) return String(xff).split(',')[0].trim();
+  return req.ip || req.socket?.remoteAddress || 'unknown';
+}
+
+function checkLoginRateLimit(ip) {
+  const now = Date.now();
+  const entry = loginAttemptsMap.get(ip);
+  if (!entry) return { blocked: false };
+  if (now - entry.firstAttemptAt > LOGIN_WINDOW_MS) {
+    loginAttemptsMap.delete(ip);
+    return { blocked: false };
+  }
+  if (entry.count >= LOGIN_MAX_ATTEMPTS) {
+    const retrySeconds = Math.ceil((LOGIN_WINDOW_MS - (now - entry.firstAttemptAt)) / 1000);
+    return { blocked: true, retrySeconds };
+  }
+  return { blocked: false };
+}
+
+function recordFailedLoginAttempt(ip) {
+  const now = Date.now();
+  const entry = loginAttemptsMap.get(ip);
+  if (!entry || now - entry.firstAttemptAt > LOGIN_WINDOW_MS) {
+    loginAttemptsMap.set(ip, { count: 1, firstAttemptAt: now });
+  } else {
+    entry.count += 1;
+  }
+}
+
+function clearLoginAttempts(ip) {
+  loginAttemptsMap.delete(ip);
+}
+
+// Configuração do Multer para Fotos de Perfil (Avatar) com filtro de segurança
 const avatarStorage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadDir = path.join(__dirname, '../../uploads');
@@ -17,17 +62,25 @@ const avatarStorage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname) || '.png';
-    cb(null, 'avatar-' + uniqueSuffix + ext);
+    const ext = (path.extname(file.originalname) || '.png').toLowerCase();
+    cb(null, 'avatar-' + uniqueSuffix + (ALLOWED_IMAGE_EXTS.has(ext) ? ext : '.png'));
   }
 });
 const uploadAvatar = multer({
   storage: avatarStorage,
-  limits: { fileSize: 5 * 1024 * 1024 }
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: function (req, file, cb) {
+    const ext = (path.extname(file.originalname) || '').toLowerCase();
+    const isImageMime = file.mimetype && file.mimetype.startsWith('image/');
+    if (!ALLOWED_IMAGE_EXTS.has(ext) || !isImageMime) {
+      return cb(new Error('Formato de arquivo não permitido. Envie apenas imagens (PNG, JPG, WEBP ou GIF).'));
+    }
+    cb(null, true);
+  }
 });
 
 function hashPassword(password) {
-  return crypto.createHash('sha256').update(password + 'personaliza_salt_2026').digest('hex');
+  return crypto.createHash('sha256').update(String(password) + PASSWORD_SALT).digest('hex');
 }
 
 function generateToken(user) {
@@ -40,20 +93,32 @@ function generateToken(user) {
     timestamp: Date.now()
   };
   const str = JSON.stringify(payload);
-  const signature = crypto.createHmac('sha256', 'personaliza_secret_key_2026').update(str).digest('hex');
+  const signature = crypto.createHmac('sha256', JWT_SECRET).update(str).digest('hex');
   return Buffer.from(str).toString('base64') + '.' + signature;
 }
 
 function verifyToken(token) {
-  if (!token) return null;
+  if (!token || typeof token !== 'string') return null;
   try {
-    const parts = token.replace('Bearer ', '').split('.');
+    const cleanToken = token.startsWith('Bearer ') ? token.slice(7).trim() : token.trim();
+    const parts = cleanToken.split('.');
     if (parts.length !== 2) return null;
     const [payloadBase64, signature] = parts;
     const str = Buffer.from(payloadBase64, 'base64').toString('utf8');
-    const expectedSig = crypto.createHmac('sha256', 'personaliza_secret_key_2026').update(str).digest('hex');
-    if (signature !== expectedSig) return null;
-    return JSON.parse(str);
+    const expectedSig = crypto.createHmac('sha256', JWT_SECRET).update(str).digest('hex');
+
+    const sigBuf = Buffer.from(signature, 'utf8');
+    const expBuf = Buffer.from(expectedSig, 'utf8');
+    if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+      return null;
+    }
+
+    const parsed = JSON.parse(str);
+    if (!parsed || !parsed.id) return null;
+    if (parsed.timestamp && (Date.now() - Number(parsed.timestamp) > TOKEN_TTL_MS)) {
+      return null; // Token expirado
+    }
+    return parsed;
   } catch (e) {
     return null;
   }
@@ -61,23 +126,32 @@ function verifyToken(token) {
 
 // POST /api/auth/login
 router.post('/login', (req, res) => {
-  const { email, password } = req.body;
+  const ip = getClientIp(req);
+  const rateCheck = checkLoginRateLimit(ip);
+  if (rateCheck.blocked) {
+    return res.status(429).json({
+      error: `Muitas tentativas de login. Aguarde ${Math.ceil(rateCheck.retrySeconds / 60)} minuto(s) antes de tentar novamente.`
+    });
+  }
+
+  const { email, password } = req.body || {};
   if (!email || !password) {
     return res.status(400).json({ error: 'Email e senha são obrigatórios.' });
   }
 
-  const cleanEmail = email.trim().toLowerCase();
-  const inputHash = hashPassword(password);
+  const cleanEmail = String(email).trim().toLowerCase();
+  const inputHash = hashPassword(String(password));
 
   db.get(
     "SELECT id, name, email, password_hash, role, status, cnpj_cpf, phone, avatar_url, parent_client_id, branch_number, can_access_flow, can_access_store, cep, address, address_number, complement, neighborhood, city, state FROM clients WHERE LOWER(email) = ?",
     [cleanEmail],
     (err, user) => {
       if (err) {
-        return res.status(500).json({ error: 'Erro no servidor ao buscar usuário.' });
+        return res.status(500).json({ error: 'Erro no servidor ao autenticar usuário.' });
       }
 
       if (!user || user.password_hash !== inputHash) {
+        recordFailedLoginAttempt(ip);
         return res.status(401).json({ error: 'Credenciais inválidas. Verifique seu email e senha.' });
       }
 
@@ -85,6 +159,7 @@ router.post('/login', (req, res) => {
         return res.status(403).json({ error: 'Sua conta está inativa. Entre em contato com o suporte.' });
       }
 
+      clearLoginAttempts(ip);
       const token = generateToken(user);
 
       res.json({
@@ -189,22 +264,16 @@ router.delete('/avatar', (req, res) => {
   );
 });
 
-// PUT /api/auth/me - Atualizar perfil do usuário autenticado
+// PUT /api/auth/me - Atualizar perfil do usuário autenticado (somente via token assinado)
 router.put('/me', (req, res) => {
   const authHeader = req.headers.authorization;
-  let decoded = verifyToken(authHeader);
+  const decoded = verifyToken(authHeader);
 
-  let targetUserId = decoded ? decoded.id : null;
-  if (!targetUserId && req.headers['x-user-id']) {
-    targetUserId = parseInt(req.headers['x-user-id'], 10);
-  }
-  if (!targetUserId && req.headers['x-target-client-id']) {
-    targetUserId = parseInt(req.headers['x-target-client-id'], 10);
-  }
-
-  if (!targetUserId) {
+  if (!decoded || !decoded.id) {
     return res.status(401).json({ error: 'Sessão expirada ou token inválido. Faça login novamente.' });
   }
+
+  const targetUserId = Number(decoded.id);
 
   const { name, phone, cnpj_cpf, doc, cnpj, password, avatar_url } = req.body;
   const finalDoc = cnpj_cpf !== undefined ? cnpj_cpf : (doc !== undefined ? doc : (cnpj !== undefined ? cnpj : null));

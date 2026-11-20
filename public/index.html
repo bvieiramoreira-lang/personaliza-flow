@@ -49,6 +49,9 @@
           <li class="strip-item admin-only hidden" data-tab="tab-admin-store-orders" title="Loja Virtual (Admin)">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
           </li>
+          <li class="strip-item" data-tab="tab-integrations" title="Integração Flow (API & Webhook)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </li>
           <li class="strip-item admin-only hidden" data-tab="tab-clients" title="Configuração (Clientes)">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           </li>
@@ -173,6 +176,19 @@
                 </span>
               </li>
               <li class="panel-item" data-tab="tab-mother-branches"><span>Minhas Sedes (Filhos)</span></li>
+            </ul>
+          </div>
+
+          <!-- CATEGORIA MÃE: INTEGRAÇÃO (SOMENTE FLOW - API & WEBHOOK POR SKU) -->
+          <div class="menu-category-group" id="cat-group-integrations" style="margin-top: 0.85rem;">
+            <button type="button" class="menu-category-header" onclick="toggleMenuCategory('cat-group-integrations')">
+              <span class="menu-category-title">INTEGRAÇÃO</span>
+              <svg class="menu-category-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <ul class="panel-menu menu-category-list">
+              <li class="panel-item" data-tab="tab-integrations">
+                <span>Integração Flow (API)</span>
+              </li>
             </ul>
           </div>
 
@@ -1357,83 +1373,107 @@
       <!-- TAB 4: CONFIGURAÇÕES (ADMIN ONLY) -->
       <section id="tab-settings" class="tab-page hidden admin-only">
         <div style="margin-bottom: 1.5rem;">
-          <h2 style="font-size: 1.3rem; font-weight: 800;">Configurações Logísticas & Gateways (Admin)</h2>
-          <p style="color: var(--text-muted); font-size: 0.88rem;">Ajuste CEP de origem, margem de lucro padrão e gerencie os gateways de frete integrados.</p>
+          <h2 style="font-size: 1.3rem; font-weight: 800;">Parâmetros de Frete & Conexão Melhor Envio (Admin)</h2>
+          <p style="color: var(--text-muted); font-size: 0.88rem;">Todas as cotações do Flow, Loja e Integração API utilizam exclusivamente os valores oficiais do Melhor Envio somados à porcentagem definida abaixo.</p>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.5rem; max-width: 1000px;">
-          <!-- Card 1: Configurações Gerais -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(390px, 1fr)); gap: 1.5rem; max-width: 1120px;">
+          <!-- Card 1: Parâmetros de Cotação & Token Melhor Envio -->
           <div class="card">
-            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-              Parâmetros de Cotação
-            </h3>
-            <form id="form-settings" class="form-grid">
-              <div class="form-group" style="grid-column: span 2;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <h3 style="font-size: 1.05rem; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Parâmetros & Credenciais Melhor Envio
+              </h3>
+              <span id="badge-melhor-envio-status" style="color: #16a34a; font-size: 0.78rem; font-weight: 800;">
+                Melhor Envio Conectado
+              </span>
+            </div>
+
+            <form id="form-settings" class="form-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem;">
+              <div class="form-group">
                 <label for="input-origin-cep">CEP de Origem (Personaliza Brindes)</label>
-                <input type="text" id="input-origin-cep" placeholder="80000000" required>
+                <input type="text" id="input-origin-cep" placeholder="88133700" required>
+              </div>
+
+              <div class="form-group">
+                <label for="input-markup-percent">Porcentagem sobre Melhor Envio (%)</label>
+                <input type="number" id="input-markup-percent" step="0.1" min="0" placeholder="10.0" required>
               </div>
 
               <div class="form-group" style="grid-column: span 2;">
-                <label for="input-markup-percent">Margem de Lucro Padrão (%)</label>
-                <input type="number" id="input-markup-percent" step="0.1" min="0" placeholder="10.0" required>
-                <small style="color: var(--text-muted); font-size: 0.78rem;">Aplicada automaticamente sobre o valor de custo de todas as transportadoras.</small>
+                <small style="color: var(--text-muted); font-size: 0.76rem; display: block; margin-top: -0.35rem;">
+                  Exemplo: Se o frete no Melhor Envio custar R$ 20,00 e a porcentagem acima for 10%, o valor cobrado no Flow será R$ 22,00.
+                </small>
               </div>
 
-              <div class="form-group" style="grid-column: span 2; margin-top: 1rem;">
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Salvar Configurações</button>
+              <div class="form-group" style="grid-column: span 2;">
+                <label for="input-melhor-envio-env">Ambiente da API Melhor Envio</label>
+                <select id="input-melhor-envio-env" style="width: 100%; padding: 0.6rem 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.85rem; background: #fff; font-weight: 600;">
+                  <option value="production">Produção Oficial (melhorenvio.com.br)</option>
+                  <option value="sandbox">Sandbox / Homologação (sandbox.melhorenvio.com.br)</option>
+                </select>
+              </div>
+
+              <div class="form-group" style="grid-column: span 2;">
+                <label for="input-melhor-envio-token">Token de Acesso Melhor Envio (Bearer Token)</label>
+                <textarea id="input-melhor-envio-token" rows="3" placeholder="Cole aqui o Token JWT gerado no painel do Melhor Envio..." style="width: 100%; padding: 0.6rem 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-family: monospace; font-size: 0.73rem; resize: vertical;"></textarea>
+                <small style="color: var(--text-muted); font-size: 0.74rem;">Token utilizado para consultar os valores reais da sua conta Melhor Envio em tempo real.</small>
+              </div>
+
+              <div class="form-group" style="grid-column: span 2; margin-top: 0.35rem;">
+                <button type="submit" class="btn btn-primary" style="width: 100%; font-weight: 700;">Salvar Configurações & Token</button>
               </div>
             </form>
           </div>
 
-          <!-- Card 2: Transportadora Disktenha (Tabela Excel) -->
-          <div class="card" style="border: 1px solid #10b98140; background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
-              <div>
-                <h3 style="font-size: 1.1rem; font-weight: 700; color: #065f46; display: flex; align-items: center; gap: 0.5rem;">
-                  <span style="font-size: 1.2rem;">🚛</span> Disktenha (Tabela Regional)
-                </h3>
-                <p style="color: #047857; font-size: 0.8rem; margin-top: 0.2rem;">Integração direta via planilha Excel</p>
-              </div>
-              <span id="badge-disktenha-status" style="background: #10b981; color: #fff; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 20px;">
-                🟢 Ativo
-              </span>
+          <!-- Card 2: Conferência e Simulador Direto Melhor Envio (Custo vs Valor Final com %) -->
+          <div class="card">
+            <div style="margin-bottom: 0.9rem;">
+              <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-primary); margin: 0;">
+                Conferência em Tempo Real — Melhor Envio + Sua %
+              </h3>
+              <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0.2rem 0 0 0;">
+                Teste qualquer CEP e dimensões de caixa para conferir o valor exato retornado pelo Melhor Envio e o valor final com a sua porcentagem aplicada.
+              </p>
             </div>
 
-            <div style="background: #ffffff; border: 1px solid #d1fae5; border-radius: 8px; padding: 0.85rem; margin-bottom: 1rem; font-size: 0.84rem; color: #1f2937;">
-              <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
-                <span style="color: var(--text-muted);">Cidades Cobertas:</span>
-                <strong id="disktenha-total-cities">65 cidades (SC e PR)</strong>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; margin-bottom: 0.75rem;">
+              <div class="form-group" style="margin: 0; min-width: 0;">
+                <label for="input-me-test-cep" style="font-size: 0.74rem; font-weight: 700;">CEP de Destino</label>
+                <input type="text" id="input-me-test-cep" placeholder="Ex: 88015-200" value="88015200" style="width: 100%; min-width: 0; font-size: 0.84rem;">
               </div>
-              <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
-                <span style="color: var(--text-muted);">Prazo de Entrega:</span>
-                <strong>2 dias úteis</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between;">
-                <span style="color: var(--text-muted);">Arquivo:</span>
-                <span style="font-family: monospace; font-size: 0.78rem; background: #e5e7eb; padding: 0.1rem 0.4rem; border-radius: 4px;">disktenha_personaliza.xlsx</span>
+              <div class="form-group" style="margin: 0; min-width: 0;">
+                <label for="input-me-test-weight" style="font-size: 0.74rem; font-weight: 700;">Peso da Caixa (kg)</label>
+                <input type="number" id="input-me-test-weight" step="0.1" min="0.1" value="0.5" style="width: 100%; min-width: 0; font-size: 0.84rem;">
               </div>
             </div>
 
-            <!-- Testador Rápido de CEP Disktenha -->
-            <div style="margin-top: 0.75rem;">
-              <label style="font-weight: 700; font-size: 0.82rem; color: #374151; display: block; margin-bottom: 0.4rem;">
-                🔍 Testar Cobertura de CEP:
-              </label>
-              <div style="display: flex; gap: 0.5rem;">
-                <input type="text" id="input-disktenha-test-cep" placeholder="Ex: 88010-000 ou 80010-000" style="flex: 1; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.88rem;">
-                <button type="button" class="btn btn-secondary" onclick="testDisktenhaCep()" style="padding: 0.5rem 0.9rem; font-weight: 700; font-size: 0.85rem;">Testar</button>
+            <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; margin-bottom: 0.85rem;">
+              <div class="form-group" style="margin: 0; min-width: 0;">
+                <label for="input-me-test-length" style="font-size: 0.72rem; font-weight: 700;">Comprimento (cm)</label>
+                <input type="number" id="input-me-test-length" value="20" min="16" style="width: 100%; min-width: 0; font-size: 0.82rem;">
               </div>
-              <div id="disktenha-test-result" style="margin-top: 0.6rem; min-height: 24px; font-size: 0.82rem;"></div>
+              <div class="form-group" style="margin: 0; min-width: 0;">
+                <label for="input-me-test-width" style="font-size: 0.72rem; font-weight: 700;">Largura (cm)</label>
+                <input type="number" id="input-me-test-width" value="15" min="11" style="width: 100%; min-width: 0; font-size: 0.82rem;">
+              </div>
+              <div class="form-group" style="margin: 0; min-width: 0;">
+                <label for="input-me-test-height" style="font-size: 0.72rem; font-weight: 700;">Altura (cm)</label>
+                <input type="number" id="input-me-test-height" value="10" min="2" style="width: 100%; min-width: 0; font-size: 0.82rem;">
+              </div>
             </div>
 
-            <div style="display: flex; gap: 0.5rem; margin-top: 1rem; border-top: 1px solid #e5e7eb; padding-top: 0.85rem;">
-              <button type="button" class="btn btn-secondary" onclick="openDisktenhaCitiesModal()" style="flex: 1; font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 0.35rem;">
-                Ver 65 Cidades Atendidas
+            <div style="margin-bottom: 0.9rem;">
+              <button type="button" class="btn btn-primary" onclick="testMelhorEnvioQuote()" style="width: 100%; font-weight: 700; font-size: 0.84rem; padding: 0.6rem 1rem;">
+                Cotar Agora no Melhor Envio
               </button>
-              <button type="button" class="btn btn-secondary" onclick="reloadDisktenhaTable()" title="Recarregar dados da planilha" style="font-size: 0.82rem; font-weight: 700;">
-                🔄 Recarregar
-              </button>
+            </div>
+
+            <div id="me-test-result" style="font-size: 0.8rem; border-top: 1px solid var(--border-color); padding-top: 0.85rem;">
+              <div style="color: var(--text-muted); text-align: center; padding: 1.25rem 0.5rem;">
+                Clique em <strong>"Cotar Agora"</strong> para consultar a tabela ao vivo do Melhor Envio e comparar o custo puro com o valor acrescido da sua porcentagem.
+              </div>
             </div>
           </div>
         </div>
@@ -2529,6 +2569,285 @@
         </div>
       </section>
 
+      <!-- =========================================================================
+           MÓDULO DE INTEGRAÇÃO AUTOMATIZADA FLOW (API & WEBHOOK POR SKU)
+           ========================================================================= -->
+      <section id="tab-integrations" class="tab-page hidden">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h2 style="font-size: 1.38rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.2rem;">Integração Automatizada Flow (API & Webhook por SKU)</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Vincule os produtos do estoque Flow pelo SKU ao site do cliente (ex: Banlek) para recebimento automático de remessas e retorno em tempo real de status e código de rastreio.</p>
+          </div>
+
+          <!-- Seletor de Cliente (Visível para o Admin escolher qual cliente configurar) -->
+          <div id="integration-admin-client-selector-box" class="admin-only hidden" style="display: flex; align-items: center; gap: 0.65rem; background: #ffffff; border: 1px solid #cbd5e1; padding: 0.45rem 0.8rem; border-radius: 8px;">
+            <label for="integration-client-select" style="font-size: 0.75rem; font-weight: 800; color: #334155; text-transform: uppercase; white-space: nowrap;">Cliente Vinculado:</label>
+            <select id="integration-client-select" onchange="loadIntegrationsPanel(this.value)" style="padding: 0.38rem 0.65rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.84rem; font-weight: 700; color: var(--primary); min-width: 220px; background: #fff;">
+              <option value="">Carregando clientes...</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- BLOCO 1: CREDENCIAIS DA API & CONFIGURAÇÃO DE WEBHOOK DE RETORNO -->
+        <div class="card" style="margin-bottom: 1.35rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.85rem; margin-bottom: 1.15rem; flex-wrap: wrap; gap: 0.75rem;">
+            <div>
+              <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-primary); margin: 0;">1. Credenciais da API & Webhook de Atualização (Status + Rastreio)</h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0.15rem 0 0 0;">Configure a chave de acesso para o site do cliente enviar pedidos e a URL onde ele receberá as mudanças de status e o código de rastreio.</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-size: 0.78rem; color: #64748b; font-weight: 600;">Cliente Ativo:</span>
+              <strong id="integration-current-client-label" style="font-size: 0.86rem; color: var(--primary);">-</strong>
+            </div>
+          </div>
+
+          <form id="form-integration-config" onsubmit="saveIntegrationConfig(event)">
+            <div class="form-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+              <!-- Chave de API -->
+              <div class="form-group" style="grid-column: span 2;">
+                <label for="integration-api-key" style="font-size: 0.76rem; font-weight: 700;">Chave de API Exclusiva do Cliente (Header <code style="background:#f1f5f9;padding:1px 5px;border-radius:4px;">X-API-Key</code>)</label>
+                <div style="display: flex; gap: 0.5rem;">
+                  <input type="text" id="integration-api-key" readonly style="flex: 1; font-family: monospace; font-weight: 700; font-size: 0.84rem; background: #f8fafc; color: #0f172a;">
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="copyIntegrationText('integration-api-key', 'Chave de API copiada!')" style="white-space: nowrap; font-weight: 700;">Copiar Chave</button>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="regenerateIntegrationApiKey()" style="white-space: nowrap; color: #b45309; border-color: #fde68a; font-weight: 700;">Gerar Nova</button>
+                </div>
+              </div>
+
+              <!-- Status da Integração -->
+              <div class="form-group">
+                <label for="integration-is-active" style="font-size: 0.76rem; font-weight: 700;">Status da Integração</label>
+                <select id="integration-is-active" style="width: 100%; padding: 0.62rem 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.84rem; font-weight: 700; background: #fff;">
+                  <option value="1">Ativa (Recebendo Pedidos & Enviando Rastreio)</option>
+                  <option value="0">Pausada / Inativa</option>
+                </select>
+              </div>
+
+              <!-- URL de Webhook do Cliente -->
+              <div class="form-group" style="grid-column: span 2;">
+                <label for="integration-webhook-url" style="font-size: 0.76rem; font-weight: 700;">URL de Webhook do Site do Cliente (Recebe Status: Em aberto, Separação, A caminho, Entregue + Código de Rastreio)</label>
+                <div style="display: flex; gap: 0.5rem;">
+                  <input type="url" id="integration-webhook-url" placeholder="https://site-do-cliente.com.br/api/webhooks/personaliza-flow" style="flex: 1; font-size: 0.84rem;">
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="testClientIntegrationWebhook()" style="white-space: nowrap; font-weight: 700;">Testar Webhook</button>
+                </div>
+              </div>
+
+              <!-- Regra Automática de Frete -->
+              <div class="form-group">
+                <label for="integration-freight-rule" style="font-size: 0.76rem; font-weight: 700;">Seleção Automática de Frete</label>
+                <select id="integration-freight-rule" style="width: 100%; padding: 0.62rem 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.84rem; background: #fff;">
+                  <option value="cheapest">Mais Econômico (Menor Custo de Frete)</option>
+                  <option value="fastest">Mais Rápido (Menor Prazo de Entrega)</option>
+                </select>
+              </div>
+
+              <!-- Segredo de Assinatura do Webhook -->
+              <div class="form-group" style="grid-column: span 2;">
+                <label for="integration-webhook-secret" style="font-size: 0.76rem; font-weight: 700;">Assinatura / Segredo do Webhook (Enviado no Header <code style="background:#f1f5f9;padding:1px 5px;border-radius:4px;">X-PersonalizaFlow-Secret</code>)</label>
+                <input type="text" id="integration-webhook-secret" placeholder="whsec_..." style="font-family: monospace; font-size: 0.82rem;">
+              </div>
+
+              <div class="form-group" style="display: flex; align-items: flex-end; justify-content: flex-end;">
+                <button type="submit" class="btn btn-primary" style="width: 100%; font-weight: 700; padding: 0.65rem 1.2rem;">Salvar Configuração de Integração</button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- BLOCO 2: CATÁLOGO DE SKUs DO FLOW PARA VÍNCULO NO SITE DO CLIENTE -->
+        <div class="card" style="margin-bottom: 1.35rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.9rem; flex-wrap: wrap; gap: 0.75rem;">
+            <div>
+              <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-primary); margin: 0;">2. Catálogo de SKUs do Estoque Flow (Para Cadastrar no Site do Cliente)</h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0.15rem 0 0 0;">Envie os códigos SKU abaixo para o cliente cadastrar nos produtos equivalentes no site dele. Quando vender lá, o sistema identifica o produto por este SKU.</p>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="copyAllIntegrationSkus()" style="font-weight: 700;">Copiar Lista de SKUs</button>
+          </div>
+
+          <div class="table-responsive">
+            <table style="font-size: 0.82rem;">
+              <thead>
+                <tr>
+                  <th>Foto</th>
+                  <th>SKU para Integração</th>
+                  <th>Produto no Estoque Flow</th>
+                  <th>Saldo Disponível</th>
+                  <th>Peso / Dimensões Unit.</th>
+                  <th>Regra de Caixa Master</th>
+                  <th>Status p/ API</th>
+                  <th style="text-align: right;">Ação</th>
+                </tr>
+              </thead>
+              <tbody id="integration-skus-tbody">
+                <!-- Renderizado via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- BLOCO 3: SIMULADOR DE PEDIDO INTEGRADO & DOCUMENTAÇÃO TÉCNICA PARA O DESENVOLVEDOR -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 1.35rem; margin-bottom: 1.35rem;">
+          <!-- Card Esquerdo: Simulador de Pedido Integrado (Teste Real sem sair da tela) -->
+          <div class="card">
+            <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+              <h3 style="font-size: 0.98rem; font-weight: 800; color: var(--text-primary); margin: 0;">3A. Simulador de Recebimento Automático de Pedido</h3>
+              <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0.15rem 0 0 0;">Simule uma venda ocorrida no site do cliente (ex: Banlek). O pedido cairá imediatamente em <strong>Gestão de Remessas</strong> como "Em aberto", calculará caixas/frete e baixará o estoque.</p>
+            </div>
+
+            <form id="form-integration-simulator" onsubmit="submitIntegrationSimulatedOrder(event)">
+              <div class="form-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem;">
+                <div class="form-group">
+                  <label for="sim-external-order-id" style="font-size: 0.74rem; font-weight: 700;">Nº Pedido no Site Cliente *</label>
+                  <input type="text" id="sim-external-order-id" placeholder="Ex: BNK-1042" required style="font-family: monospace; font-weight: 700; font-size: 0.82rem;">
+                </div>
+                <div class="form-group">
+                  <label for="sim-product-sku" style="font-size: 0.74rem; font-weight: 700;">Produto (SKU do Flow) *</label>
+                  <select id="sim-product-sku" required style="width: 100%; padding: 0.58rem 0.65rem; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.82rem; background: #fff; font-weight: 700;">
+                    <option value="">Selecione um SKU...</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="sim-product-qty" style="font-size: 0.74rem; font-weight: 700;">Quantidade Vendida *</label>
+                  <input type="number" id="sim-product-qty" min="1" value="1" required style="font-size: 0.82rem;">
+                </div>
+
+                <div class="form-group" style="grid-column: span 2;">
+                  <label for="sim-recipient-name" style="font-size: 0.74rem; font-weight: 700;">Nome do Comprador Final (Destinatário) *</label>
+                  <input type="text" id="sim-recipient-name" placeholder="Ex: Lucas Andrade (Cliente Banlek)" required style="font-size: 0.82rem;">
+                </div>
+                <div class="form-group">
+                  <label for="sim-dest-cep" style="font-size: 0.74rem; font-weight: 700;">CEP de Entrega *</label>
+                  <input type="text" id="sim-dest-cep" placeholder="88015-200" required onblur="lookupSimulatorCep(this.value)" style="font-size: 0.82rem;">
+                </div>
+
+                <div class="form-group" style="grid-column: span 2;">
+                  <label for="sim-dest-address" style="font-size: 0.74rem; font-weight: 700;">Rua / Logradouro *</label>
+                  <input type="text" id="sim-dest-address" placeholder="Rua Felipe Schmidt" required style="font-size: 0.82rem;">
+                </div>
+                <div class="form-group">
+                  <label for="sim-dest-number" style="font-size: 0.74rem; font-weight: 700;">Número *</label>
+                  <input type="text" id="sim-dest-number" placeholder="120" required style="font-size: 0.82rem;">
+                </div>
+
+                <div class="form-group">
+                  <label for="sim-dest-neighborhood" style="font-size: 0.74rem; font-weight: 700;">Bairro</label>
+                  <input type="text" id="sim-dest-neighborhood" placeholder="Centro" style="font-size: 0.82rem;">
+                </div>
+                <div class="form-group">
+                  <label for="sim-dest-city" style="font-size: 0.74rem; font-weight: 700;">Cidade *</label>
+                  <input type="text" id="sim-dest-city" placeholder="Florianópolis" required style="font-size: 0.82rem;">
+                </div>
+                <div class="form-group">
+                  <label for="sim-dest-state" style="font-size: 0.74rem; font-weight: 700;">UF *</label>
+                  <input type="text" id="sim-dest-state" placeholder="SC" maxlength="2" required style="text-transform: uppercase; font-size: 0.82rem;">
+                </div>
+              </div>
+
+              <div style="margin-top: 1rem; display: flex; justify-content: flex-end;">
+                <button type="submit" class="btn btn-primary" id="btn-run-integration-sim" style="font-weight: 700; width: 100%; padding: 0.65rem 1rem;">
+                  Disparar Pedido Simulado (Enviar para Gestão de Remessas)
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Card Direito: Documentação Pronta para o Desenvolvedor do Cliente -->
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
+              <div>
+                <h3 style="font-size: 0.98rem; font-weight: 800; color: var(--text-primary); margin: 0;">3B. Documentação Técnica da API (Para o Dev do Cliente)</h3>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0.15rem 0 0 0;">Envie estas especificações para a equipe técnica do cliente conectar o site deles ao Flow.</p>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="copyIntegrationDocSpec()" style="font-weight: 700; font-size: 0.75rem;">Copiar Especificação</button>
+            </div>
+
+            <div style="font-size: 0.78rem; color: #334155; display: flex; flex-direction: column; gap: 0.75rem;">
+              <div>
+                <div style="font-weight: 800; color: var(--primary); margin-bottom: 0.25rem;">1. Enviar Pedido Automaticamente para o Flow (Site Cliente &rarr; Flow)</div>
+                <div style="font-family: monospace; background: #0f172a; color: #f8fafc; padding: 0.65rem 0.8rem; border-radius: 8px; font-size: 0.72rem; overflow-x: auto; line-height: 1.45;">
+POST /api/integrations/v1/orders
+Headers:
+  Content-Type: application/json
+  X-API-Key: <span id="doc-sample-api-key">pflow_live_...</span>
+
+{
+  "external_order_id": "BNK-1042",
+  "recipient": {
+    "name": "Nome do Comprador",
+    "document": "000.000.000-00",
+    "phone": "(48) 99999-0000",
+    "email": "comprador@email.com"
+  },
+  "address": {
+    "cep": "88015200",
+    "street": "Rua Felipe Schmidt",
+    "number": "120",
+    "complement": "Sala 02",
+    "neighborhood": "Centro",
+    "city": "Florianópolis",
+    "state": "SC"
+  },
+  "items": [
+    { "sku": "<span id="doc-sample-sku">SKU-DO-FLOW</span>", "quantity": 1 }
+  ]
+}</div>
+              </div>
+
+              <div>
+                <div style="font-weight: 800; color: #16a34a; margin-bottom: 0.25rem;">2. Webhook de Retorno Automático: Status + Rastreio (Flow &rarr; Site Cliente)</div>
+                <div style="font-size: 0.74rem; color: #475569; margin-bottom: 0.25rem;">Disparado automaticamente para a <strong>URL de Webhook</strong> a cada alteração em Gestão de Remessas (<code style="background:#f1f5f9;padding:1px 4px;">em_aberto</code>, <code style="background:#f1f5f9;padding:1px 4px;">separacao</code>, <code style="background:#f1f5f9;padding:1px 4px;">a_caminho</code>, <code style="background:#f1f5f9;padding:1px 4px;">entregue</code>):</div>
+                <div style="font-family: monospace; background: #0f172a; color: #f8fafc; padding: 0.65rem 0.8rem; border-radius: 8px; font-size: 0.72rem; overflow-x: auto; line-height: 1.45;">
+POST https://site-do-cliente.com.br/webhook
+Headers:
+  X-PersonalizaFlow-Event: shipment.status_updated
+  X-PersonalizaFlow-Secret: whsec_...
+
+{
+  "event": "shipment.status_updated",
+  "shipment_code": "ENV-2026-4819",
+  "external_order_id": "BNK-1042",
+  "status": "a_caminho",
+  "status_label": "A caminho (Despachado)",
+  "tracking_code": "BR123456789BR",
+  "carrier": "Correios",
+  "service": "SEDEX",
+  "updated_at": "2026-11-20T14:22:00.000Z"
+}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BLOCO 4: HISTÓRICO & LOGS DE INTEGRAÇÃO (PEDIDOS RECEBIDOS E WEBHOOKS DE RASTREIO ENVIADOS) -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.9rem; flex-wrap: wrap; gap: 0.75rem;">
+            <div>
+              <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-primary); margin: 0;">4. Histórico de Pedidos Recebidos & Webhooks de Status/Rastreio Enviados</h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0.15rem 0 0 0;">Acompanhe todas as remessas criadas automaticamente via API e as notificações de status e código de rastreio enviadas ao site do cliente.</p>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="loadIntegrationsPanel()" style="font-weight: 700;">Atualizar Histórico</button>
+          </div>
+
+          <div class="table-responsive">
+            <table style="font-size: 0.8rem;">
+              <thead>
+                <tr>
+                  <th>Data / Hora</th>
+                  <th>Direção</th>
+                  <th>Evento</th>
+                  <th>Pedido Externo</th>
+                  <th>Remessa Flow</th>
+                  <th>Status / Retorno</th>
+                  <th style="text-align: right;">Ação</th>
+                </tr>
+              </thead>
+              <tbody id="integration-logs-tbody">
+                <!-- Renderizado via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 
@@ -2787,6 +3106,6 @@
     </div>
   </div>
 
-  <script src="js/app.js?v=1794210000"></script>
+  <script src="js/app.js?v=1803500000"></script>
 </body>
 </html>

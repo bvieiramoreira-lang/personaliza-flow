@@ -24,8 +24,10 @@ try {
   console.error('Erro ao ler authUser:', e);
 }
 
-// Proteção de Rota: Redirecionar para login.html se não houver usuário autenticado
-if (!currentAuthUser && !window.location.pathname.includes('login.html')) {
+// Proteção de Rota: Redirecionar para login.html se não houver usuário ou token autenticado
+if ((!currentAuthUser || !localStorage.getItem('authToken')) && !window.location.pathname.includes('login.html')) {
+  localStorage.removeItem('authUser');
+  localStorage.removeItem('authToken');
   window.location.href = '/login.html';
 }
 
@@ -296,10 +298,12 @@ function setAppRole(role) {
     const flowGroup = document.getElementById('cat-group-flow');
     const storeGroup = document.getElementById('cat-group-store');
     const motherGroup = document.getElementById('cat-group-mother');
+    const integrationsGroup = document.getElementById('cat-group-integrations');
     if (flowGroup) flowGroup.classList.remove('hidden');
     if (storeGroup) storeGroup.classList.remove('hidden');
     if (motherGroup) motherGroup.classList.add('hidden');
-    document.querySelectorAll('.strip-item[data-tab="tab-my-products"], .strip-item[data-tab="tab-shipments"], .strip-item[data-tab="tab-store-catalog"]').forEach(el => el.classList.remove('hidden'));
+    if (integrationsGroup) integrationsGroup.classList.remove('hidden');
+    document.querySelectorAll('.strip-item[data-tab="tab-my-products"], .strip-item[data-tab="tab-shipments"], .strip-item[data-tab="tab-store-catalog"], .strip-item[data-tab="tab-integrations"]').forEach(el => el.classList.remove('hidden'));
   } else {
     if (btnClient) btnClient.classList.add('active');
     if (btnAdmin) btnAdmin.classList.remove('active');
@@ -317,12 +321,14 @@ function setAppRole(role) {
     const flowGroup = document.getElementById('cat-group-flow');
     const storeGroup = document.getElementById('cat-group-store');
     const motherGroup = document.getElementById('cat-group-mother');
+    const integrationsGroup = document.getElementById('cat-group-integrations');
 
     if (flowGroup) flowGroup.classList.toggle('hidden', !canFlow);
     if (storeGroup) storeGroup.classList.toggle('hidden', !canStore);
     if (motherGroup) motherGroup.classList.toggle('hidden', isChildBranch);
+    if (integrationsGroup) integrationsGroup.classList.toggle('hidden', !canFlow);
 
-    document.querySelectorAll('.strip-item[data-tab="tab-my-products"], .strip-item[data-tab="tab-shipments"]').forEach(el => el.classList.toggle('hidden', !canFlow));
+    document.querySelectorAll('.strip-item[data-tab="tab-my-products"], .strip-item[data-tab="tab-shipments"], .strip-item[data-tab="tab-integrations"]').forEach(el => el.classList.toggle('hidden', !canFlow));
     document.querySelectorAll('.strip-item[data-tab="tab-store-catalog"]').forEach(el => el.classList.toggle('hidden', !canStore));
 
     if (!isChildBranch && typeof refreshMotherApprovalsBadge === 'function') {
@@ -453,6 +459,9 @@ function switchTab(targetTab) {
   if (targetTab === 'tab-admin-store-settings') {
     loadAdminStoreOverview();
     loadAdminAllStoreProducts();
+  }
+  if (targetTab === 'tab-integrations') {
+    if (typeof loadIntegrationsPanel === 'function') loadIntegrationsPanel();
   }
 
   const mainContent = document.querySelector('.main-content');
@@ -1856,6 +1865,11 @@ function renderShipmentCards(detailedShipments, isFiltered = false) {
             <span style="font-size: 0.82rem; font-weight: 600; color: #475569; background: #ffffff; border: 1px solid #cbd5e1; padding: 0.22rem 0.65rem; border-radius: 6px;">
               Cliente: <strong style="color: #0f172a;">${escapeHtml(s.client_name || 'Personaliza Brindes')}</strong>
             </span>
+            ${(s.origin_channel === 'api_integration' || s.external_order_id) ? `
+            <span style="font-size: 0.78rem; font-weight: 800; color: #59338f; background: #ffffff; border: 1px solid #cbd5e1; padding: 0.22rem 0.65rem; border-radius: 6px;">
+              Integração API${s.external_order_id ? ' • Pedido #' + escapeHtml(s.external_order_id) : ''}
+            </span>
+            ` : ''}
           </div>
 
           <div style="display: flex; align-items: center; gap: 0.6rem; text-align: right; flex-wrap: wrap;">
@@ -2335,15 +2349,21 @@ async function saveShipmentStatus(e) {
     if (!res.ok) return showToast('Erro ao atualizar status: ' + data.error, 'error');
 
     closeModal('modal-update-status');
-    showToast('Status da remessa atualizado com sucesso!', 'success');
+    showToast(
+      data.webhook_dispatched
+        ? 'Status e rastreio atualizados e enviados automaticamente via Webhook ao site do cliente!'
+        : 'Status da remessa atualizado com sucesso!',
+      'success'
+    );
     await loadShipments();
+    if (typeof refreshSystemNotifications === 'function') refreshSystemNotifications();
   } catch (err) {
     showToast('Erro de conexão ao salvar status.', 'error');
   }
 }
 
 /* ==========================================================================
-   7. CONFIGURAÇÕES
+   7. CONFIGURAÇÕES & MELHOR ENVIO (EXCLUSIVO)
    ========================================================================== */
 async function loadSettings() {
   try {
@@ -2352,14 +2372,107 @@ async function loadSettings() {
 
     const originInput = document.getElementById('input-origin-cep');
     const markupInput = document.getElementById('input-markup-percent');
-    if (originInput) originInput.value = settings.origin_cep || '';
-    if (markupInput) markupInput.value = settings.default_markup_percent || 0;
+    const envInput = document.getElementById('input-melhor-envio-env');
+    const tokenInput = document.getElementById('input-melhor-envio-token');
+    const statusBadge = document.getElementById('badge-melhor-envio-status');
+
+    if (originInput) originInput.value = settings.origin_cep || '88133700';
+    if (markupInput) markupInput.value = settings.default_markup_percent ?? 10;
+    if (envInput) envInput.value = settings.melhor_envio_env || 'production';
+    if (tokenInput) {
+      tokenInput.value = '';
+      tokenInput.placeholder = settings.has_melhor_envio_token
+        ? `Token ativo protegido (${settings.melhor_envio_token_masked || 'Configurado'}). Cole um novo token aqui apenas se desejar substituí-lo.`
+        : 'Cole aqui o Token JWT gerado no painel do Melhor Envio...';
+    }
+
+    if (statusBadge) {
+      if (settings.has_melhor_envio_token) {
+        statusBadge.textContent = settings.melhor_envio_env === 'sandbox'
+          ? 'Melhor Envio Conectado (Sandbox)'
+          : 'Melhor Envio Conectado (Produção)';
+        statusBadge.style.color = '#16a34a';
+      } else {
+        statusBadge.textContent = 'Token Não Configurado';
+        statusBadge.style.color = '#dc2626';
+      }
+    }
   } catch (err) {
     console.error('Erro ao carregar configurações:', err);
   }
-
-  await loadDisktenhaSummary();
 }
+
+async function testMelhorEnvioQuote() {
+  const cep = document.getElementById('input-me-test-cep')?.value || '';
+  const weight = document.getElementById('input-me-test-weight')?.value || '0.5';
+  const length = document.getElementById('input-me-test-length')?.value || '20';
+  const width = document.getElementById('input-me-test-width')?.value || '15';
+  const height = document.getElementById('input-me-test-height')?.value || '10';
+  const resultEl = document.getElementById('me-test-result');
+  if (!resultEl) return;
+
+  const cleanCep = String(cep).replace(/\D/g, '');
+  if (cleanCep.length !== 8) {
+    resultEl.innerHTML = '<div style="color: #dc2626; font-weight: 700;">Informe um CEP de destino com 8 dígitos.</div>';
+    return;
+  }
+
+  resultEl.innerHTML = '<div style="color: #64748b; padding: 0.75rem 0;">Consultando valores oficiais no Melhor Envio...</div>';
+
+  try {
+    const res = await fetch('/api/settings/melhor-envio/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cep: cleanCep, weight, length, width, height })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao cotar no Melhor Envio.');
+
+    const quotes = Array.isArray(data.quotes) ? data.quotes : [];
+    if (quotes.length === 0) {
+      resultEl.innerHTML = '<div style="color: #d97706; font-weight: 700;">Nenhuma opção retornada pelo Melhor Envio para este CEP.</div>';
+      return;
+    }
+
+    const isLive = quotes[0] && quotes[0].source === 'melhor_envio_api';
+
+    resultEl.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <span style="font-size: 0.75rem; font-weight: 800; color: #334155; text-transform: uppercase;">Tabela Retornada (CEP ${escapeHtml(cleanCep)})</span>
+        <span style="font-size: 0.74rem; font-weight: 800; color: ${isLive ? '#16a34a' : '#d97706'};">
+          ${isLive ? 'Fonte: API Oficial Melhor Envio' : 'Fonte: Contingência Local'}
+        </span>
+      </div>
+      <div class="table-responsive">
+        <table style="font-size: 0.78rem;">
+          <thead>
+            <tr>
+              <th>Transportadora / Serviço</th>
+              <th>Prazo</th>
+              <th>Custo Melhor Envio</th>
+              <th>+ Sua %</th>
+              <th>Valor Final no Flow</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${quotes.map(q => `
+              <tr>
+                <td style="font-weight: 700; color: #0f172a;">${escapeHtml(q.carrier)} — ${escapeHtml(q.service)}</td>
+                <td>${q.delivery_days} dias úteis</td>
+                <td style="color: #475569; font-weight: 600;">R$ ${(Number(q.raw_price) || 0).toFixed(2).replace('.', ',')}</td>
+                <td style="color: #d97706; font-weight: 700;">+${q.markup_percent}% (R$ ${(Number(q.markup_value) || 0).toFixed(2).replace('.', ',')})</td>
+                <td style="color: var(--primary); font-weight: 800;">R$ ${(Number(q.final_price) || 0).toFixed(2).replace('.', ',')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } catch (err) {
+    resultEl.innerHTML = `<div style="color: #dc2626; font-weight: 700;">Erro: ${escapeHtml(err.message)}</div>`;
+  }
+}
+window.testMelhorEnvioQuote = testMelhorEnvioQuote;
 
 /* --------------------------------------------------------------------------
    GESTÃO DA TRANSPORTADORA DISKTENHA
@@ -2560,21 +2673,32 @@ function initFormEvents() {
   // Confirmar Remessa
   document.getElementById('btn-confirm-shipment')?.addEventListener('click', confirmAndCreateShipment);
 
-  // Form Configurações
+  // Form Configurações & Melhor Envio
   document.getElementById('form-settings')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const cep = document.getElementById('input-origin-cep').value;
     const markup = document.getElementById('input-markup-percent').value;
+    const meEnv = document.getElementById('input-melhor-envio-env')?.value || 'production';
+    const meToken = document.getElementById('input-melhor-envio-token')?.value || '';
 
     try {
-      await fetch('/api/settings', {
+      const res = await fetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ origin_cep: cep, default_markup_percent: parseFloat(markup) })
+        body: JSON.stringify({
+          origin_cep: cep,
+          default_markup_percent: parseFloat(markup),
+          melhor_envio_env: meEnv,
+          melhor_envio_token: meToken
+        })
       });
-      alert('Configurações salvas!');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao salvar configurações.');
+      if (typeof showToast === 'function') showToast(data.message || 'Configurações salvas!', 'success');
+      else alert('Configurações salvas!');
+      await loadSettings();
     } catch (err) {
-      alert('Erro ao salvar configurações.');
+      alert('Erro ao salvar configurações: ' + err.message);
     }
   });
 
@@ -7472,6 +7596,482 @@ async function handleMotherOrderApproval(orderId, action) {
   }
 }
 window.handleMotherOrderApproval = handleMotherOrderApproval;
+
+// --------------------------------------------------------------------------
+// 8. MÓDULO DE INTEGRAÇÃO AUTOMATIZADA FLOW (API & WEBHOOK POR SKU)
+// --------------------------------------------------------------------------
+
+let activeIntegrationClientId = null;
+let currentIntegrationProducts = [];
+
+async function loadIntegrationsPanel(selectedClientId = null) {
+  const selectorBox = document.getElementById('integration-admin-client-selector-box');
+  const clientSelect = document.getElementById('integration-client-select');
+  const isAdmin = currentRole === 'admin';
+
+  if (selectorBox) {
+    if (isAdmin) selectorBox.classList.remove('hidden');
+    else selectorBox.classList.add('hidden');
+  }
+
+  if (selectedClientId) {
+    activeIntegrationClientId = Number(selectedClientId);
+  } else if (!isAdmin && currentAuthUser) {
+    activeIntegrationClientId = Number(currentAuthUser.parent_client_id || currentAuthUser.id);
+  }
+
+  try {
+    let url = '/api/integrations/config';
+    if (isAdmin && activeIntegrationClientId) {
+      url += `?client_id=${activeIntegrationClientId}`;
+    }
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Falha ao carregar configurações de integração.');
+    const data = await res.json();
+
+    // Popular seletor de clientes para o Admin
+    if (isAdmin && clientSelect && Array.isArray(data.clients_list)) {
+      const targetId = (data.client && data.client.id) || activeIntegrationClientId || (data.clients_list[0] && data.clients_list[0].id);
+      activeIntegrationClientId = targetId ? Number(targetId) : null;
+
+      clientSelect.innerHTML = data.clients_list.map(c => `
+        <option value="${c.id}" ${Number(c.id) === Number(activeIntegrationClientId) ? 'selected' : ''}>
+          ${escapeHtml(c.name)} ${c.cnpj_cpf ? '(' + escapeHtml(c.cnpj_cpf) + ')' : ''}
+        </option>
+      `).join('');
+    }
+
+    const clientNameLabel = document.getElementById('integration-current-client-label');
+    if (clientNameLabel) {
+      clientNameLabel.textContent = data.client ? data.client.name : (currentAuthUser?.name || '-');
+    }
+
+    const cfg = data.integration || {};
+    const apiKeyEl = document.getElementById('integration-api-key');
+    const isActiveEl = document.getElementById('integration-is-active');
+    const webhookUrlEl = document.getElementById('integration-webhook-url');
+    const webhookSecretEl = document.getElementById('integration-webhook-secret');
+    const freightRuleEl = document.getElementById('integration-freight-rule');
+    const docApiKeyEl = document.getElementById('doc-sample-api-key');
+
+    if (apiKeyEl) apiKeyEl.value = cfg.api_key || '';
+    if (docApiKeyEl) docApiKeyEl.textContent = cfg.api_key || 'pflow_live_...';
+    if (isActiveEl) isActiveEl.value = String(cfg.is_active !== undefined ? cfg.is_active : 1);
+    if (webhookUrlEl) webhookUrlEl.value = cfg.webhook_url || '';
+    if (webhookSecretEl) webhookSecretEl.value = cfg.webhook_secret || '';
+    if (freightRuleEl) freightRuleEl.value = cfg.default_freight_rule || 'cheapest';
+
+    currentIntegrationProducts = Array.isArray(data.products) ? data.products : [];
+    renderIntegrationSkusTable(currentIntegrationProducts);
+    renderIntegrationLogsTable(Array.isArray(data.logs) ? data.logs : []);
+
+    // Sugerir um número de pedido externo no simulador se estiver vazio
+    const simExtOrderInput = document.getElementById('sim-external-order-id');
+    if (simExtOrderInput && !simExtOrderInput.value) {
+      const prefix = (data.client && data.client.name)
+        ? data.client.name.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() || 'PED'
+        : 'BNK';
+      simExtOrderInput.value = `${prefix}-${Math.floor(1000 + Math.random() * 9000)}`;
+    }
+  } catch (err) {
+    console.error('Erro em loadIntegrationsPanel:', err);
+  }
+}
+window.loadIntegrationsPanel = loadIntegrationsPanel;
+
+function renderIntegrationSkusTable(products) {
+  const tbody = document.getElementById('integration-skus-tbody');
+  const simSelect = document.getElementById('sim-product-sku');
+  const docSkuEl = document.getElementById('doc-sample-sku');
+
+  if (simSelect) {
+    if (!products || products.length === 0) {
+      simSelect.innerHTML = '<option value="">Nenhum produto Flow cadastrado para este cliente</option>';
+    } else {
+      simSelect.innerHTML = products.map(p => `
+        <option value="${escapeHtml(p.code)}">${escapeHtml(p.code)} — ${escapeHtml(p.name)} (Saldo: ${p.stock_quantity || 0} un)</option>
+      `).join('');
+    }
+  }
+
+  if (docSkuEl && products && products.length > 0) {
+    docSkuEl.textContent = products[0].code;
+  }
+
+  if (!tbody) return;
+
+  if (!products || products.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+          Nenhum produto cadastrado no estoque Flow para este cliente. Cadastre produtos na aba "Meus Produtos" para gerar os SKUs de integração.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = products.map(p => {
+    const img = p.image_url || '/images/logow2.png';
+    const stock = Number(p.stock_quantity) || 0;
+    const hasDimensions = Number(p.unit_weight) > 0 && Number(p.max_qty_per_box) > 0;
+
+    return `
+      <tr>
+        <td>
+          <img src="${escapeHtml(img)}" alt="${escapeHtml(p.name)}" style="width: 38px; height: 38px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color);">
+        </td>
+        <td>
+          <span style="font-family: monospace; font-weight: 800; font-size: 0.9rem; color: var(--primary);">${escapeHtml(p.code)}</span>
+        </td>
+        <td style="font-weight: 700; color: var(--text-primary);">${escapeHtml(p.name)}</td>
+        <td>
+          <span style="font-weight: 800; color: ${stock > 0 ? '#16a34a' : '#dc2626'};">
+            ${stock} un.
+          </span>
+        </td>
+        <td style="font-size: 0.78rem; color: #475569;">
+          ${(p.unit_weight || 0)} kg • ${p.unit_length || 0}x${p.unit_width || 0}x${p.unit_height || 0} cm
+        </td>
+        <td style="font-size: 0.78rem; color: #475569;">
+          Máx ${p.max_qty_per_box || 1} un/cx (${p.box_length || 0}x${p.box_width || 0}x${p.box_height || 0} cm)
+        </td>
+        <td>
+          ${hasDimensions && stock > 0
+            ? '<span style="color: #16a34a; font-weight: 700; font-size: 0.78rem;">Pronto p/ Envio</span>'
+            : (stock <= 0
+                ? '<span style="color: #dc2626; font-weight: 700; font-size: 0.78rem;">Sem Estoque</span>'
+                : '<span style="color: #d97706; font-weight: 700; font-size: 0.78rem;">Verificar Cubagem</span>')}
+        </td>
+        <td style="text-align: right;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="copySingleSku('${escapeHtml(p.code)}')" style="font-size: 0.75rem; font-weight: 700; padding: 0.28rem 0.65rem;">
+            Copiar SKU
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderIntegrationLogsTable(logs) {
+  const tbody = document.getElementById('integration-logs-tbody');
+  if (!tbody) return;
+
+  if (!logs || logs.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+          Nenhum evento de integração registrado ainda. Use o Simulador acima ou envie um pedido via API para testar.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = logs.map(l => {
+    const dateStr = l.created_at ? new Date(l.created_at).toLocaleString('pt-BR') : '-';
+    const isInbound = l.direction === 'inbound';
+    const isOk = l.status === 'success';
+
+    const dirLabel = isInbound
+      ? '<span style="color: #2563eb; font-weight: 800;">Entrada (Pedido API)</span>'
+      : '<span style="color: #59338f; font-weight: 800;">Saída (Webhook Status/Rastreio)</span>';
+
+    let eventDesc = l.event_type;
+    if (l.event_type === 'order.created') eventDesc = 'Recebimento de Pedido por SKU';
+    else if (l.event_type === 'shipment.created') eventDesc = 'Confirmação de Remessa Criada';
+    else if (l.event_type === 'shipment.status_updated') {
+      try {
+        const parsed = JSON.parse(l.payload_json || '{}');
+        eventDesc = `Status: ${parsed.status_label || parsed.status || '-'}${parsed.tracking_code ? ' • Rastreio: ' + parsed.tracking_code : ''}`;
+      } catch (_) {
+        eventDesc = 'Atualização de Status / Rastreio';
+      }
+    } else if (l.event_type === 'webhook.test') {
+      eventDesc = 'Disparo de Teste de Webhook';
+    }
+
+    const statusText = isOk
+      ? `<span style="color: #16a34a; font-weight: 700;">Sucesso ${l.response_status ? '(HTTP ' + l.response_status + ')' : ''}</span>`
+      : `<span style="color: #dc2626; font-weight: 700;" title="${escapeHtml(l.response_body || '')}">Falha ${l.response_status ? '(HTTP ' + l.response_status + ')' : ''}</span>`;
+
+    return `
+      <tr>
+        <td style="white-space: nowrap; color: #475569;">${dateStr}</td>
+        <td>${dirLabel}</td>
+        <td style="font-weight: 600; color: #0f172a;">${escapeHtml(eventDesc)}</td>
+        <td style="font-family: monospace; font-weight: 700;">${escapeHtml(l.external_order_id || '-')}</td>
+        <td style="font-family: monospace; font-weight: 800; color: var(--primary);">${escapeHtml(l.shipment_code || '-')}</td>
+        <td>${statusText}</td>
+        <td style="text-align: right;">
+          ${(!isInbound && l.shipment_id)
+            ? `<button type="button" class="btn btn-secondary btn-sm" onclick="resendIntegrationWebhook(${l.id})" style="font-size: 0.73rem; font-weight: 700; padding: 0.25rem 0.6rem;">Reenviar Webhook</button>`
+            : '<span style="color: #94a3b8; font-size: 0.75rem;">-</span>'}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function saveIntegrationConfig(event) {
+  if (event) event.preventDefault();
+
+  const payload = {
+    client_id: activeIntegrationClientId,
+    is_active: Number(document.getElementById('integration-is-active')?.value ?? 1),
+    webhook_url: (document.getElementById('integration-webhook-url')?.value || '').trim(),
+    webhook_secret: (document.getElementById('integration-webhook-secret')?.value || '').trim(),
+    default_freight_rule: document.getElementById('integration-freight-rule')?.value || 'cheapest'
+  };
+
+  try {
+    const res = await fetch('/api/integrations/config', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao salvar configuração de integração.');
+
+    if (typeof showToast === 'function') showToast(data.message, 'success');
+    await loadIntegrationsPanel(activeIntegrationClientId);
+  } catch (err) {
+    alert(err.message);
+  }
+}
+window.saveIntegrationConfig = saveIntegrationConfig;
+
+async function regenerateIntegrationApiKey() {
+  if (!confirm('Deseja gerar uma nova Chave de API (API Key)? A chave anterior deixará de funcionar imediatamente no site do cliente.')) return;
+
+  try {
+    const res = await fetch('/api/integrations/regenerate-key', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client_id: activeIntegrationClientId })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao gerar nova chave.');
+
+    document.getElementById('integration-api-key').value = data.api_key || '';
+    const docKey = document.getElementById('doc-sample-api-key');
+    if (docKey) docKey.textContent = data.api_key || '';
+
+    if (typeof showToast === 'function') showToast(data.message, 'success');
+  } catch (err) {
+    alert(err.message);
+  }
+}
+window.regenerateIntegrationApiKey = regenerateIntegrationApiKey;
+
+async function testClientIntegrationWebhook() {
+  const webhookUrl = (document.getElementById('integration-webhook-url')?.value || '').trim();
+  if (!webhookUrl) {
+    alert('Preencha o campo "URL de Webhook do Site do Cliente" antes de disparar o teste.');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/integrations/test-webhook', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: activeIntegrationClientId,
+        webhook_url: webhookUrl
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao testar webhook.');
+
+    if (typeof showToast === 'function') {
+      showToast(data.message, data.success ? 'success' : 'warning');
+    } else {
+      alert(data.message);
+    }
+    await loadIntegrationsPanel(activeIntegrationClientId);
+  } catch (err) {
+    alert(err.message);
+  }
+}
+window.testClientIntegrationWebhook = testClientIntegrationWebhook;
+
+async function resendIntegrationWebhook(logId) {
+  try {
+    const res = await fetch(`/api/integrations/resend-webhook/${logId}`, {
+      method: 'POST'
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao reenviar webhook.');
+
+    if (typeof showToast === 'function') {
+      showToast(data.message, data.success ? 'success' : 'warning');
+    }
+    await loadIntegrationsPanel(activeIntegrationClientId);
+  } catch (err) {
+    alert(err.message);
+  }
+}
+window.resendIntegrationWebhook = resendIntegrationWebhook;
+
+function copyIntegrationText(inputId, toastMessage) {
+  const el = document.getElementById(inputId);
+  if (!el || !el.value) return;
+  navigator.clipboard.writeText(el.value).then(() => {
+    if (typeof showToast === 'function') showToast(toastMessage || 'Copiado!', 'success');
+  });
+}
+window.copyIntegrationText = copyIntegrationText;
+
+function copySingleSku(skuCode) {
+  navigator.clipboard.writeText(skuCode).then(() => {
+    if (typeof showToast === 'function') showToast(`SKU "${skuCode}" copiado para a área de transferência!`, 'success');
+  });
+}
+window.copySingleSku = copySingleSku;
+
+function copyAllIntegrationSkus() {
+  if (!currentIntegrationProducts || currentIntegrationProducts.length === 0) {
+    alert('Não há produtos/SKUs cadastrados para este cliente.');
+    return;
+  }
+  const text = currentIntegrationProducts
+    .map(p => `SKU: ${p.code} | Produto: ${p.name} | Estoque Flow: ${p.stock_quantity || 0} un`)
+    .join('\n');
+
+  navigator.clipboard.writeText(text).then(() => {
+    if (typeof showToast === 'function') showToast('Lista completa de SKUs copiada!', 'success');
+  });
+}
+window.copyAllIntegrationSkus = copyAllIntegrationSkus;
+
+function copyIntegrationDocSpec() {
+  const apiKey = document.getElementById('integration-api-key')?.value || 'pflow_live_...';
+  const sampleSku = (currentIntegrationProducts[0] && currentIntegrationProducts[0].code) || 'SKU-001';
+  const baseUrl = window.location.origin;
+
+  const specText = `=== DOCUMENTAÇÃO DE INTEGRAÇÃO PERSONALIZA FLOW ===
+Endpoint Criar Pedido (POST): ${baseUrl}/api/integrations/v1/orders
+Endpoint Consultar Estoque SKUs (GET): ${baseUrl}/api/integrations/v1/products
+Endpoint Consultar Status/Rastreio (GET): ${baseUrl}/api/integrations/v1/orders/:external_order_id
+
+Header de Autenticação:
+X-API-Key: ${apiKey}
+
+Exemplo JSON (POST ${baseUrl}/api/integrations/v1/orders):
+{
+  "external_order_id": "BNK-1042",
+  "recipient": {
+    "name": "Nome do Comprador",
+    "document": "000.000.000-00",
+    "phone": "(48) 99999-0000",
+    "email": "cliente@email.com"
+  },
+  "address": {
+    "cep": "88015200",
+    "street": "Rua Felipe Schmidt",
+    "number": "120",
+    "complement": "Sala 02",
+    "neighborhood": "Centro",
+    "city": "Florianópolis",
+    "state": "SC"
+  },
+  "items": [
+    { "sku": "${sampleSku}", "quantity": 1 }
+  ]
+}`;
+
+  navigator.clipboard.writeText(specText).then(() => {
+    if (typeof showToast === 'function') showToast('Documentação técnica copiada para enviar ao desenvolvedor do cliente!', 'success');
+  });
+}
+window.copyIntegrationDocSpec = copyIntegrationDocSpec;
+
+async function lookupSimulatorCep(rawCep) {
+  const clean = String(rawCep || '').replace(/\D/g, '');
+  if (clean.length !== 8) return;
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
+    const data = await res.json();
+    if (data && !data.erro) {
+      if (data.logradouro) document.getElementById('sim-dest-address').value = data.logradouro;
+      if (data.bairro) document.getElementById('sim-dest-neighborhood').value = data.bairro;
+      if (data.localidade) document.getElementById('sim-dest-city').value = data.localidade;
+      if (data.uf) document.getElementById('sim-dest-state').value = data.uf;
+    }
+  } catch (_) {}
+}
+window.lookupSimulatorCep = lookupSimulatorCep;
+
+async function submitIntegrationSimulatedOrder(event) {
+  event.preventDefault();
+
+  const sku = document.getElementById('sim-product-sku')?.value;
+  if (!sku) {
+    alert('Selecione um produto (SKU do Flow) para simular o pedido.');
+    return;
+  }
+
+  const apiKey = document.getElementById('integration-api-key')?.value || '';
+  const payload = {
+    client_id: activeIntegrationClientId,
+    api_key: apiKey,
+    external_order_id: document.getElementById('sim-external-order-id').value.trim(),
+    recipient: {
+      name: document.getElementById('sim-recipient-name').value.trim()
+    },
+    address: {
+      cep: document.getElementById('sim-dest-cep').value.trim(),
+      street: document.getElementById('sim-dest-address').value.trim(),
+      number: document.getElementById('sim-dest-number').value.trim(),
+      neighborhood: document.getElementById('sim-dest-neighborhood').value.trim(),
+      city: document.getElementById('sim-dest-city').value.trim(),
+      state: document.getElementById('sim-dest-state').value.trim().toUpperCase()
+    },
+    items: [
+      {
+        sku,
+        quantity: parseInt(document.getElementById('sim-product-qty').value, 10) || 1
+      }
+    ]
+  };
+
+  const btn = document.getElementById('btn-run-integration-sim');
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/integrations/v1/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': apiKey
+      },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao simular pedido integrado.');
+
+    if (typeof showToast === 'function') {
+      showToast(`Remessa ${data.shipment.shipment_code} (Pedido #${payload.external_order_id}) recebida automaticamente em Gestão de Remessas!`, 'success');
+    }
+
+    // Gerar próximo número de pedido de exemplo
+    const nextNum = Math.floor(1000 + Math.random() * 9000);
+    const prefix = payload.external_order_id.split('-')[0] || 'BNK';
+    document.getElementById('sim-external-order-id').value = `${prefix}-${nextNum}`;
+
+    await loadIntegrationsPanel(activeIntegrationClientId);
+    if (typeof loadShipments === 'function') loadShipments();
+    if (typeof loadProducts === 'function') loadProducts();
+    if (typeof refreshSystemNotifications === 'function') refreshSystemNotifications();
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+window.submitIntegrationSimulatedOrder = submitIntegrationSimulatedOrder;
+
 
 
 

@@ -7,7 +7,9 @@ const db = require('../database');
 const { calculatePackages } = require('../services/packagingEngine');
 const { quoteFreight } = require('../services/freightService');
 
-// Configuração do Multer para Upload de Fotos da Loja
+const ALLOWED_STORE_IMAGE_EXTS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif']);
+
+// Configuração do Multer para Upload de Fotos da Loja (Protegido)
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadDir = path.join(__dirname, '../../uploads');
@@ -18,15 +20,31 @@ const storage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname) || '.png';
-    cb(null, 'store-prod-' + uniqueSuffix + ext);
+    const ext = (path.extname(file.originalname) || '.png').toLowerCase();
+    cb(null, 'store-prod-' + uniqueSuffix + (ALLOWED_STORE_IMAGE_EXTS.has(ext) ? ext : '.png'));
   }
 });
 
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: function (req, file, cb) {
+    const ext = (path.extname(file.originalname) || '').toLowerCase();
+    const isImageMime = file.mimetype && file.mimetype.startsWith('image/');
+    if (!ALLOWED_STORE_IMAGE_EXTS.has(ext) || !isImageMime) {
+      return cb(new Error('Formato de arquivo inválido. Envie apenas imagens (PNG, JPG, WEBP ou GIF).'));
+    }
+    cb(null, true);
+  }
+});
 
-// Upload de fotos (suporta única ou múltiplas fotos)
-router.post('/upload', upload.array('images', 10), (req, res) => {
+// Upload de fotos (suporta única ou múltiplas fotos - Somente Admin)
+router.post('/upload', (req, res, next) => {
+  if (!req.isAdmin) {
+    return res.status(403).json({ error: 'Apenas administradores podem enviar fotos de produtos da loja.' });
+  }
+  next();
+}, upload.array('images', 10), (req, res) => {
   if (!req.files || req.files.length === 0) {
     return res.status(400).json({ error: 'Nenhum arquivo de imagem enviado.' });
   }

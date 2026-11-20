@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../database');
 const { calculatePackages } = require('../services/packagingEngine');
 const { quoteFreight } = require('../services/freightService');
+const { dispatchClientWebhook } = require('./integrations');
 
 function getShipmentSessionId(req) {
   if (req.clientId) return `cart_client_${req.clientId}`;
@@ -508,9 +509,24 @@ router.put('/:id/status', (req, res) => {
 
   params.push(shipmentId);
 
-  db.run(`UPDATE shipments SET ${updates.join(', ')} WHERE id = ?`, params, function (err) {
+  db.run(`UPDATE shipments SET ${updates.join(', ')} WHERE id = ?`, params, async function (err) {
     if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: 'Remessa atualizada com sucesso!', status, tracking_code });
+
+    let webhookResult = null;
+    try {
+      if (typeof dispatchClientWebhook === 'function') {
+        webhookResult = await dispatchClientWebhook(shipmentId, 'shipment.status_updated');
+      }
+    } catch (whErr) {
+      console.warn('Aviso ao disparar webhook de atualização de status:', whErr.message);
+    }
+
+    res.json({
+      message: 'Remessa atualizada com sucesso!',
+      status,
+      tracking_code,
+      webhook_dispatched: Boolean(webhookResult && webhookResult.sent)
+    });
   });
 });
 

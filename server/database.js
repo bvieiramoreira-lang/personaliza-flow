@@ -189,9 +189,16 @@ db.serialize(() => {
   `);
 
   // Inserir configurações padrão se não existirem
-  db.run(`INSERT OR IGNORE INTO settings (key, value) VALUES ('origin_cep', '80000000')`);
+  db.run(`INSERT OR IGNORE INTO settings (key, value) VALUES ('origin_cep', '88133700')`);
   db.run(`INSERT OR IGNORE INTO settings (key, value) VALUES ('default_markup_percent', '10.0')`);
   db.run(`INSERT OR IGNORE INTO settings (key, value) VALUES ('freight_provider', 'melhor_envio')`);
+  db.run(`INSERT OR IGNORE INTO settings (key, value) VALUES ('melhor_envio_env', 'production')`);
+  if (process.env.MELHOR_ENVIO_TOKEN && process.env.MELHOR_ENVIO_TOKEN !== 'your_melhor_envio_token_here') {
+    db.run(
+      `INSERT OR IGNORE INTO settings (key, value) VALUES ('melhor_envio_token', ?)`,
+      [process.env.MELHOR_ENVIO_TOKEN.trim()]
+    );
+  }
 
   // Tabela de Fechamentos / Faturas Quinzenais
   db.run(`
@@ -341,6 +348,12 @@ db.serialize(() => {
   db.run(`ALTER TABLE shipments ADD COLUMN billing_client_id INTEGER`, () => {});
   db.run(`ALTER TABLE shipments ADD COLUMN billing_cnpj TEXT`, () => {});
   db.run(`ALTER TABLE shipments ADD COLUMN billing_name TEXT`, () => {});
+  db.run(`ALTER TABLE shipments ADD COLUMN external_order_id TEXT`, () => {});
+  db.run(`ALTER TABLE shipments ADD COLUMN origin_channel TEXT DEFAULT 'manual'`, () => {});
+  db.run(`ALTER TABLE shipments ADD COLUMN recipient_document TEXT`, () => {});
+  db.run(`ALTER TABLE shipments ADD COLUMN recipient_phone TEXT`, () => {});
+  db.run(`ALTER TABLE shipments ADD COLUMN recipient_email TEXT`, () => {});
+  db.run(`ALTER TABLE shipments ADD COLUMN dest_neighborhood TEXT`, () => {});
 
   // 5. Itens do Pedido da Loja Virtual
   db.run(`
@@ -359,6 +372,42 @@ db.serialize(() => {
     )
   `);
   db.run(`ALTER TABLE store_order_items ADD COLUMN production_days INTEGER DEFAULT 7`, () => {});
+
+  // =========================================================================
+  // MÓDULO DE INTEGRAÇÃO AUTOMATIZADA FLOW (API + WEBHOOK BIDIRECIONAL)
+  // =========================================================================
+  db.run(`
+    CREATE TABLE IF NOT EXISTS client_integrations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      client_id INTEGER UNIQUE NOT NULL,
+      api_key TEXT UNIQUE NOT NULL,
+      webhook_url TEXT DEFAULT '',
+      webhook_secret TEXT DEFAULT '',
+      default_freight_rule TEXT DEFAULT 'cheapest',
+      is_active INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS integration_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      client_id INTEGER NOT NULL,
+      direction TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      external_order_id TEXT,
+      shipment_id INTEGER,
+      shipment_code TEXT,
+      payload_json TEXT,
+      response_status INTEGER,
+      response_body TEXT,
+      status TEXT DEFAULT 'success',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE
+    )
+  `);
 });
 
 module.exports = db;

@@ -5,7 +5,9 @@ const fs = require('fs');
 const multer = require('multer');
 const db = require('../database');
 
-// Configuração do Multer para Upload de Imagens de Produtos
+const ALLOWED_PRODUCT_IMAGE_EXTS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif']);
+
+// Configuração do Multer para Upload de Imagens de Produtos (Protegido)
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadDir = path.join(__dirname, '../../uploads');
@@ -16,15 +18,31 @@ const storage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname) || '.png';
-    cb(null, 'prod-' + uniqueSuffix + ext);
+    const ext = (path.extname(file.originalname) || '.png').toLowerCase();
+    cb(null, 'prod-' + uniqueSuffix + (ALLOWED_PRODUCT_IMAGE_EXTS.has(ext) ? ext : '.png'));
   }
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: function (req, file, cb) {
+    const ext = (path.extname(file.originalname) || '').toLowerCase();
+    const isImageMime = file.mimetype && file.mimetype.startsWith('image/');
+    if (!ALLOWED_PRODUCT_IMAGE_EXTS.has(ext) || !isImageMime) {
+      return cb(new Error('Formato de arquivo inválido. Envie apenas imagens (PNG, JPG, WEBP ou GIF).'));
+    }
+    cb(null, true);
+  }
+});
 
-// Rota de Upload de Imagem do Produto
-router.post('/upload', upload.single('image'), (req, res) => {
+// Rota de Upload de Imagem do Produto (Somente Admin)
+router.post('/upload', (req, res, next) => {
+  if (!req.isAdmin) {
+    return res.status(403).json({ error: 'Apenas administradores podem enviar imagens de produtos.' });
+  }
+  next();
+}, upload.single('image'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'Nenhum arquivo de imagem foi enviado.' });
   }
