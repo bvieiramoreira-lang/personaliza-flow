@@ -49,7 +49,7 @@
           <li class="strip-item admin-only hidden" data-tab="tab-admin-store-orders" title="Loja Virtual (Admin)">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
           </li>
-          <li class="strip-item" data-tab="tab-integrations" title="Integração Flow (API & Webhook)">
+          <li class="strip-item admin-only hidden" data-tab="tab-integrations" title="Integração Flow (API & Webhook)">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
           </li>
           <li class="strip-item admin-only hidden" data-tab="tab-clients" title="Configuração (Clientes)">
@@ -179,14 +179,14 @@
             </ul>
           </div>
 
-          <!-- CATEGORIA MÃE: INTEGRAÇÃO (SOMENTE FLOW - API & WEBHOOK POR SKU) -->
-          <div class="menu-category-group" id="cat-group-integrations" style="margin-top: 0.85rem;">
+          <!-- CATEGORIA MÃE: INTEGRAÇÃO (ADMIN ONLY - SOMENTE FLOW - API & WEBHOOK POR SKU) -->
+          <div class="menu-category-group admin-only hidden" id="cat-group-integrations" style="margin-top: 0.85rem;">
             <button type="button" class="menu-category-header" onclick="toggleMenuCategory('cat-group-integrations')">
               <span class="menu-category-title">INTEGRAÇÃO</span>
               <svg class="menu-category-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
             <ul class="panel-menu menu-category-list">
-              <li class="panel-item" data-tab="tab-integrations">
+              <li class="panel-item admin-only hidden" data-tab="tab-integrations">
                 <span>Integração Flow (API)</span>
               </li>
             </ul>
@@ -685,7 +685,13 @@
             <button type="button" onclick="clearUnifiedBillingFilters()" style="padding: 0 0.65rem; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 0.72rem; background: #ffffff; font-weight: 600; color: #0f172a; height: 28px; cursor: pointer;">
               Limpar Filtros
             </button>
+
+            <button type="button" id="btn-open-billing-export" onclick="openBillingExportModal('main')" style="padding: 0 0.75rem; border: 1px solid #59338f; border-radius: 5px; font-size: 0.72rem; background: #59338f; font-weight: 700; color: #ffffff; height: 28px; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem;" title="Escolher período e baixar relatório do extrato em Excel ou PDF">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Baixar Extrato</span>
+            </button>
           </div>
+          <div id="billing-filtered-summary" style="display: none; margin-top: 0.45rem; font-size: 0.72rem; color: #475569; font-weight: 600;"></div>
         </div>
 
         <!-- Tabela Compacta de Lançamentos Unificados (Fontes Reduzidas) -->
@@ -1095,6 +1101,10 @@
               </div>
               <button type="button" onclick="clearClientBillingFilters()" style="padding: 0 0.65rem; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 0.72rem; background: #ffffff; font-weight: 600; color: #0f172a; height: 28px; cursor: pointer;">
                 Limpar Filtros
+              </button>
+              <button type="button" onclick="openBillingExportModal('client')" style="padding: 0 0.75rem; border: 1px solid #59338f; border-radius: 5px; font-size: 0.72rem; background: #59338f; font-weight: 700; color: #ffffff; height: 28px; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem;" title="Baixar extrato financeiro deste cliente">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Baixar Extrato</span>
               </button>
             </div>
 
@@ -2572,7 +2582,7 @@
       <!-- =========================================================================
            MÓDULO DE INTEGRAÇÃO AUTOMATIZADA FLOW (API & WEBHOOK POR SKU)
            ========================================================================= -->
-      <section id="tab-integrations" class="tab-page hidden">
+      <section id="tab-integrations" class="tab-page hidden admin-only">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
           <div>
             <h2 style="font-size: 1.38rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.2rem;">Integração Automatizada Flow (API & Webhook por SKU)</h2>
@@ -3106,6 +3116,96 @@ Headers:
     </div>
   </div>
 
-  <script src="js/app.js?v=1803500000"></script>
+  <!-- MODAL: BAIXAR EXTRATO FINANCEIRO DA CARTEIRA -->
+  <div id="modal-billing-export" class="modal-backdrop hidden">
+    <div class="modal-content" style="max-width: 540px;">
+      <div class="modal-header" style="margin-bottom: 0.85rem;">
+        <div>
+          <h2 class="card-title" style="margin: 0; font-size: 1.08rem; font-weight: 800; color: #0f172a;">Baixar Extrato Financeiro</h2>
+          <p id="billing-export-subtitle" style="margin: 0.15rem 0 0 0; font-size: 0.76rem; color: #64748b;">Selecione o período desejado para gerar e baixar o relatório da carteira.</p>
+        </div>
+        <button type="button" class="modal-close" onclick="closeModal('modal-billing-export')">&times;</button>
+      </div>
+
+      <!-- Atalhos rápidos de período -->
+      <div style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.9rem;">
+        <button type="button" onclick="setBillingExportQuickPeriod('this_month')" style="padding: 0.25rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 999px; background: #ffffff; color: #334155; font-size: 0.72rem; font-weight: 600; cursor: pointer;">Este mês</button>
+        <button type="button" onclick="setBillingExportQuickPeriod('last_month')" style="padding: 0.25rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 999px; background: #ffffff; color: #334155; font-size: 0.72rem; font-weight: 600; cursor: pointer;">Mês anterior</button>
+        <button type="button" onclick="setBillingExportQuickPeriod('30d')" style="padding: 0.25rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 999px; background: #ffffff; color: #334155; font-size: 0.72rem; font-weight: 600; cursor: pointer;">Últimos 30 dias</button>
+        <button type="button" onclick="setBillingExportQuickPeriod('7d')" style="padding: 0.25rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 999px; background: #ffffff; color: #334155; font-size: 0.72rem; font-weight: 600; cursor: pointer;">Últimos 7 dias</button>
+        <button type="button" onclick="setBillingExportQuickPeriod('all')" style="padding: 0.25rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 999px; background: #ffffff; color: #334155; font-size: 0.72rem; font-weight: 600; cursor: pointer;">Todo o período</button>
+      </div>
+
+      <!-- Intervalo de datas -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.85rem;">
+        <div class="form-group" style="margin: 0;">
+          <label for="export-billing-date-from" style="font-size: 0.72rem; font-weight: 700; color: #334155; display: block; margin-bottom: 0.25rem;">Data Inicial (De)</label>
+          <input type="date" id="export-billing-date-from" onchange="updateBillingExportPreview()" style="width: 100%; padding: 0.48rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.82rem; color: #0f172a; background: #fff;">
+        </div>
+        <div class="form-group" style="margin: 0;">
+          <label for="export-billing-date-to" style="font-size: 0.72rem; font-weight: 700; color: #334155; display: block; margin-bottom: 0.25rem;">Data Final (Até)</label>
+          <input type="date" id="export-billing-date-to" onchange="updateBillingExportPreview()" style="width: 100%; padding: 0.48rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.82rem; color: #0f172a; background: #fff;">
+        </div>
+      </div>
+
+      <!-- Filtros opcionais -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+        <div class="form-group" style="margin: 0;">
+          <label for="export-billing-origin" style="font-size: 0.72rem; font-weight: 700; color: #334155; display: block; margin-bottom: 0.25rem;">Origem</label>
+          <select id="export-billing-origin" onchange="updateBillingExportPreview()" style="width: 100%; padding: 0.48rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.8rem; color: #0f172a; background: #fff;">
+            <option value="">Todas (Flow + Loja)</option>
+            <option value="flow">Somente Envios Flow</option>
+            <option value="store">Somente Loja Virtual</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin: 0;">
+          <label for="export-billing-status" style="font-size: 0.72rem; font-weight: 700; color: #334155; display: block; margin-bottom: 0.25rem;">Status Pagamento</label>
+          <select id="export-billing-status" onchange="updateBillingExportPreview()" style="width: 100%; padding: 0.48rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.8rem; color: #0f172a; background: #fff;">
+            <option value="">Todos os status</option>
+            <option value="em_aberto">Em Aberto</option>
+            <option value="aguardando_pagamento">Aguard. Pagamento</option>
+            <option value="pago">Pago / Quitado</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Resumo prévio do relatório -->
+      <div id="billing-export-preview-box" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem 0.9rem; margin-bottom: 1.1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
+          <span style="font-size: 0.74rem; font-weight: 700; color: #334155;">Resumo do Extrato Selecionado</span>
+          <span id="billing-export-preview-count" style="font-size: 0.73rem; font-weight: 700; color: #59338f;">0 lançamento(s)</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; font-size: 0.75rem;">
+          <div>
+            <div style="color: #64748b; font-size: 0.68rem;">Total no Período</div>
+            <strong id="billing-export-preview-total" style="color: #0f172a; font-size: 0.86rem;">R$ 0,00</strong>
+          </div>
+          <div>
+            <div style="color: #64748b; font-size: 0.68rem;">Em Aberto / Aguard.</div>
+            <strong id="billing-export-preview-open" style="color: #dc2626; font-size: 0.86rem;">R$ 0,00</strong>
+          </div>
+          <div>
+            <div style="color: #64748b; font-size: 0.68rem;">Total Quitado</div>
+            <strong id="billing-export-preview-paid" style="color: #16a34a; font-size: 0.86rem;">R$ 0,00</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botões de download -->
+      <div style="display: flex; justify-content: flex-end; align-items: center; gap: 0.55rem; flex-wrap: wrap;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('modal-billing-export')" style="font-size: 0.78rem;">Cancelar</button>
+        <button type="button" id="btn-export-billing-pdf" onclick="exportBillingStatementPDF()" style="padding: 0.48rem 0.85rem; border: 1px solid #cbd5e1; border-radius: 6px; background: #ffffff; color: #0f172a; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          <span>Relatório PDF / Imprimir</span>
+        </button>
+        <button type="button" id="btn-export-billing-xlsx" onclick="exportBillingStatementExcel()" style="padding: 0.48rem 0.9rem; border: none; border-radius: 6px; background: #16a34a; color: #ffffff; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Baixar Excel (.xlsx)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js?v=1803500002"></script>
 </body>
 </html>

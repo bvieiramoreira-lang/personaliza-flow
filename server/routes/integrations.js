@@ -173,12 +173,19 @@ async function dispatchClientWebhook(shipmentId, eventType = 'shipment.status_up
 }
 
 // ============================================================================
-// 1. ROTAS DO PAINEL INTERNO (ADMIN E CLIENTE)
+// 1. ROTAS DO PAINEL INTERNO (EXCLUSIVO ADMIN DO FLOW)
 // ============================================================================
 
+function requireFlowAdmin(req, res, next) {
+  if (!req.isAdmin) {
+    return res.status(403).json({ error: 'Acesso restrito ao administrador do Flow.' });
+  }
+  next();
+}
+
 function resolvePanelTargetClientId(req) {
-  if (req.isClient) {
-    return req.rootClientId || req.clientId;
+  if (!req.isAdmin) {
+    return null;
   }
   if (req.query && req.query.client_id) {
     return parseInt(req.query.client_id, 10);
@@ -193,7 +200,7 @@ function resolvePanelTargetClientId(req) {
 }
 
 // GET /api/integrations/config - Obter credenciais, produtos (SKUs Flow) e logs do cliente
-router.get('/config', async (req, res) => {
+router.get('/config', requireFlowAdmin, async (req, res) => {
   try {
     const clientsList = await new Promise((resolve, reject) => {
       db.all(
@@ -262,7 +269,7 @@ router.get('/config', async (req, res) => {
 });
 
 // PUT /api/integrations/config - Salvar Webhook URL, Secret, Regra de Frete e Status
-router.put('/config', async (req, res) => {
+router.put('/config', requireFlowAdmin, async (req, res) => {
   try {
     const targetClientId = resolvePanelTargetClientId(req);
     if (!targetClientId) {
@@ -297,7 +304,7 @@ router.put('/config', async (req, res) => {
 });
 
 // POST /api/integrations/regenerate-key - Gerar nova API Key para o cliente
-router.post('/regenerate-key', async (req, res) => {
+router.post('/regenerate-key', requireFlowAdmin, async (req, res) => {
   try {
     const targetClientId = resolvePanelTargetClientId(req);
     if (!targetClientId) {
@@ -325,7 +332,7 @@ router.post('/regenerate-key', async (req, res) => {
 });
 
 // POST /api/integrations/test-webhook - Testar disparo de Webhook para a URL do cliente
-router.post('/test-webhook', async (req, res) => {
+router.post('/test-webhook', requireFlowAdmin, async (req, res) => {
   try {
     const targetClientId = resolvePanelTargetClientId(req);
     if (!targetClientId) {
@@ -416,7 +423,7 @@ router.post('/test-webhook', async (req, res) => {
 });
 
 // POST /api/integrations/resend-webhook/:logId - Reenviar atualização de status/rastreio
-router.post('/resend-webhook/:logId', (req, res) => {
+router.post('/resend-webhook/:logId', requireFlowAdmin, (req, res) => {
   const logId = parseInt(req.params.logId, 10);
   db.get('SELECT * FROM integration_logs WHERE id = ?', [logId], async (err, logRow) => {
     if (err || !logRow) {
@@ -462,9 +469,9 @@ async function authenticateExternalApi(req) {
     if (configRow) return configRow;
   }
 
-  // Fallback para o Simulador Interno no Painel quando autenticado via sessão
+  // Fallback para o Simulador Interno no Painel quando autenticado como Admin
   const panelClientId = resolvePanelTargetClientId(req);
-  if (panelClientId && req.user) {
+  if (panelClientId && req.isAdmin) {
     await ensureClientIntegration(panelClientId);
     const configRow = await new Promise((resolve) => {
       db.get(

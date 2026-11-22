@@ -326,9 +326,10 @@ function setAppRole(role) {
     if (flowGroup) flowGroup.classList.toggle('hidden', !canFlow);
     if (storeGroup) storeGroup.classList.toggle('hidden', !canStore);
     if (motherGroup) motherGroup.classList.toggle('hidden', isChildBranch);
-    if (integrationsGroup) integrationsGroup.classList.toggle('hidden', !canFlow);
+    if (integrationsGroup) integrationsGroup.classList.add('hidden');
 
-    document.querySelectorAll('.strip-item[data-tab="tab-my-products"], .strip-item[data-tab="tab-shipments"], .strip-item[data-tab="tab-integrations"]').forEach(el => el.classList.toggle('hidden', !canFlow));
+    document.querySelectorAll('.strip-item[data-tab="tab-my-products"], .strip-item[data-tab="tab-shipments"]').forEach(el => el.classList.toggle('hidden', !canFlow));
+    document.querySelectorAll('.strip-item[data-tab="tab-integrations"]').forEach(el => el.classList.add('hidden'));
     document.querySelectorAll('.strip-item[data-tab="tab-store-catalog"]').forEach(el => el.classList.toggle('hidden', !canStore));
 
     if (!isChildBranch && typeof refreshMotherApprovalsBadge === 'function') {
@@ -337,7 +338,7 @@ function setAppRole(role) {
 
     // Se estiver em uma aba exclusiva de admin ao trocar para cliente, vai para a home
     const activePage = document.querySelector('.tab-page:not(.hidden)');
-    if (activePage && (activePage.id === 'tab-products' || activePage.id === 'tab-settings' || activePage.id === 'tab-clients' || activePage.id === 'page-client-detail' || activePage.id === 'page-add-client' || activePage.id === 'page-product-form' || activePage.id === 'tab-admin-store-orders' || activePage.id === 'tab-admin-store-settings' || activePage.id === 'page-store-product-form' || activePage.id === 'page-billing-receive')) {
+    if (activePage && (activePage.id === 'tab-products' || activePage.id === 'tab-settings' || activePage.id === 'tab-clients' || activePage.id === 'page-client-detail' || activePage.id === 'page-add-client' || activePage.id === 'page-product-form' || activePage.id === 'tab-admin-store-orders' || activePage.id === 'tab-admin-store-settings' || activePage.id === 'page-store-product-form' || activePage.id === 'page-billing-receive' || activePage.id === 'tab-integrations')) {
       switchTab(canFlow ? 'tab-home' : 'tab-store-catalog');
     } else if (!canFlow && activePage && activePage.id === 'tab-home') {
       switchTab('tab-store-catalog');
@@ -356,6 +357,9 @@ function setAppRole(role) {
 }
 
 function switchTab(targetTab) {
+  if (targetTab === 'tab-integrations' && currentRole !== 'admin') {
+    targetTab = 'tab-home';
+  }
   const stripItems = document.querySelectorAll('.strip-item[data-tab]');
   const panelItems = document.querySelectorAll('.panel-item[data-tab]');
   const tabPages = document.querySelectorAll('.tab-page');
@@ -3535,6 +3539,29 @@ function renderUnifiedBillingTable() {
     combined = combined.filter(item => item.payment_method === methodFilter);
   }
 
+  // Atualizar indicador discreto de resumo filtrado
+  const filteredSummaryEl = document.getElementById('billing-filtered-summary');
+  if (filteredSummaryEl) {
+    const hasAnyFilter = Boolean(
+      (periodFilter && periodFilter !== 'all') ||
+      dateFromStr ||
+      dateToStr ||
+      originFilter ||
+      statusFilter ||
+      methodFilter
+    );
+    if (hasAnyFilter) {
+      const fTotal = combined.reduce((sum, it) => sum + (parseFloat(it.amount) || 0), 0);
+      const fPaid = combined.filter(it => it.payment_status === 'pago').reduce((sum, it) => sum + (parseFloat(it.amount) || 0), 0);
+      const fOpen = fTotal - fPaid;
+      filteredSummaryEl.style.display = 'block';
+      filteredSummaryEl.innerHTML = `Filtro ativo: <strong style="color:#0f172a;">${combined.length} lançamento(s)</strong> • Total no filtro: <strong style="color:#0f172a;">${formatCurrencyBR(fTotal)}</strong> (Em aberto: <span style="color:#dc2626;">${formatCurrencyBR(fOpen)}</span> | Quitado: <span style="color:#16a34a;">${formatCurrencyBR(fPaid)}</span>)`;
+    } else {
+      filteredSummaryEl.style.display = 'none';
+      filteredSummaryEl.innerHTML = '';
+    }
+  }
+
   if (combined.length === 0) {
     tbody.innerHTML = `<tr><td colspan="${isAdmin ? 9 : 8}" style="text-align: center; color: var(--text-muted); padding: 1.75rem; font-size: 0.76rem;">Nenhum lançamento financeiro aprovado encontrado para os filtros selecionados.</td></tr>`;
     return;
@@ -3663,6 +3690,459 @@ function renderUnifiedBillingTable() {
 }
 window.renderUnifiedBillingTable = renderUnifiedBillingTable;
 window.renderBillingShipmentsTable = renderUnifiedBillingTable;
+
+// ==========================================================================
+// EXPORTAÇÃO DE EXTRATO FINANCEIRO DA CARTEIRA (EXCEL .XLSX E RELATÓRIO PDF)
+// ==========================================================================
+
+let billingExportSource = 'main';
+
+function formatYmdLocal(dateObj) {
+  const y = dateObj.getFullYear();
+  const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const d = String(dateObj.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function formatDateBrFromYmd(ymd) {
+  if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return '';
+  const [y, m, d] = ymd.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function openBillingExportModal(source = 'main') {
+  billingExportSource = source === 'client' ? 'client' : 'main';
+
+  const fromInput = document.getElementById('export-billing-date-from');
+  const toInput = document.getElementById('export-billing-date-to');
+  const originSelect = document.getElementById('export-billing-origin');
+  const statusSelect = document.getElementById('export-billing-status');
+  const subtitleEl = document.getElementById('billing-export-subtitle');
+
+  const today = new Date();
+  let preFrom = '';
+  let preTo = '';
+  let preOrigin = '';
+  let preStatus = '';
+
+  if (billingExportSource === 'client') {
+    preFrom = document.getElementById('filter-client-billing-date-from')?.value || '';
+    preTo = document.getElementById('filter-client-billing-date-to')?.value || '';
+    preStatus = document.getElementById('filter-client-billing-status')?.value || '';
+    const clientName = document.getElementById('client-detail-name')?.textContent?.trim() || 'Cliente';
+    if (subtitleEl) {
+      subtitleEl.textContent = `Extrato financeiro de ${clientName} — selecione o período para baixar em Excel ou PDF.`;
+    }
+  } else {
+    const periodVal = document.getElementById('filter-billing-period')?.value || 'all';
+    preFrom = document.getElementById('filter-billing-date-from')?.value || '';
+    preTo = document.getElementById('filter-billing-date-to')?.value || '';
+    preOrigin = document.getElementById('filter-billing-origin')?.value || '';
+    preStatus = document.getElementById('filter-billing-status')?.value || '';
+
+    if (periodVal === 'today') {
+      preFrom = formatYmdLocal(today);
+      preTo = formatYmdLocal(today);
+    } else if (periodVal === 'this_month') {
+      preFrom = formatYmdLocal(new Date(today.getFullYear(), today.getMonth(), 1));
+      preTo = formatYmdLocal(today);
+    } else if (periodVal === '7d' || periodVal === '30d' || periodVal === '90d') {
+      const days = periodVal === '7d' ? 7 : (periodVal === '30d' ? 30 : 90);
+      const start = new Date(today.getTime() - days * 86400000);
+      preFrom = formatYmdLocal(start);
+      preTo = formatYmdLocal(today);
+    }
+
+    if (subtitleEl) {
+      subtitleEl.textContent = 'Selecione o período desejado para gerar e baixar o relatório da carteira.';
+    }
+  }
+
+  if (fromInput) fromInput.value = preFrom;
+  if (toInput) toInput.value = preTo;
+  if (originSelect) originSelect.value = preOrigin;
+  if (statusSelect) statusSelect.value = preStatus;
+
+  updateBillingExportPreview();
+
+  const modal = document.getElementById('modal-billing-export');
+  if (modal) modal.classList.remove('hidden');
+}
+window.openBillingExportModal = openBillingExportModal;
+
+function setBillingExportQuickPeriod(preset) {
+  const fromInput = document.getElementById('export-billing-date-from');
+  const toInput = document.getElementById('export-billing-date-to');
+  const today = new Date();
+
+  let dFrom = '';
+  let dTo = '';
+
+  if (preset === 'this_month') {
+    dFrom = formatYmdLocal(new Date(today.getFullYear(), today.getMonth(), 1));
+    dTo = formatYmdLocal(today);
+  } else if (preset === 'last_month') {
+    const firstLast = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const lastLast = new Date(today.getFullYear(), today.getMonth(), 0);
+    dFrom = formatYmdLocal(firstLast);
+    dTo = formatYmdLocal(lastLast);
+  } else if (preset === '30d') {
+    dFrom = formatYmdLocal(new Date(today.getTime() - 30 * 86400000));
+    dTo = formatYmdLocal(today);
+  } else if (preset === '7d') {
+    dFrom = formatYmdLocal(new Date(today.getTime() - 7 * 86400000));
+    dTo = formatYmdLocal(today);
+  } else {
+    dFrom = '';
+    dTo = '';
+  }
+
+  if (fromInput) fromInput.value = dFrom;
+  if (toInput) toInput.value = dTo;
+  updateBillingExportPreview();
+}
+window.setBillingExportQuickPeriod = setBillingExportQuickPeriod;
+
+function getBillingExportFilteredEntries() {
+  const dateFrom = document.getElementById('export-billing-date-from')?.value || '';
+  const dateTo = document.getElementById('export-billing-date-to')?.value || '';
+  const originFilter = document.getElementById('export-billing-origin')?.value || '';
+  const statusFilter = document.getElementById('export-billing-status')?.value || '';
+  const methodFilter = billingExportSource === 'main'
+    ? (document.getElementById('filter-billing-method')?.value || '')
+    : '';
+
+  let list = [];
+  if (billingExportSource === 'client') {
+    list = Array.isArray(window._lastClientBillingCombined)
+      ? window._lastClientBillingCombined.map(it => ({
+          ...it,
+          payment_method: it.payment_method || (it.origin === 'store' ? 'Pedido Loja' : 'Frete Remessa Flow'),
+          description: it.description || it.info || '',
+          client_name: it.client_name || document.getElementById('client-detail-name')?.textContent?.trim() || ''
+        }))
+      : [];
+  } else {
+    list = getUnifiedApprovedBillingEntries();
+  }
+
+  if (dateFrom || dateTo) {
+    const startTs = dateFrom ? new Date(dateFrom + 'T00:00:00').getTime() : null;
+    const endTs = dateTo ? new Date(dateTo + 'T23:59:59').getTime() : null;
+    list = list.filter(item => {
+      if (!item.created_at) return false;
+      const ts = new Date(item.created_at).getTime();
+      if (isNaN(ts)) return false;
+      if (startTs !== null && ts < startTs) return false;
+      if (endTs !== null && ts > endTs) return false;
+      return true;
+    });
+  }
+
+  if (originFilter) list = list.filter(item => item.origin === originFilter);
+  if (statusFilter) list = list.filter(item => item.payment_status === statusFilter);
+  if (methodFilter) list = list.filter(item => item.payment_method === methodFilter);
+
+  return {
+    items: list,
+    filters: { dateFrom, dateTo, originFilter, statusFilter, methodFilter }
+  };
+}
+
+function updateBillingExportPreview() {
+  const { items } = getBillingExportFilteredEntries();
+
+  let total = 0;
+  let open = 0;
+  let paid = 0;
+  items.forEach(it => {
+    const val = parseFloat(it.amount) || 0;
+    total += val;
+    if (it.payment_status === 'pago') paid += val;
+    else open += val;
+  });
+
+  const countEl = document.getElementById('billing-export-preview-count');
+  const totalEl = document.getElementById('billing-export-preview-total');
+  const openEl = document.getElementById('billing-export-preview-open');
+  const paidEl = document.getElementById('billing-export-preview-paid');
+
+  if (countEl) countEl.textContent = `${items.length} lançamento(s)`;
+  if (totalEl) totalEl.textContent = formatCurrencyBR(total);
+  if (openEl) openEl.textContent = formatCurrencyBR(open);
+  if (paidEl) paidEl.textContent = formatCurrencyBR(paid);
+}
+window.updateBillingExportPreview = updateBillingExportPreview;
+
+async function exportBillingStatementExcel() {
+  const { items, filters } = getBillingExportFilteredEntries();
+  if (filters.dateFrom && filters.dateTo && filters.dateFrom > filters.dateTo) {
+    return showToast('A Data Inicial não pode ser maior que a Data Final.', 'warning');
+  }
+  if (items.length === 0) {
+    return showToast('Nenhum lançamento encontrado para o período selecionado.', 'warning');
+  }
+
+  const btn = document.getElementById('btn-export-billing-xlsx');
+  const originalHTML = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>Gerando Excel...</span>';
+  }
+
+  try {
+    const params = new URLSearchParams();
+    if (filters.dateFrom) params.set('date_from', filters.dateFrom);
+    if (filters.dateTo) params.set('date_to', filters.dateTo);
+    if (filters.originFilter) params.set('origin', filters.originFilter);
+    if (filters.statusFilter) params.set('status', filters.statusFilter);
+    if (filters.methodFilter) params.set('method', filters.methodFilter);
+    if (billingExportSource === 'client' && window._lastClientBillingClientId) {
+      params.set('client_id', String(window._lastClientBillingClientId));
+    }
+
+    const res = await fetch(`/api/billing/export-statement?${params.toString()}`);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'Erro ao gerar arquivo Excel.');
+    }
+
+    const blob = await res.blob();
+    const slug = (filters.dateFrom || filters.dateTo)
+      ? `${filters.dateFrom || 'inicio'}_a_${filters.dateTo || 'hoje'}`
+      : formatYmdLocal(new Date());
+    const fileName = `extrato-carteira-${slug}.xlsx`;
+
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 1500);
+
+    showToast('Extrato Excel (.xlsx) baixado com sucesso!', 'success');
+    closeModal('modal-billing-export');
+  } catch (err) {
+    console.error('Erro ao baixar extrato Excel:', err);
+    showToast(err.message || 'Não foi possível baixar o extrato.', 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHTML;
+    }
+  }
+}
+window.exportBillingStatementExcel = exportBillingStatementExcel;
+
+function exportBillingStatementPDF() {
+  const { items, filters } = getBillingExportFilteredEntries();
+  if (filters.dateFrom && filters.dateTo && filters.dateFrom > filters.dateTo) {
+    return showToast('A Data Inicial não pode ser maior que a Data Final.', 'warning');
+  }
+  if (items.length === 0) {
+    return showToast('Nenhum lançamento encontrado para o período selecionado.', 'warning');
+  }
+
+  const printWin = window.open('', '_blank', 'width=1024,height=820');
+  if (!printWin) {
+    return showToast('Permita pop-ups no navegador para gerar o relatório PDF do extrato.', 'warning');
+  }
+
+  let periodLabel = 'Todo o período';
+  if (filters.dateFrom && filters.dateTo) {
+    periodLabel = `${formatDateBrFromYmd(filters.dateFrom)} até ${formatDateBrFromYmd(filters.dateTo)}`;
+  } else if (filters.dateFrom) {
+    periodLabel = `A partir de ${formatDateBrFromYmd(filters.dateFrom)}`;
+  } else if (filters.dateTo) {
+    periodLabel = `Até ${formatDateBrFromYmd(filters.dateTo)}`;
+  }
+
+  const accountLabel = billingExportSource === 'client'
+    ? (document.getElementById('client-detail-name')?.textContent?.trim() || 'Cliente')
+    : (currentRole === 'admin'
+        ? 'Todos os Clientes (Visão Administrativa)'
+        : `${currentAuthUser?.name || 'Cliente'}${currentAuthUser?.cnpj_cpf ? ' — ' + currentAuthUser.cnpj_cpf : ''}`);
+
+  let totalGeral = 0;
+  let totalOpen = 0;
+  let totalWaiting = 0;
+  let totalPaid = 0;
+  let totalFlow = 0;
+  let totalStore = 0;
+
+  items.forEach(it => {
+    const val = parseFloat(it.amount) || 0;
+    totalGeral += val;
+    if (it.payment_status === 'pago') totalPaid += val;
+    else if (it.payment_status === 'aguardando_pagamento') totalWaiting += val;
+    else totalOpen += val;
+
+    if (it.origin === 'store') totalStore += val;
+    else totalFlow += val;
+  });
+
+  const statusMeta = {
+    pago: { label: 'Pago', color: '#15803d', bg: '#dcfce7' },
+    aguardando_pagamento: { label: 'Aguard. Pagamento', color: '#b45309', bg: '#fef3c7' },
+    em_aberto: { label: 'Em Aberto', color: '#b91c1c', bg: '#fee2e2' }
+  };
+
+  const isAdminView = currentRole === 'admin' && billingExportSource !== 'client';
+  const generatedAt = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+
+  const rowsHtml = items.map(it => {
+    const dt = it.created_at ? new Date(it.created_at).toLocaleDateString('pt-BR') : '-';
+    const st = statusMeta[it.payment_status] || statusMeta.em_aberto;
+    const originText = it.origin === 'store' ? 'Loja Virtual' : 'Envio Flow';
+    const desc = (isAdminView && it.client_name)
+      ? `<strong>${escapeHtml(it.client_name)}</strong> — ${escapeHtml(it.description || '')}`
+      : escapeHtml(it.description || '');
+    const nfText = it.nf_number ? `NF ${escapeHtml(it.nf_number)}` : (it.nf_url ? 'Anexada' : '-');
+
+    return `
+      <tr>
+        <td style="white-space: nowrap;">${dt}</td>
+        <td style="white-space: nowrap; font-weight: 700; color: ${it.origin === 'store' ? '#59338f' : '#334155'};">${originText}</td>
+        <td style="white-space: nowrap; font-family: monospace; font-weight: 700;">${escapeHtml(it.code || '-')}</td>
+        <td style="white-space: nowrap;">${escapeHtml(it.payment_method || '-')}</td>
+        <td>${desc}</td>
+        <td style="white-space: nowrap;">${nfText}</td>
+        <td style="white-space: nowrap;">
+          <span style="display: inline-block; padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; color: ${st.color}; background: ${st.bg};">${st.label}</span>
+        </td>
+        <td style="white-space: nowrap; text-align: right; font-weight: 800; color: ${it.payment_status === 'pago' ? '#15803d' : '#0f172a'};">${formatCurrencyBR(it.amount)}</td>
+      </tr>
+    `;
+  }).join('');
+
+  printWin.document.write(`
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="UTF-8">
+      <title>Extrato Financeiro — Personaliza Flow (${escapeHtml(periodLabel)})</title>
+      <style>
+        @page { size: A4 landscape; margin: 10mm; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; color: #0f172a; margin: 0; padding: 18px; background: #fff; font-size: 11px; line-height: 1.4; }
+        .no-print { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px dashed #cbd5e1; }
+        .no-print button { padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .btn-print { background: #59338f; color: #fff; border: none; }
+        .btn-close { background: #fff; color: #334155; border: 1px solid #cbd5e1; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2.5px solid #59338f; padding-bottom: 12px; margin-bottom: 14px; }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand img { height: 34px; object-fit: contain; }
+        .doc-meta { text-align: right; }
+        .doc-meta h1 { margin: 0; font-size: 16px; font-weight: 800; color: #59338f; letter-spacing: -0.2px; }
+        .doc-meta p { margin: 2px 0 0 0; font-size: 11px; color: #475569; }
+        .info-strip { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; }
+        .info-strip div { font-size: 11px; color: #334155; }
+        .info-strip strong { color: #0f172a; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+        .kpi-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; background: #ffffff; }
+        .kpi-label { font-size: 10px; text-transform: uppercase; font-weight: 700; color: #64748b; margin-bottom: 3px; }
+        .kpi-value { font-size: 15px; font-weight: 800; }
+        .kpi-sub { font-size: 10px; color: #64748b; margin-top: 2px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+        th { background: #2d174d; color: #fff; text-align: left; padding: 7px 8px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; }
+        td { padding: 7px 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; vertical-align: top; }
+        tbody tr:nth-child(even) { background: #f8fafc; }
+        tfoot td { background: #f1f5f9; font-weight: 800; border-top: 2px solid #cbd5e1; padding: 8px; font-size: 12px; }
+        .footer { display: flex; justify-content: space-between; font-size: 10px; color: #64748b; margin-top: 10px; padding-top: 8px; border-top: 1px solid #e2e8f0; }
+        @media print {
+          body { padding: 0; }
+          .no-print { display: none !important; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="no-print">
+        <button type="button" class="btn-close" onclick="window.close()">Fechar</button>
+        <button type="button" class="btn-print" onclick="window.print()">Imprimir / Salvar em PDF</button>
+      </div>
+
+      <div class="header">
+        <div class="brand">
+          <img src="${window.location.origin}/images/logo2.png" alt="Personaliza Flow" onerror="this.style.display='none'">
+        </div>
+        <div class="doc-meta">
+          <h1>EXTRATO FINANCEIRO — CARTEIRA</h1>
+          <p>Período: <strong>${escapeHtml(periodLabel)}</strong> • Emitido em ${escapeHtml(generatedAt)}</p>
+        </div>
+      </div>
+
+      <div class="info-strip">
+        <div><strong>Conta / Cliente:</strong> ${escapeHtml(accountLabel)}</div>
+        <div><strong>Lançamentos:</strong> ${items.length} registro(s)</div>
+        <div><strong>Detalhamento:</strong> Envios Flow: ${formatCurrencyBR(totalFlow)} • Loja Virtual: ${formatCurrencyBR(totalStore)}</div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Total no Período</div>
+          <div class="kpi-value" style="color: #0f172a;">${formatCurrencyBR(totalGeral)}</div>
+          <div class="kpi-sub">${items.length} lançamento(s)</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Em Aberto</div>
+          <div class="kpi-value" style="color: #dc2626;">${formatCurrencyBR(totalOpen)}</div>
+          <div class="kpi-sub">Pendente de faturamento</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Aguard. Pagamento</div>
+          <div class="kpi-value" style="color: #d97706;">${formatCurrencyBR(totalWaiting)}</div>
+          <div class="kpi-sub">Boleto / NF emitidos</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Total Quitado</div>
+          <div class="kpi-value" style="color: #16a34a;">${formatCurrencyBR(totalPaid)}</div>
+          <div class="kpi-sub">Pagamentos confirmados</div>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Origem</th>
+            <th>Pedido / Remessa</th>
+            <th>Condição</th>
+            <th>Descrição / Detalhes</th>
+            <th>NF</th>
+            <th>Status</th>
+            <th style="text-align: right;">Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="7">TOTAL GERAL (${items.length} lançamento(s))</td>
+            <td style="text-align: right; color: #59338f;">${formatCurrencyBR(totalGeral)}</td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <div class="footer">
+        <span>Personaliza Flow — Relatório Financeiro da Carteira Unificada</span>
+        <span>Documento gerado eletronicamente em ${escapeHtml(generatedAt)}</span>
+      </div>
+
+      <script>
+        window.onload = function() {
+          setTimeout(function() { window.print(); }, 350);
+        };
+      </script>
+    </body>
+    </html>
+  `);
+  printWin.document.close();
+  closeModal('modal-billing-export');
+}
+window.exportBillingStatementPDF = exportBillingStatementPDF;
 
 function toggleSelectAllBillingShipments(checked) {
   const checkboxes = document.querySelectorAll('.billing-item-checkbox');
@@ -4384,6 +4864,7 @@ async function loadClientProducts(clientId) {
 }
 
 async function loadClientBilling(clientId) {
+  window._lastClientBillingClientId = clientId;
   const tbody = document.getElementById('client-shipments-tbody');
   const openBalEl = document.getElementById('client-open-balance');
   const paidBalEl = document.getElementById('client-paid-balance');
@@ -7605,6 +8086,7 @@ let activeIntegrationClientId = null;
 let currentIntegrationProducts = [];
 
 async function loadIntegrationsPanel(selectedClientId = null) {
+  if (currentRole !== 'admin') return;
   const selectorBox = document.getElementById('integration-admin-client-selector-box');
   const clientSelect = document.getElementById('integration-client-select');
   const isAdmin = currentRole === 'admin';
